@@ -1,4 +1,5 @@
 mod communication;
+mod fault;
 mod metrics;
 mod process;
 mod random;

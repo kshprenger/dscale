@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     communication::{Destination, Event, EventDeliveryQueue, EventId, EventType},
+    fault::NetworkController,
     metrics::{self, Metrics},
     process::{ProcessHandle, ProcessId},
     random::{self, Randomizer},
@@ -9,7 +10,7 @@ use crate::{
 };
 
 pub struct Simulation {
-    randomizer: Randomizer,
+    network_controller: NetworkController,
     procs: HashMap<ProcessId, (Box<dyn ProcessHandle>, EventDeliveryQueue)>,
     metrics: Metrics,
     current_process: Option<ProcessId>,
@@ -19,9 +20,13 @@ pub struct Simulation {
 }
 
 impl Simulation {
-    pub(crate) fn new(seed: random::Seed, max_steps: Jiffies) -> Self {
+    pub(crate) fn new(
+        seed: random::Seed,
+        max_steps: Jiffies,
+        max_network_latency: Jiffies,
+    ) -> Self {
         Self {
-            randomizer: Randomizer::new(seed),
+            network_controller: NetworkController::new(Randomizer::new(seed), max_network_latency),
             procs: HashMap::new(),
             metrics: Metrics::default(),
             current_process: None,
@@ -38,7 +43,7 @@ impl Simulation {
         after: Jiffies,
     ) -> EventId {
         let next_event_id = self.get_next_event_id();
-        let will_arrive_at = after + self.global_time;
+        let will_arrive_at = self.calculate_arrival_time(after);
 
         let event = Event {
             id: next_event_id,
@@ -109,6 +114,10 @@ impl Simulation {
 
     fn tick(&mut self) {
         self.global_time += 1;
+    }
+
+    fn calculate_arrival_time(&mut self, after: Jiffies) -> Jiffies {
+        after + self.global_time + self.network_controller.introduce_random_latency()
     }
 
     fn get_next_event_id(&mut self) -> EventId {
