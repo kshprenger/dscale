@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     communication::{Destination, Event, EventDeliveryQueue, EventId, EventType},
-    fault::NetworkController,
+    fault::Latency,
     history::ProcessStep,
     metrics::Metrics,
     process::{ProcessHandle, ProcessId},
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub(crate) struct Simulation {
-    network_controller: NetworkController,
+    latency: Latency,
     procs: HashMap<ProcessId, (Box<dyn ProcessHandle>, EventDeliveryQueue)>,
     metrics: Metrics,
     current_process: Option<ProcessId>,
@@ -28,7 +28,7 @@ impl Simulation {
         max_network_latency: Jiffies,
     ) -> Self {
         Self {
-            network_controller: NetworkController::new(Randomizer::new(seed), max_network_latency),
+            latency: Latency::new(Randomizer::new(seed), max_network_latency),
             procs: HashMap::new(),
             metrics: Metrics::default(),
             current_process: None,
@@ -119,7 +119,7 @@ impl Simulation {
     }
 
     fn calculate_arrival_time(&mut self, after: Jiffies) -> Jiffies {
-        after + self.global_time + self.network_controller.introduce_random_latency()
+        after + self.global_time + self.latency.introduce_random_latency()
     }
 
     fn get_next_event_id(&mut self) -> EventId {
@@ -165,10 +165,11 @@ impl Simulation {
                     .map(|(_, next_event_arrival_time)| {
                         *next_event_arrival_time == self.global_time
                     })
-                    .or_else(|| Some(false))
-                    .unwrap()
+                    .unwrap_or(false)
             })
-            .map(|(candidate, (_, candidate_queue))| (*candidate, candidate_queue.pop().unwrap().0))
+            .filter_map(|(candidate, (_, candidate_queue))| {
+                candidate_queue.pop().map(|(event, _)| (*candidate, event))
+            })
             .collect()
     }
 }
