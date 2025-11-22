@@ -159,12 +159,16 @@ impl Simulation {
     fn choose_next_processes_steps(&mut self) -> Vec<ProcessStep> {
         self.procs
             .iter_mut()
-            .filter(|(_, (_, candidate_queue))| !candidate_queue.is_empty())
-            .map(|(candidate, (_, candidate_queue))| {
-                (candidate, candidate_queue.pop().expect("Queue is empty"))
+            .filter(|(_, (_, candidate_queue))| {
+                candidate_queue
+                    .peek()
+                    .map(|(_, next_event_arrival_time)| {
+                        *next_event_arrival_time == self.global_time
+                    })
+                    .or_else(|| Some(false))
+                    .unwrap()
             })
-            .filter(|(_, (_, arrival_time))| *arrival_time == self.global_time)
-            .map(|(candidate, (event, _))| (*candidate, event))
+            .map(|(candidate, (_, candidate_queue))| (*candidate, candidate_queue.pop().unwrap().0))
             .collect()
     }
 }

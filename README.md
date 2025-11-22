@@ -1,2 +1,3 @@
-# bft-consensus-simulator
-Simulation framework for different BFT consensus protocols
+# Consensus simulator
+
+Simulation framework for different consensus protocols
