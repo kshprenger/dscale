@@ -1,9 +1,11 @@
 mod communication;
 mod fault;
+mod history;
 mod metrics;
 mod process;
 mod random;
 mod runner;
 mod simulation;
 mod simulation_handle;
+mod simulation_result;
 mod time;

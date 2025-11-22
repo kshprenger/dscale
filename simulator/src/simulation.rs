@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use crate::{
     communication::{Destination, Event, EventDeliveryQueue, EventId, EventType},
     fault::NetworkController,
-    metrics::{self, Metrics},
+    history::ProcessStep,
+    metrics::Metrics,
     process::{ProcessHandle, ProcessId},
     random::{self, Randomizer},
+    simulation_result::SimulationResult,
     time::Jiffies,
 };
 
-pub struct Simulation {
+pub(crate) struct Simulation {
     network_controller: NetworkController,
     procs: HashMap<ProcessId, (Box<dyn ProcessHandle>, EventDeliveryQueue)>,
     metrics: Metrics,
@@ -73,16 +75,16 @@ impl Simulation {
         });
     }
 
-    pub(crate) fn run(&mut self) -> metrics::Metrics {
+    pub(crate) fn run(&mut self) -> SimulationResult {
         self.initial_step();
 
         while self.keep_running() {
             if !self.step() {
-                panic!("Deadlock")
+                return SimulationResult::Deadlock(self.metrics.execution_history.clone());
             }
         }
 
-        self.metrics.clone()
+        SimulationResult::Ok(self.metrics.clone())
     }
 }
 
@@ -133,27 +135,28 @@ impl Simulation {
     }
 
     fn step(&mut self) -> bool {
-        let next_events = self.choose_next_events();
-        if next_events.is_empty() {
+        let next_steps = self.choose_next_processes_steps();
+        if next_steps.is_empty() {
             return false;
         }
-        self.deliver_events(next_events);
+        self.execute_processes_steps(next_steps);
         return true;
     }
 
-    fn deliver_events(&mut self, events: Vec<(ProcessId, Event)>) {
-        events.into_iter().for_each(|(target, event)| {
+    fn execute_processes_steps(&mut self, steps: Vec<ProcessStep>) {
+        steps.into_iter().for_each(|(target, event)| {
             self.current_process = Some(target);
+            self.metrics.track_step((target, event.clone()));
             let produced_messages = self.handle_of(target).on_event(event);
             produced_messages
                 .into_iter()
                 .for_each(|(destination, message)| {
-                    self.submit_event_after(EventType::Message(message), destination, 0);
+                    self.submit_event_after(EventType::Message(message), destination, 1);
                 });
         })
     }
 
-    fn choose_next_events(&mut self) -> Vec<(ProcessId, Event)> {
+    fn choose_next_processes_steps(&mut self) -> Vec<ProcessStep> {
         self.procs
             .iter_mut()
             .filter(|(_, (_, candidate_queue))| !candidate_queue.is_empty())
@@ -161,7 +164,7 @@ impl Simulation {
                 (candidate, candidate_queue.pop().expect("Queue is empty"))
             })
             .filter(|(_, (_, arrival_time))| *arrival_time == self.global_time)
-            .map(|(candidate, (event, _))| (candidate.clone(), event))
+            .map(|(candidate, (event, _))| (*candidate, event))
             .collect()
     }
 }

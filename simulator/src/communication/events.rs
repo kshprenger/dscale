@@ -16,7 +16,7 @@ pub(crate) enum EventType {
     Message(Message),
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub enum Destination {
     Broadcast,
     SendSelf,
