@@ -1,11 +1,11 @@
-use crate::{EventSet, communication::Event};
+use crate::{Message, OutgoingMessages};
 
 pub type ProcessId = usize;
 
-pub trait ProcessHandle {
+pub trait ProcessHandle<M: Message> {
     /// Should schedule some initial events
-    fn init(&mut self) -> EventSet;
+    fn init(&mut self, outgoing: &mut OutgoingMessages<M>);
 
     /// Deliver event with source process
-    fn on_event(&mut self, event: (ProcessId, Event)) -> EventSet;
+    fn on_message(&mut self, from: ProcessId, message: M, outgoing: &mut OutgoingMessages<M>);
 }

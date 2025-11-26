@@ -14,7 +14,9 @@ impl Latency {
     }
 
     pub(crate) fn introduce_random_latency(&mut self) -> Jiffies {
-        let random_time = self.randomizer.random_from_range(0, self.max_latency.0);
+        let random_time = self
+            .randomizer
+            .random_from_range_uniform(0, self.max_latency.0);
         Jiffies(random_time)
     }
 }

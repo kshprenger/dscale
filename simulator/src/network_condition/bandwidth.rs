@@ -1,5 +1,7 @@
+use std::cmp::Reverse;
+
 use crate::{
-    communication::{Event, TimePriorityEventQueue},
+    communication::{Message, TimePriorityMessageQueue},
     process::ProcessId,
     time::Jiffies,
 };
@@ -10,13 +12,13 @@ pub enum BandwidthType {
     Bounded(usize), // Bytes per Jiffy
 }
 
-pub(crate) struct NetworkBoundedQueue {
+pub(crate) struct NetworkBoundedMessageQueue<M: Message> {
     bandwidth: usize,
     total_passed: usize,
-    queue: TimePriorityEventQueue,
+    queue: TimePriorityMessageQueue<M>,
 }
 
-impl NetworkBoundedQueue {
+impl<M: Message> NetworkBoundedMessageQueue<M> {
     pub(crate) fn new(bandwidth_type: BandwidthType) -> Self {
         let bandwidth = match bandwidth_type {
             BandwidthType::Unbounded => usize::MAX,
@@ -26,33 +28,33 @@ impl NetworkBoundedQueue {
         Self {
             bandwidth,
             total_passed: 0,
-            queue: TimePriorityEventQueue::new(),
+            queue: TimePriorityMessageQueue::new(),
         }
     }
 
-    pub(crate) fn push(&mut self, event: (ProcessId, Event), should_arrive_at: Jiffies) {
-        self.queue.push(event, should_arrive_at);
+    pub(crate) fn push(&mut self, message: (ProcessId, M), should_arrive_at: Jiffies) {
+        self.queue.push(Reverse((should_arrive_at, message)));
     }
 
     pub(crate) fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
 
-    pub(crate) fn peek(&self) -> Option<(&(ProcessId, Event), &Jiffies)> {
+    pub(crate) fn peek(&self) -> Option<&Reverse<(Jiffies, (ProcessId, M))>> {
         self.queue.peek()
     }
 
-    pub(crate) fn try_pop(&mut self, current_time: Jiffies) -> Option<(ProcessId, Event)> {
+    pub(crate) fn try_pop(&mut self, current_time: Jiffies) -> Option<(Jiffies, (ProcessId, M))> {
         match self.queue.peek() {
             None => None,
-            Some(((_, event), _)) => {
+            Some(Reverse((_, (_, message)))) => {
                 if self.bandwidth == usize::MAX {
                     return Some(self.queue.pop().unwrap().0);
                 }
-                if self.total_passed + event.size() > self.bandwidth * current_time {
+                if self.total_passed + message.virtual_size() > self.bandwidth * current_time {
                     None
                 } else {
-                    self.total_passed += event.size();
+                    self.total_passed += message.virtual_size();
                     Some(self.queue.pop().unwrap().0)
                 }
             }

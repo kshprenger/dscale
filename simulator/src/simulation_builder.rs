@@ -1,12 +1,15 @@
+use std::marker::PhantomData;
+
 use crate::{
-    Simulation, network_condition::BandwidthType, process::ProcessHandle, random::Seed,
+    Message, Simulation, network_condition::BandwidthType, process::ProcessHandle, random::Seed,
     time::Jiffies,
 };
 
-pub struct SimulationBuilder<F, P>
+pub struct SimulationBuilder<F, P, M>
 where
     F: Fn() -> P,
-    P: ProcessHandle,
+    P: ProcessHandle<M>,
+    M: Message,
 {
     seed: Seed,
     max_steps: Jiffies,
@@ -14,14 +17,16 @@ where
     process_count: usize,
     factory: F,
     bandwidth: BandwidthType,
+    _phantom: PhantomData<M>,
 }
 
-impl<F, P> SimulationBuilder<F, P>
+impl<F, P, M> SimulationBuilder<F, P, M>
 where
     F: Fn() -> P,
-    P: ProcessHandle,
+    P: ProcessHandle<M>,
+    M: Message,
 {
-    pub fn new_with_process_factory(f: F) -> SimulationBuilder<F, P> {
+    pub fn new_with_process_factory(f: F) -> SimulationBuilder<F, P, M> {
         SimulationBuilder {
             seed: 0,
             max_steps: Jiffies(1000),
@@ -29,6 +34,7 @@ where
             process_count: 0,
             factory: f,
             bandwidth: BandwidthType::Unbounded,
+            _phantom: PhantomData,
         }
     }
 
@@ -57,7 +63,7 @@ where
         self
     }
 
-    pub fn build(self) -> Simulation<P> {
+    pub fn build(self) -> Simulation<P, M> {
         let mut simulation = Simulation::new(self.seed, self.max_steps, self.max_network_latency);
 
         (1..=self.process_count).for_each(|id| {

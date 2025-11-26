@@ -8,8 +8,8 @@ mod simulation;
 mod simulation_builder;
 mod time;
 
-pub use communication::EventSet;
-pub use communication::{Destination, Event};
+pub use communication::OutgoingMessages;
+pub use communication::{Destination, Message};
 pub use network_condition::BandwidthType;
 pub use process::ProcessHandle;
 pub use process::ProcessId;

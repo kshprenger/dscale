@@ -1,6 +1,7 @@
-mod events;
+mod message;
+mod outgoing_messages;
 
-pub use events::Destination;
-pub use events::Event;
-pub use events::EventSet;
-pub use events::TimePriorityEventQueue;
+pub use message::Destination;
+pub use message::Message;
+pub use message::TimePriorityMessageQueue;
+pub use outgoing_messages::OutgoingMessages;

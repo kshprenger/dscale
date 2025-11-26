@@ -1,7 +1,15 @@
-use bytes::Bytes;
-use simulator::{
-    Destination, Event, EventSet, Jiffies, ProcessHandle, ProcessId, SimulationBuilder, event_set,
-};
+use std::time::Instant;
+
+use simulator::{Jiffies, Message, ProcessHandle, ProcessId, SimulationBuilder};
+
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
+struct ExampleMessage {}
+
+impl Message for ExampleMessage {
+    fn virtual_size(&self) -> usize {
+        69
+    }
+}
 
 struct ExampleProcess {}
 
@@ -11,25 +19,25 @@ impl ExampleProcess {
     }
 }
 
-impl ProcessHandle for ExampleProcess {
-    fn init(&mut self) -> EventSet {
-        event_set![Destination::SendSelf => Event::Timeout]
+impl ProcessHandle<ExampleMessage> for ExampleProcess {
+    fn init(&mut self, outgoing: &mut simulator::OutgoingMessages<ExampleMessage>) {
+        outgoing.send_self(ExampleMessage {});
     }
 
-    fn on_event(&mut self, event: (ProcessId, Event)) -> EventSet {
-        match event.1 {
-            Event::Timeout => {
-                event_set![Destination::Broadcast => Event::Message(Bytes::new())]
-            }
-            Event::Message(_) => {
-                event_set![Destination::SendSelf => Event::Timeout]
-            }
-        }
+    fn on_message(
+        &mut self,
+        from: ProcessId,
+        message: ExampleMessage,
+        outgoing: &mut simulator::OutgoingMessages<ExampleMessage>,
+    ) {
+        outgoing.send_self(ExampleMessage {});
     }
 }
 
 fn main() {
-    SimulationBuilder::new_with_process_factory(|| Box::new(ExampleProcess::new()))
+    let start = Instant::now();
+
+    let m = SimulationBuilder::new_with_process_factory(|| ExampleProcess::new())
         .with_network_bandwidth(simulator::BandwidthType::Unbounded)
         .with_max_network_latency(Jiffies(2))
         .with_max_steps(Jiffies(100_000))
@@ -38,5 +46,9 @@ fn main() {
         .build()
         .run();
 
-    println!("Done")
+    println!(
+        "Done, events: {}, elapsed: {:?}",
+        m.events_total,
+        start.elapsed()
+    )
 }
