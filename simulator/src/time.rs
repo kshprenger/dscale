@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Mul};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Mul},
+};
 
 #[derive(PartialEq, PartialOrd, Ord, Eq, Copy, Clone)]
 pub struct Jiffies(pub usize);
@@ -28,5 +31,11 @@ impl Mul<Jiffies> for usize {
 
     fn mul(self, rhs: Jiffies) -> Self::Output {
         self * rhs.0
+    }
+}
+
+impl Display for Jiffies {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(("Jiffies(".to_string() + &self.0.to_string() + ")").as_str())
     }
 }

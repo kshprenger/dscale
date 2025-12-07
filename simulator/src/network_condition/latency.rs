@@ -1,5 +1,7 @@
 use std::collections::BinaryHeap;
 
+use log::debug;
+
 use crate::Message;
 use crate::communication::{RoutedMessage, TimePriorityMessageQueue};
 use crate::{random::Randomizer, time::Jiffies};
@@ -20,9 +22,11 @@ impl<M: Message> LatencyQueue<M> {
     }
 
     pub(crate) fn push(&mut self, mut message: RoutedMessage<M>) {
+        debug!("Arrival time before adding latency: {}", message.0);
         message.0 += self
             .randomizer
             .random_from_range_uniform(0, self.max_latency.0);
+        debug!("Arrival time after adding random latency: {}", message.0);
         self.queue.push(std::cmp::Reverse(message));
     }
 

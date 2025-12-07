@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::debug;
+
 use crate::{
     OutgoingMessages,
     communication::{Destination, Message},
@@ -36,6 +38,8 @@ where
         bandwidth_type: BandwidthType,
         procs: Vec<(ProcessId, P)>,
     ) -> Self {
+        let _ = env_logger::try_init();
+
         Self {
             bandwidth_queue: BandwidthQueue::new(
                 bandwidth_type,
@@ -87,6 +91,8 @@ where
             Destination::SendSelf => vec![source],
         };
 
+        debug!("Submited message, targets: {targets:?}");
+
         targets.into_iter().for_each(|target| {
             self.bandwidth_queue
                 .push((base_arrival_time, (source, target, message.clone())));
@@ -127,10 +133,12 @@ where
 
     fn set_global_time(&mut self, time: Jiffies) {
         debug_assert!(self.global_time <= time);
+        debug!("Global time now: {}", time);
         self.global_time = time;
     }
 
     fn execute_process_step(&mut self, step: ProcessStep<M>) {
+        debug!("Executing step. Source: {}, Dest: {}", step.0, step.1);
         self.metrics.track_event();
 
         let source = step.0;

@@ -1,5 +1,7 @@
 use std::collections::BinaryHeap;
 
+use log::debug;
+
 use crate::{
     communication::{Message, RoutedMessage, TimePriorityMessageQueue},
     network_condition::LatencyQueue,
@@ -46,7 +48,7 @@ impl<M: Message> BandwidthQueue<M> {
     }
 
     pub(crate) fn push(&mut self, message: RoutedMessage<M>) {
-        // println!("Submitted with base time: {}", message.0.0);
+        debug!("Submitted message with base time: {}", message.0.0);
         self.global_queue.push(message);
     }
 
@@ -71,12 +73,25 @@ impl<M: Message> BandwidthQueue<M> {
 
 impl<M: Message> BandwidthQueue<M> {
     fn move_message_from_latency_queue_to_buffers(&mut self) {
+        debug!("Moving message from latency queue to buffers");
         let mut message = self
             .global_queue
             .pop()
             .expect("Global queue should not be empty");
         self.current_buffers_sizes[message.1.0] += message.1.2.virtual_size();
+        debug!(
+            "New process {} buffer's size: {}",
+            message.1.0, self.current_buffers_sizes[message.1.0]
+        );
+        debug!(
+            "Message arrival time before bandwidth adjustment: {}",
+            message.0
+        );
         message.0 += Jiffies(self.current_buffers_sizes[message.1.0] / self.bandwidth);
+        debug!(
+            "Message arrival time after bandwidth adjustment: {}",
+            message.0
+        );
         self.merged_fifo_buffers.push(std::cmp::Reverse(message));
     }
 
@@ -87,6 +102,10 @@ impl<M: Message> BandwidthQueue<M> {
             .expect("All buffers should not be empty")
             .0;
         self.current_buffers_sizes[message.1.0] -= message.1.2.virtual_size();
+        debug!(
+            "New process {} buffer's size: {}",
+            message.1.0, self.current_buffers_sizes[message.1.0]
+        );
         BandwidthQueueOptions::Some(message)
     }
 
