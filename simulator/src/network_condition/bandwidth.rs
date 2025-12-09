@@ -54,9 +54,9 @@ impl<M: Message> BandwidthQueue<M> {
 
     pub(crate) fn pop(&mut self) -> BandwidthQueueOptions<M> {
         let closest_arriving_message = self.global_queue.peek();
-        let closest_squizzing_message = self.merged_fifo_buffers.peek();
+        let closest_squeezing_message = self.merged_fifo_buffers.peek();
 
-        match (closest_arriving_message, closest_squizzing_message) {
+        match (closest_arriving_message, closest_squeezing_message) {
             (None, None) => BandwidthQueueOptions::None,
             (Some(_), None) => self.deliver_from_latency_queue(),
             (None, Some(_)) => self.deliver_from_buffer(),

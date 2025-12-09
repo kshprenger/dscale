@@ -28,10 +28,10 @@ where
 {
     pub fn new_with_process_factory(f: F) -> SimulationBuilder<F, P, M> {
         SimulationBuilder {
-            seed: 0,
-            max_steps: Jiffies(1000),
+            seed: 69,
+            max_steps: Jiffies(1_000_000),
             max_network_latency: Jiffies(10),
-            process_count: 0,
+            process_count: 5,
             factory: f,
             bandwidth: BandwidthType::Unbounded,
             _phantom: PhantomData,
