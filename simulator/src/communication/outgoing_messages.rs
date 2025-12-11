@@ -5,7 +5,7 @@ use crate::{Destination, ProcessId, communication::Message};
 pub struct OutgoingMessages<M: Message>(pub(crate) Vec<(Destination, M)>);
 
 impl<M: Message> OutgoingMessages<M> {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn New() -> Self {
         Self(Vec::new())
     }
 }
@@ -13,15 +13,15 @@ impl<M: Message> OutgoingMessages<M> {
 /// User interface.
 /// Methods should be called from inside of on_message handler.
 impl<M: Message> OutgoingMessages<M> {
-    pub fn broadcast(&mut self, message: M) {
+    pub fn Broadcast(&mut self, message: M) {
         self.0.push((Destination::Broadcast, message));
     }
 
-    pub fn send_to(&mut self, to: ProcessId, message: M) {
+    pub fn SendTo(&mut self, to: ProcessId, message: M) {
         self.0.push((Destination::To(to), message));
     }
 
-    pub fn send_self(&mut self, message: M) {
+    pub fn SendSelf(&mut self, message: M) {
         self.0.push((Destination::SendSelf, message));
     }
 }

@@ -11,9 +11,8 @@ pub(crate) struct LatencyQueue<M: Message> {
     max_latency: Jiffies,
     queue: TimePriorityMessageQueue<M>,
 }
-
 impl<M: Message> LatencyQueue<M> {
-    pub(crate) fn new(randomizer: Randomizer, max_latency: Jiffies) -> Self {
+    pub(crate) fn New(randomizer: Randomizer, max_latency: Jiffies) -> Self {
         Self {
             randomizer,
             max_latency,
@@ -21,20 +20,18 @@ impl<M: Message> LatencyQueue<M> {
         }
     }
 
-    pub(crate) fn push(&mut self, mut message: RoutedMessage<M>) {
+    pub(crate) fn Push(&mut self, mut message: RoutedMessage<M>) {
         debug!("Arrival time before adding latency: {}", message.0);
-        message.0 += self
-            .randomizer
-            .random_from_range_uniform(0, self.max_latency.0);
+        message.0 += self.randomizer.RandomFromRange(0, self.max_latency.0);
         debug!("Arrival time after adding random latency: {}", message.0);
         self.queue.push(std::cmp::Reverse(message));
     }
 
-    pub(crate) fn pop(&mut self) -> Option<RoutedMessage<M>> {
+    pub(crate) fn Pop(&mut self) -> Option<RoutedMessage<M>> {
         Some(self.queue.pop()?.0)
     }
 
-    pub(crate) fn peek(&mut self) -> Option<&RoutedMessage<M>> {
+    pub(crate) fn Peek(&mut self) -> Option<&RoutedMessage<M>> {
         Some(&self.queue.peek()?.0)
     }
 }

@@ -26,7 +26,7 @@ where
     P: ProcessHandle<M>,
     M: Message,
 {
-    pub fn new_with_process_factory(f: F) -> SimulationBuilder<F, P, M> {
+    pub fn NewFromFactory(f: F) -> SimulationBuilder<F, P, M> {
         SimulationBuilder {
             seed: 69,
             max_steps: Jiffies(1_000_000),
@@ -38,33 +38,33 @@ where
         }
     }
 
-    pub fn with_seed(mut self, seed: Seed) -> Self {
+    pub fn Seed(mut self, seed: Seed) -> Self {
         self.seed = seed;
         self
     }
 
-    pub fn with_max_simulation_time(mut self, max_steps: Jiffies) -> Self {
+    pub fn MaxTime(mut self, max_steps: Jiffies) -> Self {
         self.max_steps = max_steps;
         self
     }
 
-    pub fn with_max_network_latency(mut self, max_network_latency: Jiffies) -> Self {
+    pub fn MaxLatency(mut self, max_network_latency: Jiffies) -> Self {
         self.max_network_latency = max_network_latency;
         self
     }
 
-    pub fn with_process_count(mut self, count: usize) -> Self {
+    pub fn ProcessInstances(mut self, count: usize) -> Self {
         self.process_count = count;
         self
     }
 
-    pub fn with_network_bandwidth(mut self, bandwidth: BandwidthType) -> Self {
+    pub fn NetworkBandwidth(mut self, bandwidth: BandwidthType) -> Self {
         self.bandwidth = bandwidth;
         self
     }
 
-    pub fn build(self) -> Simulation<P, M> {
-        Simulation::new(
+    pub fn Build(self) -> Simulation<P, M> {
+        Simulation::New(
             self.seed,
             self.max_steps,
             self.max_network_latency,

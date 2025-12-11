@@ -9,7 +9,7 @@ enum ExampleMessage {
 }
 
 impl Message for ExampleMessage {
-    fn virtual_size(&self) -> usize {
+    fn VirtualSize(&self) -> usize {
         100
     }
 }
@@ -19,24 +19,24 @@ struct ExampleProcess {
 }
 
 impl ExampleProcess {
-    fn new() -> Self {
+    fn New() -> Self {
         Self { self_id: 0 }
     }
 }
 
 impl ProcessHandle<ExampleMessage> for ExampleProcess {
-    fn bootstrap(
+    fn Bootstrap(
         &mut self,
         assigned_id: ProcessId,
         outgoing: &mut simulator::OutgoingMessages<ExampleMessage>,
     ) {
         self.self_id = assigned_id;
         if assigned_id == 1 {
-            outgoing.send_to(2, ExampleMessage::Ping);
+            outgoing.SendTo(2, ExampleMessage::Ping);
         }
     }
 
-    fn on_message(
+    fn OnMessage(
         &mut self,
         from: ProcessId,
         message: ExampleMessage,
@@ -44,13 +44,13 @@ impl ProcessHandle<ExampleMessage> for ExampleProcess {
     ) {
         if from == 1 && self.self_id == 2 {
             assert!(message == ExampleMessage::Ping);
-            outgoing.send_to(1, ExampleMessage::Pong);
+            outgoing.SendTo(1, ExampleMessage::Pong);
             return;
         }
 
         if from == 2 && self.self_id == 1 {
             assert!(message == ExampleMessage::Pong);
-            outgoing.send_to(2, ExampleMessage::Ping);
+            outgoing.SendTo(2, ExampleMessage::Ping);
             return;
         }
     }
@@ -59,14 +59,14 @@ impl ProcessHandle<ExampleMessage> for ExampleProcess {
 fn main() {
     let start = Instant::now();
 
-    let m = SimulationBuilder::new_with_process_factory(|| ExampleProcess::new())
-        .with_network_bandwidth(simulator::BandwidthType::Unbounded)
-        .with_max_network_latency(Jiffies(10))
-        .with_max_simulation_time(Jiffies(100_000_000))
-        .with_process_count(2)
-        .with_seed(5)
-        .build()
-        .run();
+    let m = SimulationBuilder::NewFromFactory(|| ExampleProcess::New())
+        .NetworkBandwidth(simulator::BandwidthType::Unbounded)
+        .MaxLatency(Jiffies(10))
+        .MaxTime(Jiffies(100_000_000))
+        .ProcessInstances(2)
+        .Seed(5)
+        .Build()
+        .Run();
 
     println!(
         "Done, events: {}, elapsed: {:?}",
@@ -76,14 +76,14 @@ fn main() {
 
     let start = Instant::now();
 
-    let m = SimulationBuilder::new_with_process_factory(|| ExampleProcess::new())
-        .with_network_bandwidth(simulator::BandwidthType::Bounded(5))
-        .with_max_network_latency(Jiffies(10))
-        .with_max_simulation_time(Jiffies(100_000_000))
-        .with_process_count(2)
-        .with_seed(5)
-        .build()
-        .run();
+    let m = SimulationBuilder::NewFromFactory(|| ExampleProcess::New())
+        .NetworkBandwidth(simulator::BandwidthType::Bounded(5))
+        .MaxLatency(Jiffies(10))
+        .MaxTime(Jiffies(100_000_000))
+        .ProcessInstances(2)
+        .Seed(5)
+        .Build()
+        .Run();
 
     println!(
         "Done, events: {}, elapsed: {:?}",

@@ -8,7 +8,7 @@ pub struct Metrics {
 }
 
 impl Metrics {
-    pub(crate) fn track_event(&mut self) {
+    pub(crate) fn TrackEvent(&mut self) {
         self.events_total += 1;
         if self.events_total % K_PROGRESS_LOG == 0 {
             info!("Events tracked: {}", self.events_total)

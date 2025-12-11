@@ -31,7 +31,7 @@ where
     P: ProcessHandle<M>,
     M: Message,
 {
-    pub(crate) fn new(
+    pub(crate) fn New(
         seed: random::Seed,
         max_steps: Jiffies,
         max_network_latency: Jiffies,
@@ -41,10 +41,10 @@ where
         let _ = env_logger::try_init();
 
         Self {
-            bandwidth_queue: BandwidthQueue::new(
+            bandwidth_queue: BandwidthQueue::New(
                 bandwidth_type,
                 procs.len(),
-                LatencyQueue::new(Randomizer::new(seed), max_network_latency),
+                LatencyQueue::New(Randomizer::New(seed), max_network_latency),
             ),
             procs: procs.into_iter().collect(),
             metrics: Metrics::default(),
@@ -53,11 +53,11 @@ where
         }
     }
 
-    pub fn run(&mut self) -> Metrics {
-        self.initial_step();
+    pub fn Run(&mut self) -> Metrics {
+        self.InitialStep();
 
-        while self.keep_running() {
-            if !self.step() {
+        while self.KeepRunning() {
+            if !self.Step() {
                 panic!("Deadlock")
             }
         }
@@ -71,13 +71,13 @@ where
     P: ProcessHandle<M>,
     M: Message,
 {
-    fn submit_messages(&mut self, source: ProcessId, messages: Vec<(Destination, M)>) {
+    fn SubmitMessages(&mut self, source: ProcessId, messages: Vec<(Destination, M)>) {
         messages.into_iter().for_each(|(destination, event)| {
-            self.submit_message(event, source, destination, self.global_time + Jiffies(1));
+            self.SubmitSingleMessage(event, source, destination, self.global_time + Jiffies(1));
         });
     }
 
-    fn submit_message(
+    fn SubmitSingleMessage(
         &mut self,
         message: M,
         source: ProcessId,
@@ -93,61 +93,61 @@ where
         debug!("Submited message, targets of the message: {targets:?}");
         targets.into_iter().for_each(|target| {
             self.bandwidth_queue
-                .push((base_arrival_time, (source, target, message.clone())));
+                .Push((base_arrival_time, (source, target, message.clone())));
         });
     }
 
-    fn handle_of(&mut self, process_id: ProcessId) -> &mut P {
+    fn HandleOf(&mut self, process_id: ProcessId) -> &mut P {
         self.procs
             .get_mut(&process_id)
             .expect("Invalid proccess id")
     }
 
-    fn keep_running(&mut self) -> bool {
+    fn KeepRunning(&mut self) -> bool {
         self.global_time < self.max_steps
     }
 
-    fn initial_step(&mut self) {
+    fn InitialStep(&mut self) {
         for id in self.procs.keys().copied().collect::<Vec<ProcessId>>() {
             debug!("Executing initial step for {id}");
-            let mut outgoing_messages = OutgoingMessages::new();
-            self.handle_of(id).bootstrap(id, &mut outgoing_messages);
-            self.submit_messages(id, outgoing_messages.0);
+            let mut outgoing_messages = OutgoingMessages::New();
+            self.HandleOf(id).Bootstrap(id, &mut outgoing_messages);
+            self.SubmitMessages(id, outgoing_messages.0);
         }
     }
 
-    fn step(&mut self) -> bool {
+    fn Step(&mut self) -> bool {
         let next_event = self.bandwidth_queue.pop();
 
         match next_event {
             BandwidthQueueOptions::None => false,
             BandwidthQueueOptions::MessageArrivedByLatency => true, // Do nothing
             BandwidthQueueOptions::Some(message) => {
-                self.set_global_time(message.0);
-                self.execute_process_step(message.1);
+                self.FastForwardClock(message.0);
+                self.ExecuteProcessStep(message.1);
                 true
             }
         }
     }
 
-    fn set_global_time(&mut self, time: Jiffies) {
-        debug_assert!(self.global_time <= time);
+    fn FastForwardClock(&mut self, time: Jiffies) {
+        debug_assert!(self.global_time <= time, "Time is not monotonous");
         self.global_time = time;
         debug!("Global time now: {time}");
     }
 
-    fn execute_process_step(&mut self, step: ProcessStep<M>) {
-        self.metrics.track_event();
+    fn ExecuteProcessStep(&mut self, step: ProcessStep<M>) {
+        self.metrics.TrackEvent();
 
         let source = step.0;
         let dest = step.1;
         let message = step.2;
 
-        let mut outgoing_messages = OutgoingMessages::new();
+        let mut outgoing_messages = OutgoingMessages::New();
 
         debug!("Executing step for {} | Message Source: {}", dest, source);
-        self.handle_of(dest)
-            .on_message(source, message, &mut outgoing_messages);
-        self.submit_messages(dest, outgoing_messages.0);
+        self.HandleOf(dest)
+            .OnMessage(source, message, &mut outgoing_messages);
+        self.SubmitMessages(dest, outgoing_messages.0);
     }
 }

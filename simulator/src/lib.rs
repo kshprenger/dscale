@@ -1,3 +1,5 @@
+#![allow(non_snake_case)] // I like pascal case in functions names
+
 mod communication;
 mod metrics;
 mod network_condition;

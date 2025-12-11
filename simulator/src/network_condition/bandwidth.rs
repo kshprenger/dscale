@@ -29,7 +29,7 @@ pub(crate) struct BandwidthQueue<M: Message> {
 }
 
 impl<M: Message> BandwidthQueue<M> {
-    pub(crate) fn new(
+    pub(crate) fn New(
         bandwidth_type: BandwidthType,
         proc_num: usize,
         global_queue: LatencyQueue<M>,
@@ -47,13 +47,13 @@ impl<M: Message> BandwidthQueue<M> {
         }
     }
 
-    pub(crate) fn push(&mut self, message: RoutedMessage<M>) {
+    pub(crate) fn Push(&mut self, message: RoutedMessage<M>) {
         debug!("Submitted message with base time: {}", message.0);
-        self.global_queue.push(message);
+        self.global_queue.Push(message);
     }
 
     pub(crate) fn pop(&mut self) -> BandwidthQueueOptions<M> {
-        let closest_arriving_message = self.global_queue.peek();
+        let closest_arriving_message = self.global_queue.Peek();
         let closest_squeezing_message = self.merged_fifo_buffers.peek();
 
         match (closest_arriving_message, closest_squeezing_message) {
@@ -76,9 +76,9 @@ impl<M: Message> BandwidthQueue<M> {
         debug!("Moving message from latency queue to buffers");
         let mut message = self
             .global_queue
-            .pop()
+            .Pop()
             .expect("Global queue should not be empty");
-        self.current_buffers_sizes[message.1.0] += message.1.2.virtual_size();
+        self.current_buffers_sizes[message.1.0] += message.1.2.VirtualSize();
         debug!(
             "New process {} buffer's size: {}",
             message.1.0, self.current_buffers_sizes[message.1.0]
@@ -101,7 +101,7 @@ impl<M: Message> BandwidthQueue<M> {
             .pop()
             .expect("All buffers should not be empty")
             .0;
-        self.current_buffers_sizes[message.1.0] -= message.1.2.virtual_size();
+        self.current_buffers_sizes[message.1.0] -= message.1.2.VirtualSize();
         debug!(
             "New process {} buffer's size: {}",
             message.1.0, self.current_buffers_sizes[message.1.0]

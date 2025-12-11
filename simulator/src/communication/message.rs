@@ -3,7 +3,7 @@ use std::cmp::Reverse;
 use crate::{process::ProcessId, time::Jiffies};
 
 pub trait Message: Eq + PartialEq + Ord + PartialOrd + Clone {
-    fn virtual_size(&self) -> usize;
+    fn VirtualSize(&self) -> usize;
 }
 
 // (Arrival time, source, dest, message)
