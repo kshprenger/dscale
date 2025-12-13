@@ -86,7 +86,7 @@ impl RoundBasedDAG {
     fn Grow(&mut self, rounds: usize) {
         let n = self.matrix[0].len();
         (0..rounds).for_each(|_| {
-            let mut round = Vec::<Option<VertexPtr>>::new();
+            let mut round = Round::new();
             round.resize(n, None);
             let mut round_visited = Vec::new();
             round_visited.resize(n, false);
