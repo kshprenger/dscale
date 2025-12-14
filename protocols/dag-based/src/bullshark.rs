@@ -1,9 +1,6 @@
-#![allow(non_snake_case)]
-
-use std::rc::Rc;
-
-use dag_utils::RoundBasedDAG;
 use simulator::*;
+
+use crate::dag_utils::RoundBasedDAG;
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 enum BullsharkMessage {}

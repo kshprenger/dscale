@@ -1,8 +1,7 @@
 [package]
-name = "bullshark"
+name = "dag-based"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 simulator = {path = "../../simulator"}
-dag_utils = {path = "../dag_utils"}
