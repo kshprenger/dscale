@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use log::debug;
 
@@ -18,7 +18,7 @@ where
     M: Message,
 {
     bandwidth_queue: BandwidthQueue<M>,
-    procs: HashMap<ProcessId, P>,
+    procs: BTreeMap<ProcessId, P>,
     metrics: Metrics,
     global_time: Jiffies,
     max_steps: Jiffies,
