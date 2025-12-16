@@ -1,6 +1,6 @@
-use std::{collections::BTreeMap, time::Instant};
+use std::collections::BTreeMap;
 
-use log::{debug, error};
+use log::debug;
 
 use crate::{
     SimulationAccess,
@@ -134,7 +134,6 @@ where
             BandwidthQueueOptions::MessageArrivedByLatency => true, // Do nothing
             BandwidthQueueOptions::Some(message) => {
                 self.FastForwardClock(message.arrival_time);
-                let start = Instant::now();
                 self.ExecuteProcessStep(message.step);
                 true
             }

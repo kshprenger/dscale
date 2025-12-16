@@ -1,5 +1,5 @@
 use std::{
-    collections::VecDeque,
+    collections::{HashSet, VecDeque},
     hash::{Hash, Hasher},
     ops::Index,
     rc::Rc,
@@ -33,6 +33,7 @@ pub struct RoundBasedDAG {
     proc_num: usize,
     matrix: Vec<Round>,
     visited: Vec<Vec<bool>>, // Optimized allocations & constant lookup for iterated bfs
+    ordered: Vec<Vec<bool>>,
 }
 
 impl RoundBasedDAG {
@@ -40,12 +41,31 @@ impl RoundBasedDAG {
         Self {
             matrix: Vec::new(),
             visited: Vec::new(),
+            ordered: Vec::new(),
             proc_num: 0,
         }
     }
 
     pub fn SetRoundSize(&mut self, proc_num: usize) {
         self.proc_num = proc_num;
+    }
+
+    // v should be already in the DAG
+    // "in some deterministic order"
+    pub fn OrderFrom(&mut self, v: &VertexPtr) {
+        let mut queue = VecDeque::new();
+        queue.push_back(v);
+
+        while queue.len() > 0 {
+            let curr = queue.pop_front().unwrap();
+            for edge in &curr.strong_edges {
+                if self.ordered[edge.round][edge.source] {
+                    continue;
+                } else {
+                    self.ordered[edge.round][edge.source] = true;
+                }
+            }
+        }
     }
 
     // v & u should be already in the DAG
@@ -105,9 +125,12 @@ impl RoundBasedDAG {
             round.resize(self.proc_num + 1, None);
             let mut round_visited = Vec::new();
             round_visited.resize(self.proc_num + 1, false);
+            let mut round_ordered = Vec::new();
+            round_ordered.resize(self.proc_num + 1, false);
 
             self.matrix.push(round);
             self.visited.push(round_visited);
+            self.ordered.push(round_ordered);
         });
     }
 

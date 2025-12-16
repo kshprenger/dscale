@@ -3,9 +3,9 @@ use simulator::{BandwidthType, Jiffies, SimulationBuilder};
 fn main() {
     let mut sim = SimulationBuilder::NewFromFactory(|| Bullshark::New())
         .MaxLatency(Jiffies(10))
-        .MaxTime(Jiffies(100))
+        .MaxTime(Jiffies(100000))
         .NetworkBandwidth(BandwidthType::Unbounded)
-        .ProcessInstances(4)
+        .ProcessInstances(100)
         .Seed(69)
         .Build();
 

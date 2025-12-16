@@ -1,7 +1,7 @@
 // https://arxiv.org/pdf/2201.05677
 // https://arxiv.org/pdf/2209.05633
 
-use std::collections::HashSet;
+use std::{collections::HashSet, time::Instant};
 
 use simulator::*;
 
@@ -25,7 +25,6 @@ pub struct Bullshark {
     dag: RoundBasedDAG,
     round: usize,
     buffer: HashSet<VertexPtr>,
-    ordered_vertices: HashSet<VertexPtr>,
     last_ordered_round: usize,
     ordered_anchors_stack: Vec<VertexPtr>,
 }
@@ -38,7 +37,6 @@ impl Bullshark {
             dag: RoundBasedDAG::New(),
             round: 0,
             buffer: HashSet::new(),
-            ordered_vertices: HashSet::new(),
             last_ordered_round: 0,
             ordered_anchors_stack: Vec::new(),
         }
@@ -202,7 +200,9 @@ impl Bullshark {
 
         self.buffer.remove(&v);
 
-        self.TryOrdering(v);
+        if v.source == self.GetLeaderId(v.round) {
+            self.TryOrdering(v);
+        }
         return true;
     }
 }
@@ -210,7 +210,7 @@ impl Bullshark {
 // Consensus logic
 impl Bullshark {
     fn TryOrdering(&mut self, v: VertexPtr) {
-        // Leaders on even rounds
+        // Leaders are on even rounds
         if v.round % 2 == 1 && v.round != 0 {
             return;
         }
@@ -220,12 +220,11 @@ impl Bullshark {
         match maybe_anchor {
             None => return,
             Some(anchor) => {
-                let vote_count = anchor
+                let vote_count = v
                     .strong_edges
                     .iter()
-                    .filter(|vote| self.dag.PathExists(*vote, &anchor))
+                    .filter(|vote| vote.strong_edges.contains(&anchor))
                     .count();
-
                 if vote_count >= self.AdversaryThreshold() + 1 {
                     self.OrderAnchors(anchor);
                 }
@@ -253,6 +252,7 @@ impl Bullshark {
                 }
             }
         }
+
         self.last_ordered_round = v.round;
         self.OrderHistory();
     }
@@ -264,24 +264,7 @@ impl Bullshark {
                 .pop()
                 .expect("Should not be empty");
 
-            let mut vertices_to_order = Vec::new();
-
-            // "in some deterministic order"
-            for round in 1..=self.dag.CurrentMaxAllocatedRound() {
-                for process in 1..=self.proc_num {
-                    let maybe_vertex = self.dag[round][process].clone();
-                    match maybe_vertex {
-                        None => continue,
-                        Some(vertex) => {
-                            if self.dag.PathExists(&anchor, &vertex)
-                                && !self.ordered_vertices.contains(&vertex)
-                            {
-                                vertices_to_order.push(vertex);
-                            }
-                        }
-                    }
-                }
-            }
+            self.dag.OrderFrom(&anchor);
         }
     }
 }
