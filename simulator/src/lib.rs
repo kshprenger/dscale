@@ -9,6 +9,7 @@ mod random;
 mod simulation;
 mod simulation_builder;
 mod time;
+mod progress;
 
 pub use access::Access;
 pub use communication::{Destination, Message};

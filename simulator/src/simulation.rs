@@ -8,6 +8,7 @@ use crate::{
     metrics::Metrics,
     network_condition::{BandwidthQueue, BandwidthQueueOptions, BandwidthType, LatencyQueue},
     process::{Configuration, ProcessHandle, ProcessId},
+    progress::Bar,
     random::{self, Randomizer},
     time::Jiffies,
 };
@@ -21,8 +22,11 @@ where
     procs: BTreeMap<ProcessId, P>,
     metrics: Metrics,
     global_time: Jiffies,
-    max_steps: Jiffies,
+    max_time: Jiffies,
+    progress_bar: Bar,
 }
+
+const K_PROGRESS_TIMES: usize = 10;
 
 impl<P, M> Simulation<P, M>
 where
@@ -31,7 +35,7 @@ where
 {
     pub(crate) fn New(
         seed: random::Seed,
-        max_steps: Jiffies,
+        max_time: Jiffies,
         max_network_latency: Jiffies,
         bandwidth_type: BandwidthType,
         procs: Vec<(ProcessId, P)>,
@@ -47,7 +51,8 @@ where
             procs: procs.into_iter().collect(),
             metrics: Metrics::default(),
             global_time: Jiffies(0),
-            max_steps: max_steps,
+            max_time: max_time,
+            progress_bar: Bar::New(max_time, max_time.0 / K_PROGRESS_TIMES),
         }
     }
 
@@ -111,7 +116,7 @@ where
     }
 
     fn KeepRunning(&mut self) -> bool {
-        self.global_time < self.max_steps
+        self.global_time < self.max_time
     }
 
     fn InitialStep(&mut self) {
@@ -144,6 +149,7 @@ where
     fn FastForwardClock(&mut self, time: Jiffies) {
         debug_assert!(self.global_time <= time, "Time is not monotonous");
         self.global_time = time;
+        self.progress_bar.MakeProgress(time);
         debug!("Global time now: {time}");
     }
 

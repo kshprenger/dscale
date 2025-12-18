@@ -6,7 +6,7 @@ fn main() {
             ByzantineConsistentBroadcast::Wrap(Bullshark::New())
         })
         .MaxLatency(Jiffies(133))
-        .MaxTime(Jiffies(2344))
+        .MaxTime(Jiffies(23440))
         .NetworkBandwidth(BandwidthType::Unbounded)
         .ProcessInstances(procs)
         .Seed(procs as u64)
