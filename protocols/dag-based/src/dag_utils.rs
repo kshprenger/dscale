@@ -9,7 +9,7 @@ pub fn SameVertex(v: &VertexPtr, u: &VertexPtr) -> bool {
     Rc::ptr_eq(v, u)
 }
 
-#[derive(PartialEq, Eq)] // Hashing for fast lookup in buffers
+#[derive(PartialEq, Eq)]
 pub struct Vertex {
     pub round: usize,
     pub source: ProcessId,

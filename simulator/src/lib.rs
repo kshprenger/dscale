@@ -10,7 +10,7 @@ mod simulation;
 mod simulation_builder;
 mod time;
 
-pub use access::SimulationAccess;
+pub use access::Access;
 pub use communication::{Destination, Message};
 pub use network_condition::BandwidthType;
 pub use process::Configuration;

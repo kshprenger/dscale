@@ -1,9 +1,9 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, process::exit};
 
 use log::{debug, info};
 
 use crate::{
-    SimulationAccess,
+    access::CoreAccess,
     communication::{Destination, Message, ProcessStep, RoutedMessage},
     metrics::Metrics,
     network_condition::{BandwidthQueue, BandwidthQueueOptions, BandwidthType, LatencyQueue},
@@ -56,7 +56,8 @@ where
 
         while self.KeepRunning() {
             if !self.Step() {
-                panic!("DEADLOCK! (ﾉಥ益ಥ）ﾉ ┻━┻ Try with RUST_LOG=debug")
+                info!("DEADLOCK! (ﾉಥ益ಥ）ﾉ ┻━┻ Try with RUST_LOG=debug");
+                exit(1)
             }
         }
         info!("looks good! ヽ(‘ー`)ノ");
@@ -116,7 +117,7 @@ where
     fn InitialStep(&mut self) {
         for id in self.procs.keys().copied().collect::<Vec<ProcessId>>() {
             debug!("Executing initial step for {id}");
-            let mut access_messages = SimulationAccess::New(self.global_time);
+            let mut access_messages = CoreAccess::New(self.global_time);
             let config = Configuration {
                 assigned_id: id,
                 proc_num: self.procs.keys().len(),
@@ -153,7 +154,7 @@ where
         let dest = step.dest;
         let message = step.message;
 
-        let mut access_messages = SimulationAccess::New(self.global_time);
+        let mut access_messages = CoreAccess::New(self.global_time);
 
         debug!(
             "Executing step for process {} | Message Source: {}",
