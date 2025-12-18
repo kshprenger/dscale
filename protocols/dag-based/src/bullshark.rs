@@ -47,7 +47,7 @@ impl ProcessHandle<BullsharkMessage> for Bullshark {
     fn Bootstrap(
         &mut self,
         configuration: Configuration,
-        access: &mut SimulationAccess<BullsharkMessage>,
+        access: &mut impl Access<BullsharkMessage>,
     ) {
         self.self_id = configuration.assigned_id;
         self.proc_num = configuration.proc_num;
@@ -66,7 +66,7 @@ impl ProcessHandle<BullsharkMessage> for Bullshark {
         &mut self,
         from: ProcessId,
         message: BullsharkMessage,
-        access: &mut SimulationAccess<BullsharkMessage>,
+        access: &mut impl Access<BullsharkMessage>,
     ) {
         match message {
             BullsharkMessage::Genesis(v) => {
@@ -152,24 +152,20 @@ impl Bullshark {
 
 // DAG construction: part 2
 impl Bullshark {
-    fn TryAdvanceRound(&mut self, access: &mut SimulationAccess<BullsharkMessage>) {
+    fn TryAdvanceRound(&mut self, access: &mut impl Access<BullsharkMessage>) {
         if self.QuorumReachedForRound(self.round) {
             self.round += 1;
             self.BroadcastVertex(self.round, access);
         }
     }
 
-    fn BroadcastVertex(&mut self, round: usize, access: &mut SimulationAccess<BullsharkMessage>) {
+    fn BroadcastVertex(&mut self, round: usize, access: &mut impl Access<BullsharkMessage>) {
         let v = self.CreateVertex(round);
         self.TryAddToDAG(v.clone(), access);
         access.Broadcast(BullsharkMessage::Vertex(v));
     }
 
-    fn TryAddToDAG(
-        &mut self,
-        v: VertexPtr,
-        access: &mut SimulationAccess<BullsharkMessage>,
-    ) -> bool {
+    fn TryAddToDAG(&mut self, v: VertexPtr, access: &mut impl Access<BullsharkMessage>) -> bool {
         // Strong edges are not in the DAG yet
         if v.round - 1 > self.dag.CurrentMaxAllocatedRound() {
             return false;
