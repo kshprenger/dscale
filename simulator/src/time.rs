@@ -1,7 +1,10 @@
 use std::{
+    cell::Cell,
     fmt::Display,
     ops::{Add, AddAssign, Mul},
 };
+
+use log::debug;
 
 #[derive(PartialEq, PartialOrd, Ord, Eq, Copy, Clone)]
 pub struct Jiffies(pub usize);
@@ -38,4 +41,21 @@ impl Display for Jiffies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(("Jiffies(".to_string() + &self.0.to_string() + ")").as_str())
     }
+}
+
+thread_local! {
+    pub(crate) static CLOCK: Cell<Jiffies> = Cell::new(Jiffies(0))
+}
+
+pub(crate) fn FastForwardClock(time: Jiffies) {
+    CLOCK.with(|cell| {
+        let now = cell.get();
+        debug_assert!(now <= time, "Time is not monotonous");
+        cell.set(time);
+        debug!("Global time now: {time}");
+    });
+}
+
+pub fn Now() -> Jiffies {
+    CLOCK.with(|cell| cell.get())
 }

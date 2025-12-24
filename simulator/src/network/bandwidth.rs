@@ -4,7 +4,7 @@ use log::debug;
 
 use crate::{
     communication::{RoutedMessage, TimePriorityMessageQueue},
-    network_condition::LatencyQueue,
+    network::LatencyQueue,
     time::Jiffies,
 };
 

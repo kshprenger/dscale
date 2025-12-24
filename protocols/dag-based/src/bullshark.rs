@@ -78,16 +78,19 @@ impl ProcessHandle for Bullshark {
                 }
 
                 BullsharkMessage::Vertex(v) => {
+                    // Validity check
                     if v.strong_edges.len() < self.QuorumSize() || from != v.source {
                         return;
                     }
 
+                    // Try to drain stalled vertices first
                     let vertices_in_the_buffer =
                         self.buffer.iter().cloned().collect::<Vec<VertexPtr>>();
                     vertices_in_the_buffer.into_iter().for_each(|v| {
                         self.TryAddToDAG(v);
                     });
 
+                    // Then try add current received vertex
                     if !self.TryAddToDAG(v.clone()) {
                         self.buffer.insert(v.clone());
                     }

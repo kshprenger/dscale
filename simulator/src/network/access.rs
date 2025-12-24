@@ -1,22 +1,20 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{Destination, Jiffies, Message, ProcessId};
+use crate::{Destination, Message, ProcessId};
 
-pub struct Access {
+pub struct NetworkAccess {
     pub(crate) scheduled_messages: Vec<(Destination, Rc<dyn Message>)>,
-    pub(crate) current_time: Jiffies,
 }
 
-impl Access {
-    pub(crate) fn New(current_time: Jiffies) -> Self {
+impl NetworkAccess {
+    pub(crate) fn New() -> Self {
         Self {
             scheduled_messages: Vec::new(),
-            current_time,
         }
     }
 }
 
-impl Access {
+impl NetworkAccess {
     fn Broadcast(&mut self, message: impl Message + 'static) {
         self.scheduled_messages
             .push((Destination::Broadcast, Rc::new(message)));
@@ -32,26 +30,22 @@ impl Access {
             .push((Destination::SendSelf, Rc::new(message)));
     }
 
-    fn Now(&self) -> Jiffies {
-        self.current_time
-    }
-
     fn DrainMessages(&mut self) -> Vec<(Destination, Rc<dyn Message>)> {
         self.scheduled_messages.drain(..).collect()
     }
 }
 
 thread_local! {
-    pub(crate) static ACCESS_HANDLE: RefCell<Option<Access>> = RefCell::new(None);
+    pub(crate) static ACCESS_HANDLE: RefCell<Option<NetworkAccess>> = RefCell::new(None);
 }
 
-pub(crate) fn SetupAccess(a: Access) {
-    ACCESS_HANDLE.with_borrow_mut(|access| *access = Some(a))
+pub(crate) fn CreateAccess() {
+    ACCESS_HANDLE.with_borrow_mut(|access| *access = Some(NetworkAccess::New()))
 }
 
 pub(crate) fn WithAccess<F, T>(f: F) -> T
 where
-    F: FnOnce(&mut Access) -> T,
+    F: FnOnce(&mut NetworkAccess) -> T,
 {
     ACCESS_HANDLE.with_borrow_mut(|access| f(access.as_mut().expect("Out of simulation context")))
 }
@@ -70,8 +64,4 @@ pub fn SendTo(to: ProcessId, message: impl Message + 'static) {
 
 pub fn SendSelf(message: impl Message + 'static) {
     WithAccess(|access| access.SendSelf(message));
-}
-
-pub fn Now() -> Jiffies {
-    WithAccess(|access| access.Now())
 }

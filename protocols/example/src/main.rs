@@ -64,11 +64,7 @@ fn main() {
         .Build()
         .Run();
 
-    println!(
-        "Done, events: {}, elapsed: {:?}",
-        m.events_total,
-        start.elapsed()
-    );
+    println!("Done, events elapsed: {:?}", start.elapsed());
 
     let start = Instant::now();
 
@@ -81,9 +77,5 @@ fn main() {
         .Build()
         .Run();
 
-    println!(
-        "Done, events: {}, elapsed: {:?}",
-        m.events_total,
-        start.elapsed()
-    );
+    println!("Done, events: elapsed: {:?}", start.elapsed());
 }

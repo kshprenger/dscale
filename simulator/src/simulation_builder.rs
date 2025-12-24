@@ -1,5 +1,5 @@
 use crate::{
-    Simulation, network_condition::BandwidthType, process::ProcessHandle, random::Seed,
+    Simulation, network::BandwidthType, process::ProcessHandle, random::Seed,
     time::Jiffies,
 };
 
