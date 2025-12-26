@@ -1,7 +1,10 @@
 use std::collections::{BinaryHeap, HashMap};
 
 use crate::{
-    ProcessId, access, actor::SimulationActor, process::SharedProcessHandle, time::Jiffies,
+    ProcessId, access,
+    actor::SimulationActor,
+    process::SharedProcessHandle,
+    time::{Jiffies, Now},
     tso::NextGlobalUniqueId,
 };
 
@@ -30,7 +33,8 @@ impl Timers {
             .drain(..)
             .into_iter()
             .for_each(|(source, timer_id, after)| {
-                self.working_timers.push((after, (source, timer_id)));
+                self.working_timers
+                    .push((Now() + after, (source, timer_id)));
             });
     }
 }

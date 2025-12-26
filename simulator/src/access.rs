@@ -11,8 +11,8 @@ use crate::{
 
 pub struct SimulationAccess {
     process_on_execution: ProcessId,
-    pub(crate) scheduled_messages: Vec<(ProcessId, Destination, Rc<dyn Message>)>,
-    pub(crate) scheduled_timers: Vec<(ProcessId, TimerId, Jiffies)>,
+    pub(crate) scheduled_messages: Vec<(ProcessId, Destination, Rc<dyn Message>)>, // Static allocations? =(
+    pub(crate) scheduled_timers: Vec<(ProcessId, TimerId, Jiffies)>, // Static allocations? =(
     network: Rc<RefCell<Network>>,
     timers: Rc<RefCell<Timers>>,
 }
@@ -67,6 +67,8 @@ impl SimulationAccess {
     }
 }
 
+// Any actor make step -> Buffering outcoming events -> Then we drain it to all actors
+// Before any process step actor should ensuler corrent ProcessId on execution via access::SetProcess()
 thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }

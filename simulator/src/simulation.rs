@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub struct Simulation {
-    actors: Vec<Rc<RefCell<dyn SimulationActor>>>,
+    actors: Vec<SharedActor>,
     max_time: Jiffies,
     progress_bar: Bar,
 }
@@ -87,6 +87,7 @@ impl Simulation {
         });
     }
 
+    // O(n) -> O(log(n))?
     fn PeekClosest(&mut self) -> Option<(Jiffies, SharedActor)> {
         self.actors
             .iter_mut()
