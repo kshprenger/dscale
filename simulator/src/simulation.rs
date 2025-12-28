@@ -4,7 +4,7 @@ use log::{error, info};
 
 use crate::{
     access,
-    actor::{SharedActor, SimulationActor},
+    actor::SharedActor,
     network::{BandwidthType, Network},
     process::{ProcessId, SharedProcessHandle},
     progress::Bar,

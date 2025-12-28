@@ -68,7 +68,7 @@ fn main() {
     let start = Instant::now();
 
     SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
-        .NetworkBandwidth(simulator::BandwidthType::Unbounded)
+        .NICBandwidth(simulator::BandwidthType::Unbounded)
         .MaxLatency(Jiffies(10))
         .MaxTime(Jiffies(100_000_000))
         .ProcessInstances(2)
@@ -81,7 +81,7 @@ fn main() {
     let start = Instant::now();
 
     SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
-        .NetworkBandwidth(simulator::BandwidthType::Bounded(5))
+        .NICBandwidth(simulator::BandwidthType::Bounded(5))
         .MaxLatency(Jiffies(10))
         .MaxTime(Jiffies(100_000_000))
         .ProcessInstances(2)

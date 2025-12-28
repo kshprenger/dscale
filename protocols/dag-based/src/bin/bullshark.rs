@@ -8,10 +8,14 @@ fn main() {
     SimulationBuilder::NewFromFactory(|| Box::new(Bullshark::New()))
         .MaxLatency(Jiffies(500))
         .MaxTime(Jiffies(10000_000))
-        .NetworkBandwidth(BandwidthType::Bounded(100))
+        .NICBandwidth(BandwidthType::Bounded(100))
         .ProcessInstances(60)
         .Seed(234565432345)
         .Build()
         .Run();
-    println!("{:?}", metrics::Get::<Vec<Jiffies>>("latency").unwrap())
+
+    println!(
+        "{:?}",
+        metrics::Get::<Vec<Jiffies>>("latency").iter().fuse()
+    )
 }

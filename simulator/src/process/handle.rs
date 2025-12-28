@@ -10,7 +10,6 @@ pub trait ProcessHandle {
 
     // Fire timer with id that was returned on SchedulerTimerAfter() call
     #[allow(unused)]
-    
     fn OnTimer(&mut self, id: TimerId) {
         // Default - No timers
     }

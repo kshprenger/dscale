@@ -4,9 +4,6 @@ use crate::{process::ProcessId, time::Jiffies};
 
 pub trait Message: Any {
     fn VirtualSize(&self) -> usize;
-    fn PrefferedScheduleDelta(&self) -> Jiffies {
-        Jiffies(0)
-    }
 }
 
 pub struct MessagePtr(Rc<dyn Message>);

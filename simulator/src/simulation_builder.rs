@@ -51,7 +51,7 @@ where
         self
     }
 
-    pub fn NetworkBandwidth(mut self, bandwidth: BandwidthType) -> Self {
+    pub fn NICBandwidth(mut self, bandwidth: BandwidthType) -> Self {
         self.bandwidth = bandwidth;
         self
     }
