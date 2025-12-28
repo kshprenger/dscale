@@ -31,6 +31,8 @@ pub struct Bullshark {
     buffer: BTreeSet<VertexPtr>,
     last_ordered_round: usize,
     ordered_anchors_stack: Vec<VertexPtr>,
+    wait: bool,
+    current_timer: TimerId,
 }
 
 impl Bullshark {
@@ -44,6 +46,8 @@ impl Bullshark {
             buffer: BTreeSet::new(),
             last_ordered_round: 0,
             ordered_anchors_stack: Vec::new(),
+            wait: true,
+            current_timer: 0,
         }
     }
 }
@@ -72,6 +76,7 @@ impl ProcessHandle for Bullshark {
         if let Some(bs_message) = self.rbcast.Process(from, message.As::<BCBMessage>()) {
             match bs_message.As::<BullsharkMessage>().as_ref() {
                 BullsharkMessage::Genesis(v) => {
+                    Debug!("Got genesis");
                     debug_assert!(v.round == 0);
                     self.dag.AddVertex(v.clone());
                     self.TryAdvanceRound();
@@ -79,6 +84,8 @@ impl ProcessHandle for Bullshark {
                 }
 
                 BullsharkMessage::Vertex(v) => {
+                    Debug!("Got vertex from: {from}");
+
                     // Validity check
                     if v.strong_edges.len() < self.QuorumSize() || from != v.source {
                         return;
@@ -96,9 +103,79 @@ impl ProcessHandle for Bullshark {
                         self.buffer.insert(v.clone());
                     }
 
-                    self.TryAdvanceRound();
+                    if self.round == v.round {
+                        // Note: anchor vertices are on even rounds
+                        if !self.wait {
+                            self.TryAdvanceRound();
+                            return;
+                        }
+
+                        match self.round % 4 {
+                            0 => {
+                                // Wait for first steady leader
+                                if self.GetAnchor(self.round).is_some() {
+                                    self.TryAdvanceRound();
+                                }
+                            }
+                            2 => {
+                                // Wait for second steady leader
+                                if self.GetAnchor(self.round).is_some() {
+                                    self.TryAdvanceRound();
+                                }
+                            }
+                            1 => {
+                                // Wait for 2f+1 links for anchor in previous round
+                                if self.GetAnchor(self.round - 1).is_none() {
+                                    return;
+                                }
+                                if CurrentId() == 1 {
+                                    Debug!("HI")
+                                }
+                                if self.dag[self.round]
+                                    .iter()
+                                    .flatten()
+                                    .map(|v| {
+                                        v.strong_edges
+                                            .contains(&self.GetAnchor(self.round - 1).unwrap())
+                                    })
+                                    .count()
+                                    >= self.QuorumSize()
+                                {
+                                    self.TryAdvanceRound();
+                                }
+                            }
+                            3 => {
+                                // Wait 2f+1 links to anchor in previous round
+                                if self.GetAnchor(self.round - 1).is_none() {
+                                    return;
+                                }
+                                if self.dag[self.round]
+                                    .iter()
+                                    .flatten()
+                                    .map(|v| {
+                                        v.strong_edges
+                                            .contains(&self.GetAnchor(self.round - 1).unwrap())
+                                    })
+                                    .count()
+                                    >= self.QuorumSize()
+                                {
+                                    self.TryAdvanceRound();
+                                }
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    fn OnTimer(&mut self, id: TimerId) {
+        if id == self.current_timer {
+            Debug!("Timer fired: {}", id);
+            metrics::Modify::<usize>("timeouts-fired", |count| *count += 1);
+            self.wait = false;
+            self.TryAdvanceRound();
         }
     }
 }
@@ -135,25 +212,19 @@ impl Bullshark {
         })
     }
 
-    #[allow(unused)]
-    fn GetFirstPredefinedLeader(&self, w: usize) -> ProcessId {
-        let round = 4 * w - 3;
-        return self.GetLeaderId(round);
-    }
-
-    #[allow(unused)]
-    fn GetSecondPredefinedLeader(&self, w: usize) -> ProcessId {
-        let round = 4 * w - 1;
-        return self.GetLeaderId(round);
-    }
-
     fn GetLeaderId(&self, round: usize) -> ProcessId {
-        return round % self.proc_num;
+        return round % self.proc_num + 1;
     }
 
     fn GetAnchor(&self, round: usize) -> Option<VertexPtr> {
         let leader = self.GetLeaderId(round);
         self.dag[round][leader].clone()
+    }
+
+    fn StartTimer(&mut self) {
+        self.current_timer = ScheduleTimerAfter(Jiffies(200));
+        Debug!("New timer scheduled: {}", self.current_timer);
+        self.wait = true;
     }
 }
 
@@ -161,7 +232,9 @@ impl Bullshark {
 impl Bullshark {
     fn TryAdvanceRound(&mut self) {
         if self.QuorumReachedForRound(self.round) {
+            Debug!("Advancing to {} round", self.round + 1);
             self.round += 1;
+            self.StartTimer();
             self.BroadcastVertex(self.round);
         }
     }
@@ -194,6 +267,7 @@ impl Bullshark {
 
         if self.QuorumReachedForRound(v.round) && v.round > self.round {
             self.round = v.round;
+            self.StartTimer();
             self.BroadcastVertex(v.round);
         }
 
@@ -209,8 +283,8 @@ impl Bullshark {
 // Consensus logic
 impl Bullshark {
     fn TryOrdering(&mut self, v: VertexPtr) {
-        // Leaders are on even rounds
-        if v.round % 2 == 1 && v.round != 0 {
+        // Note: leaders are on even rounds
+        if v.round % 2 == 1 || v.round == 0 {
             return;
         }
 
@@ -234,7 +308,7 @@ impl Bullshark {
     fn OrderAnchors(&mut self, v: VertexPtr) {
         let mut anchor = v.clone();
         self.ordered_anchors_stack.push(anchor.clone());
-        let mut r = anchor.round - 2;
+        let mut r = anchor.round.saturating_sub(2); // Ordering can start from second round resulting into negative number here
         while r > self.last_ordered_round {
             let maybe_prev_anchor = self.GetAnchor(r);
             match maybe_prev_anchor {

@@ -3,6 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{
     Destination, Message, ProcessId,
     network::Network,
+    time::Now,
     time::{
         Jiffies,
         timer::{NextTimerId, TimerId, Timers},
@@ -116,6 +117,6 @@ pub fn CurrentId() -> ProcessId {
 #[macro_export]
 macro_rules! Debug {
     ($($arg:tt)+) => {
-        log::debug!("[Process {}] {}", CurrentId(), format_args!($($arg)+));
+        log::debug!("[Now: {} | Process {}] {}", time::Now(), CurrentId(), format_args!($($arg)+));
     }
 }
