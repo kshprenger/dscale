@@ -6,7 +6,7 @@ use crate::{
     access,
     actor::SharedActor,
     network::{BandwidthType, Network},
-    process::{ProcessId, SharedProcessHandle},
+    process::{ProcessId, ProcessPool, UniqueProcessHandle},
     progress::Bar,
     random::{self},
     time::{FastForwardClock, Jiffies, Now, timer::Timers},
@@ -26,9 +26,11 @@ impl Simulation {
         max_time: Jiffies,
         max_network_latency: Jiffies,
         bandwidth_type: BandwidthType,
-        procs: Vec<(ProcessId, SharedProcessHandle)>,
+        procs: Vec<(ProcessId, UniqueProcessHandle)>,
     ) -> Self {
         let _ = env_logger::try_init();
+
+        let proc_pool = ProcessPool::NewShared(procs);
 
         let mut actors = Vec::new();
 
@@ -36,10 +38,10 @@ impl Simulation {
             seed,
             max_network_latency,
             bandwidth_type,
-            procs.iter().cloned().collect(),
+            proc_pool.clone(),
         )));
 
-        let timers_actor = Rc::new(RefCell::new(Timers::New(procs.iter().cloned().collect())));
+        let timers_actor = Rc::new(RefCell::new(Timers::New(proc_pool.clone())));
 
         access::SetupAccess(network_actor.clone(), timers_actor.clone());
 

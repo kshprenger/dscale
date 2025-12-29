@@ -63,7 +63,7 @@ where
             self.max_network_latency,
             self.bandwidth,
             (1..=self.process_count)
-                .map(|id| (id, Rc::new(RefCell::new((self.factory)()))))
+                .map(|id| (id, (self.factory)()))
                 .collect(),
         )
     }

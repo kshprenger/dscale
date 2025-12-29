@@ -1,12 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
-
-use crate::ProcessHandle;
-
-pub(crate) type SharedProcessHandle = Rc<RefCell<Box<dyn ProcessHandle>>>;
+use crate::random::Seed;
 
 pub type ProcessId = usize;
 
 pub struct Configuration {
-    pub assigned_id: ProcessId,
+    pub seed: Seed,
     pub proc_num: usize,
 }

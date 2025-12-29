@@ -97,6 +97,7 @@ name = "dag-based"
 version = "0.1.0"
 dependencies = [
  "log",
+ "rand",
  "simulator",
 ]
 

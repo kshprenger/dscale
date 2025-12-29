@@ -1,14 +1,11 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap},
-};
+use std::{cmp::Reverse, collections::BinaryHeap, rc::Rc};
 
 use log::debug;
 
 use crate::{
     ProcessId, access,
     actor::SimulationActor,
-    process::SharedProcessHandle,
+    process::ProcessPool,
     time::{Jiffies, Now},
     tso::NextGlobalUniqueId,
 };
@@ -19,14 +16,13 @@ pub(crate) fn NextTimerId() -> TimerId {
     NextGlobalUniqueId()
 }
 
-// We cannot cancel timers yet. So user tracks them using TimerId
 pub(crate) struct Timers {
     working_timers: BinaryHeap<Reverse<(Jiffies, (ProcessId, TimerId))>>,
-    procs: HashMap<ProcessId, SharedProcessHandle>,
+    procs: Rc<ProcessPool>,
 }
 
 impl Timers {
-    pub(crate) fn New(procs: HashMap<ProcessId, SharedProcessHandle>) -> Self {
+    pub(crate) fn New(procs: Rc<ProcessPool>) -> Self {
         Self {
             working_timers: BinaryHeap::new(),
             procs,
@@ -58,10 +54,6 @@ impl SimulationActor for Timers {
         let (_, (process_id, timer_id)) = self.working_timers.pop().expect("Should not be empty").0;
         access::SetProcess(process_id);
         debug!("Firing timer with TimerId {timer_id} for Process {process_id}");
-        self.procs
-            .get_mut(&process_id)
-            .expect("Invalid ProcessId")
-            .borrow_mut()
-            .OnTimer(timer_id);
+        self.procs.Get(process_id).OnTimer(timer_id);
     }
 }

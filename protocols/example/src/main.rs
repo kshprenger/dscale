@@ -17,23 +17,18 @@ impl Message for ExampleMessage {
 }
 
 struct ExampleProcess {
-    self_id: ProcessId,
     timer_id: TimerId,
 }
 
 impl ExampleProcess {
     fn New() -> Self {
-        Self {
-            self_id: 0,
-            timer_id: 0,
-        }
+        Self { timer_id: 0 }
     }
 }
 
 impl ProcessHandle for ExampleProcess {
-    fn Bootstrap(&mut self, configuration: Configuration) {
-        self.self_id = configuration.assigned_id;
-        if configuration.assigned_id == 1 {
+    fn Bootstrap(&mut self, _configuration: Configuration) {
+        if CurrentId() == 1 {
             self.timer_id = ScheduleTimerAfter(Jiffies(100));
         }
     }
@@ -42,14 +37,14 @@ impl ProcessHandle for ExampleProcess {
         assert!(message.Is::<ExampleMessage>());
         let m = message.As::<ExampleMessage>();
 
-        if from == 1 && self.self_id == 2 {
+        if from == 1 && CurrentId() == 2 {
             assert!(*m == ExampleMessage::Ping);
             Debug!("Sending Pong");
             SendTo(1, ExampleMessage::Pong);
             return;
         }
 
-        if from == 2 && self.self_id == 1 {
+        if from == 2 && CurrentId() == 1 {
             assert!(*m == ExampleMessage::Pong);
             Debug!("Sending Ping");
             SendTo(2, ExampleMessage::Ping);

@@ -1,4 +1,9 @@
+use std::cell::RefCell;
+
 use crate::{MessagePtr, ProcessId, process::Configuration, time::timer::TimerId};
+
+pub(crate) type UniqueProcessHandle = Box<dyn ProcessHandle>;
+pub(crate) type MutableProcessHandle = RefCell<UniqueProcessHandle>;
 
 pub trait ProcessHandle {
     // This methods provides initial configuration to the process.

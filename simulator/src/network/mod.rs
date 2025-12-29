@@ -21,15 +21,16 @@ use crate::access;
 use crate::actor::SimulationActor;
 use crate::communication::ProcessStep;
 use crate::communication::RoutedMessage;
-use crate::process::SharedProcessHandle;
+use crate::process::ProcessPool;
 use crate::random::Randomizer;
 use crate::random::Seed;
 use crate::time::Jiffies;
 use crate::time::Now;
 
 pub(crate) struct Network {
+    seed: Seed,
     bandwidth_queue: BandwidthQueue,
-    procs: BTreeMap<ProcessId, SharedProcessHandle>,
+    procs: Rc<ProcessPool>,
 }
 
 impl Network {
@@ -41,7 +42,7 @@ impl Network {
         base_arrival_time: Jiffies,
     ) {
         let targets = match destination {
-            Destination::Broadcast => self.procs.keys().copied().collect::<Vec<ProcessId>>(),
+            Destination::Broadcast => self.procs.Keys().copied().collect::<Vec<ProcessId>>(),
             Destination::To(to) => vec![to],
         };
 
@@ -60,13 +61,6 @@ impl Network {
         });
     }
 
-    fn HandleOf(&mut self, process_id: ProcessId) -> RefMut<'_, Box<dyn ProcessHandle>> {
-        self.procs
-            .get_mut(&process_id)
-            .expect("Invalid proccess id")
-            .borrow_mut()
-    }
-
     fn ExecuteProcessStep(&mut self, step: ProcessStep) {
         let source = step.source;
         let dest = step.dest;
@@ -79,7 +73,8 @@ impl Network {
 
         access::SetProcess(dest);
 
-        self.HandleOf(dest)
+        self.procs
+            .Get(dest)
             .OnMessage(source, MessagePtr::New(message));
     }
 }
@@ -89,12 +84,13 @@ impl Network {
         seed: Seed,
         max_network_latency: Jiffies,
         bandwidth_type: BandwidthType,
-        procs: BTreeMap<ProcessId, SharedProcessHandle>,
+        procs: Rc<ProcessPool>,
     ) -> Self {
         Self {
+            seed,
             bandwidth_queue: BandwidthQueue::New(
                 bandwidth_type,
-                procs.len(),
+                procs.Size(),
                 LatencyQueue::New(Randomizer::New(seed), max_network_latency),
             ),
             procs,
@@ -116,17 +112,18 @@ impl Network {
 
 impl SimulationActor for Network {
     fn Start(&mut self) {
-        for id in self.procs.keys().copied().collect::<Vec<ProcessId>>() {
+        self.procs.IterMut().for_each(|(id, mut handle)| {
             debug!("Executing initial step for {id}");
+
             let config = Configuration {
-                assigned_id: id,
-                proc_num: self.procs.keys().len(),
+                seed: self.seed,
+                proc_num: self.procs.Keys().len(),
             };
 
-            access::SetProcess(id);
+            access::SetProcess(*id);
 
-            self.HandleOf(id).Bootstrap(config);
-        }
+            handle.Bootstrap(config);
+        });
     }
 
     fn Step(&mut self) {
