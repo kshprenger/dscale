@@ -72,7 +72,7 @@ impl SimulationAccess {
 }
 
 // Any actor make step -> Buffering outcoming events -> Then we drain it to all actors
-// Before any process step actor should ensuler corrent ProcessId on execution via access::SetProcess()
+// Before any process step actor should ensure corrent ProcessId on execution via access::SetProcess()
 thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }
