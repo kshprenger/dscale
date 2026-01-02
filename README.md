@@ -119,3 +119,8 @@ Example run:
 ```bash
 RUST_LOG=info cargo run --bin pingpong --release
 ```
+
+### Thanks to
+
+- https://gitlab.com/whirl-framework
+- https://github.com/jepsen-io/maelstrom
