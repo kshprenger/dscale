@@ -26,8 +26,6 @@ impl Simulation {
         bandwidth_type: BandwidthType,
         procs: Vec<(ProcessId, UniqueProcessHandle)>,
     ) -> Self {
-        let _ = env_logger::try_init();
-
         let proc_pool = ProcessPool::NewShared(procs);
 
         let network_actor = Rc::new(RefCell::new(Network::New(

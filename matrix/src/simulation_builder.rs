@@ -2,6 +2,17 @@ use crate::{
     Simulation, network::BandwidthType, process::ProcessHandle, random::Seed, time::Jiffies,
 };
 
+fn InitLogger() {
+    let _ = env_logger::Builder::from_default_env()
+        .format(|buf, record| {
+            let module_path = record.module_path().unwrap_or("unknown");
+            let crate_name = module_path.split("::").next().unwrap_or(module_path);
+            use std::io::Write;
+            writeln!(buf, "[{}] {}", crate_name, record.args())
+        })
+        .try_init();
+}
+
 pub struct SimulationBuilder<F>
 where
     F: Fn() -> Box<dyn ProcessHandle>,
@@ -23,7 +34,7 @@ where
             seed: 69,
             time_budget: Jiffies(1_000_000),
             max_network_latency: Jiffies(10),
-            process_count: 5,
+            process_count: 1,
             factory: f,
             bandwidth: BandwidthType::Unbounded,
         }
@@ -55,6 +66,8 @@ where
     }
 
     pub fn Build(self) -> Simulation {
+        InitLogger();
+
         Simulation::New(
             self.seed,
             self.time_budget,

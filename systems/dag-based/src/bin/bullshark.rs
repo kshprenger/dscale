@@ -6,7 +6,7 @@ fn main() {
     metrics::Set::<Vec<Jiffies>>("latency", Vec::new());
     metrics::Set::<usize>("timeouts-fired", 0);
 
-    (4..10000).into_par_iter().for_each(|proc_num| {
+    (4..1000).into_par_iter().for_each(|proc_num| {
         SimulationBuilder::NewFromFactory(|| Box::new(Bullshark::New()))
             .MaxLatency(Jiffies(50))
             .TimeBudget(Jiffies(10000))
