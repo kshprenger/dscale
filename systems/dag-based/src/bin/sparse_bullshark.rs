@@ -1,13 +1,13 @@
-use dag_based::bullshark::Bullshark;
-use simulator::{BandwidthType, SimulationBuilder, metrics, time::Jiffies};
+use dag_based::sparse_bullshark::SparseBullshark;
+use matrix::{BandwidthType, SimulationBuilder, metrics, time::Jiffies};
 
 fn main() {
     metrics::Set::<Vec<Jiffies>>("latency", Vec::new());
     metrics::Set::<usize>("timeouts-fired", 0);
 
-    SimulationBuilder::NewFromFactory(|| Box::new(Bullshark::New()))
-        .MaxLatency(Jiffies(50))
-        .TimeBudget(Jiffies(10000))
+    SimulationBuilder::NewFromFactory(|| Box::new(SparseBullshark::New(20)))
+        .MaxLatency(Jiffies(20))
+        .TimeBudget(Jiffies(6000))
         .NICBandwidth(BandwidthType::Unbounded)
         .ProcessInstances(100)
         .Seed(234565432345)

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use simulator::{Message, ProcessId};
+use matrix::{Message, ProcessId};
 
 #[derive(Clone, PartialEq, Eq, Hash, Copy)]
 pub struct BCBMessageId {

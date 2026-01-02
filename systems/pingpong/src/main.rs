@@ -2,17 +2,20 @@
 
 use std::time::Instant;
 
-use simulator::*;
+use matrix::*;
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
-enum ExampleMessage {
+enum PingPongMessage {
     Ping,
     Pong,
 }
 
-impl Message for ExampleMessage {
+impl Message for PingPongMessage {
     fn VirtualSize(&self) -> usize {
-        100
+        match self {
+            PingPongMessage::Ping => 50,
+            PingPongMessage::Pong => 100,
+        }
     }
 }
 
@@ -34,27 +37,27 @@ impl ProcessHandle for ExampleProcess {
     }
 
     fn OnMessage(&mut self, from: ProcessId, message: MessagePtr) {
-        assert!(message.Is::<ExampleMessage>());
-        let m = message.As::<ExampleMessage>();
+        assert!(message.Is::<PingPongMessage>());
+        let m = message.As::<PingPongMessage>();
 
         if from == 1 && CurrentId() == 2 {
-            assert!(*m == ExampleMessage::Ping);
+            assert!(*m == PingPongMessage::Ping);
             Debug!("Sending Pong");
-            SendTo(1, ExampleMessage::Pong);
+            SendTo(1, PingPongMessage::Pong);
             return;
         }
 
         if from == 2 && CurrentId() == 1 {
-            assert!(*m == ExampleMessage::Pong);
+            assert!(*m == PingPongMessage::Pong);
             Debug!("Sending Ping");
-            SendTo(2, ExampleMessage::Ping);
+            SendTo(2, PingPongMessage::Ping);
             return;
         }
     }
 
     fn OnTimer(&mut self, id: TimerId) {
         assert!(id == self.timer_id);
-        SendTo(2, ExampleMessage::Ping);
+        SendTo(2, PingPongMessage::Ping);
     }
 }
 
@@ -62,7 +65,7 @@ fn main() {
     let start = Instant::now();
 
     SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
-        .NICBandwidth(simulator::BandwidthType::Unbounded)
+        .NICBandwidth(matrix::BandwidthType::Unbounded)
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))
         .ProcessInstances(2)
@@ -70,12 +73,12 @@ fn main() {
         .Build()
         .Run();
 
-    println!("Done, events elapsed: {:?}", start.elapsed());
+    println!("Done, elapsed: {:?}", start.elapsed());
 
     let start = Instant::now();
 
     SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
-        .NICBandwidth(simulator::BandwidthType::Bounded(5))
+        .NICBandwidth(matrix::BandwidthType::Bounded(5))
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))
         .ProcessInstances(2)
@@ -83,5 +86,5 @@ fn main() {
         .Build()
         .Run();
 
-    println!("Done, events: elapsed: {:?}", start.elapsed());
+    println!("Done, elapsed: {:?}", start.elapsed());
 }

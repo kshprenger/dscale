@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, ops::Index, rc::Rc};
 
-use simulator::{
+use matrix::{
     CurrentId, ProcessId, metrics,
     time::{self},
 };

@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use simulator::{Broadcast, Configuration, CurrentId, Message, MessagePtr, ProcessId, SendTo};
+use matrix::{Broadcast, Configuration, CurrentId, Message, MessagePtr, ProcessId, SendTo};
 
 use crate::consistent_broadcast::message::BCBMessageId;
 

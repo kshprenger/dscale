@@ -3,6 +3,7 @@ use std::{any::Any, cmp::Reverse, rc::Rc};
 use crate::{process::ProcessId, time::Jiffies};
 
 pub trait Message: Any {
+    // In bytes
     fn VirtualSize(&self) -> usize;
 }
 

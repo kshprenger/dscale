@@ -1,17 +1,17 @@
-# Distributed system simulator
+# Matrix
 
 This project provides a fast & deterministic simulation framework for testing and benchmarking distributed systems. It simulates network latency, bandwidth constraints, and process execution in a single-threaded, event-driven environment.
 
 ## Usage
 
-To use the simulator, you need to implement the `ProcessHandle` trait for your distributed system and the `Message` trait for the data exchanged between processes.
+To use the matrix, you need to implement the `ProcessHandle` trait for your distributed system and the `Message` trait for the data exchanged between processes.
 
 ### 1. Define Messages
 
 Messages must implement the `Message` trait, which requires defining a `VirtualSize` for bandwidth simulation.
 
 ```rust
-use simulator::{Message, Jiffies};
+use matrix::Message;
 
 struct MyMessage {
     data: u32,
@@ -30,8 +30,8 @@ impl Message for MyMessage {
 Implement `ProcessHandle` to define how your process reacts to initialization, messages, and timers.
 
 ```rust
-use simulator::{ProcessHandle, Configuration, ProcessId, MessagePtr, TimerId};
-use simulator::{Broadcast, SendTo, ScheduleTimerAfter, CurrentId, Debug};
+use matrix::{ProcessHandle, Configuration, ProcessId, MessagePtr, TimerId};
+use matrix::{Broadcast, SendTo, ScheduleTimerAfter, CurrentId, Debug};
 
 struct MyProcess;
 
@@ -58,7 +58,7 @@ impl ProcessHandle for MyProcess {
 Use `SimulationBuilder` to configure and start the simulation.
 
 ```rust
-use simulator::SimulationBuilder;
+use matrix::SimulationBuilder;
 
 fn main() {
     let mut simulation = SimulationBuilder::NewFromFactory(|| Box::new(MyProcess))
@@ -80,6 +80,8 @@ fn main() {
   - `MaxLatency(Jiffies)`: Sets the maximum network latency.
   - `ProcessInstances(usize)`: Sets the number of nodes in the cluster.
   - `NICBandwidth(BandwidthType)`: Configures network bandwidth limits.
+    - `Bounded(usize)`
+    - Or `Unbounded`
 - **`Simulation`**: The engine driving the event loop.
   - `Run()`: Starts the simulation loop.
 
@@ -94,7 +96,7 @@ These functions are available globally but must be called within the context of 
 
 ### Logging & Debugging
 
-The simulator integrates with the `log` crate and `env_logger`.
+Matrix integrates with the `log` crate and `env_logger`.
 
 - **`Debug!(fmt, ...)`**: A macro wrapper around `log::debug!` that automatically prepends the current simulation time and process ID.
 
@@ -102,7 +104,7 @@ Debug builds (without the `--release` flag) additionally enable monotonous time-
 
 ## Logging Configuration (`RUST_LOG`)
 
-The simulator output is controlled via the `RUST_LOG` environment variable.
+Matrix output is controlled via the `RUST_LOG` environment variable.
 
 - **`RUST_LOG=info`**:
   - Shows high-level simulation status
@@ -115,5 +117,5 @@ The simulator output is controlled via the `RUST_LOG` environment variable.
 Example run:
 
 ```bash
-RUST_LOG=info cargo run --bin example --release
+RUST_LOG=info cargo run --bin pingpong --release
 ```

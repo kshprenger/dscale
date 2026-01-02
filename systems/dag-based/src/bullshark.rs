@@ -1,11 +1,9 @@
 // https://arxiv.org/pdf/2201.05677
 // https://arxiv.org/pdf/2209.05633
-// https://arxiv.org/pdf/2506.13998
 
 use std::collections::BTreeSet;
 
-use rand::{SeedableRng, rngs::StdRng};
-use simulator::*;
+use matrix::*;
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
@@ -13,19 +11,20 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub enum SparseBullsharkMessage {
+pub enum BullsharkMessage {
     Vertex(VertexPtr),
     Genesis(VertexPtr),
 }
 
-impl Message for SparseBullsharkMessage {
+impl Message for BullsharkMessage {
     fn VirtualSize(&self) -> usize {
         69
     }
 }
 
-pub struct SparseBullshark {
+pub struct Bullshark {
     rbcast: ByzantineConsistentBroadcast,
+    self_id: ProcessId,
     proc_num: usize,
     dag: RoundBasedDAG,
     round: usize,
@@ -34,14 +33,13 @@ pub struct SparseBullshark {
     ordered_anchors_stack: Vec<VertexPtr>,
     wait: bool,
     current_timer: TimerId,
-    sampler: Option<StdRng>,
-    D: usize,
 }
 
-impl SparseBullshark {
-    pub fn New(D: usize) -> Self {
+impl Bullshark {
+    pub fn New() -> Self {
         Self {
             rbcast: ByzantineConsistentBroadcast::New(),
+            self_id: 0,
             proc_num: 0,
             dag: RoundBasedDAG::New(),
             round: 0,
@@ -50,46 +48,46 @@ impl SparseBullshark {
             ordered_anchors_stack: Vec::new(),
             wait: true,
             current_timer: 0,
-            sampler: None,
-            D,
         }
     }
 }
 
-impl ProcessHandle for SparseBullshark {
+impl ProcessHandle for Bullshark {
     fn Bootstrap(&mut self, configuration: Configuration) {
+        self.self_id = CurrentId();
         self.proc_num = configuration.proc_num;
-        self.sampler = Some(StdRng::seed_from_u64(
-            configuration.seed + CurrentId() as u64,
-        ));
         self.dag.SetRoundSize(configuration.proc_num);
         self.rbcast.Bootstrap(configuration);
 
         // Shared genesis vertices
         let genesis_vertex = VertexPtr::new(Vertex {
             round: 0,
-            source: CurrentId(),
+            source: self.self_id,
             strong_edges: Vec::new(),
             creation_time: time::Now(),
         });
 
         self.rbcast
-            .ReliablyBroadcast(SparseBullsharkMessage::Genesis(genesis_vertex));
+            .ReliablyBroadcast(BullsharkMessage::Genesis(genesis_vertex));
     }
 
     // DAG construction: part 1
     fn OnMessage(&mut self, from: ProcessId, message: MessagePtr) {
         if let Some(bs_message) = self.rbcast.Process(from, message.As::<BCBMessage>()) {
-            match bs_message.As::<SparseBullsharkMessage>().as_ref() {
-                SparseBullsharkMessage::Genesis(v) => {
+            match bs_message.As::<BullsharkMessage>().as_ref() {
+                BullsharkMessage::Genesis(v) => {
+                    Debug!("Got genesis");
                     debug_assert!(v.round == 0);
                     self.dag.AddVertex(v.clone());
                     self.TryAdvanceRound();
                     return;
                 }
 
-                SparseBullsharkMessage::Vertex(v) => {
-                    if self.BadVertex(v, from) {
+                BullsharkMessage::Vertex(v) => {
+                    Debug!("Got vertex from: {from}");
+
+                    // Validity check
+                    if self.BadVertex(&v, from) {
                         return;
                     }
 
@@ -172,6 +170,7 @@ impl ProcessHandle for SparseBullshark {
 
     fn OnTimer(&mut self, id: TimerId) {
         if id == self.current_timer {
+            Debug!("Timer fired: {}", id);
             metrics::Modify::<usize>("timeouts-fired", |count| *count += 1);
             self.wait = false;
             self.TryAdvanceRound();
@@ -180,7 +179,7 @@ impl ProcessHandle for SparseBullshark {
 }
 
 // Utils
-impl SparseBullshark {
+impl Bullshark {
     fn AdversaryThreshold(&self) -> usize {
         (self.proc_num - 1) / 3
     }
@@ -190,7 +189,7 @@ impl SparseBullshark {
     }
 
     fn DirectCommitThreshold(&self) -> usize {
-        2 * self.AdversaryThreshold() + 1
+        self.AdversaryThreshold() + 1
     }
 
     fn NonNoneVerticesCountForRound(&self, round: usize) -> usize {
@@ -201,50 +200,22 @@ impl SparseBullshark {
         self.NonNoneVerticesCountForRound(round) >= self.QuorumSize()
     }
 
-    fn SampleCandidates(&mut self, round: usize) -> Vec<VertexPtr> {
-        let candidates: Vec<VertexPtr> = self.dag[round].iter().flatten().cloned().collect();
-
-        if candidates.len() <= self.D {
-            return candidates;
-        }
-
-        use rand::prelude::IndexedRandom;
-        let mut random_candidates = candidates
-            .choose_multiple(
-                self.sampler.as_mut().expect("Sampler not initialized"),
-                self.D,
-            )
-            .cloned()
-            .collect::<BTreeSet<VertexPtr>>();
-
-        // Try add myself
-        if self.dag[round][CurrentId()].is_some() {
-            random_candidates.insert(self.dag[round][CurrentId()].clone().unwrap());
-        }
-
-        // Try add anchor
-        if self.GetAnchor(round).is_some() {
-            random_candidates.insert(self.GetAnchor(round).unwrap());
-        }
-
-        debug_assert!(random_candidates.len() >= self.D);
-        debug_assert!(random_candidates.len() <= self.D + 2);
-
-        random_candidates.into_iter().collect()
-    }
-
-    fn CreateVertex(&mut self, round: usize) -> VertexPtr {
+    fn CreateVertex(&self, round: usize) -> VertexPtr {
         // Infinite source of client txns
         VertexPtr::new(Vertex {
             round,
-            source: CurrentId(),
-            strong_edges: self.SampleCandidates(round - 1),
+            source: self.self_id,
+            strong_edges: self.dag[round - 1]
+                .iter()
+                .flatten() // Remove option
+                .cloned()
+                .collect::<Vec<VertexPtr>>(),
             creation_time: time::Now(),
         })
     }
 
     fn BadVertex(&self, v: &VertexPtr, from: ProcessId) -> bool {
-        v.strong_edges.len() > self.D + 2 || from != v.source
+        v.strong_edges.len() < self.QuorumSize() || from != v.source
     }
 
     fn GetLeaderId(&self, round: usize) -> ProcessId {
@@ -258,14 +229,16 @@ impl SparseBullshark {
 
     fn StartTimer(&mut self) {
         self.current_timer = ScheduleTimerAfter(Jiffies(200));
+        Debug!("New timer scheduled: {}", self.current_timer);
         self.wait = true;
     }
 }
 
 // DAG construction: part 2
-impl SparseBullshark {
+impl Bullshark {
     fn TryAdvanceRound(&mut self) {
         if self.QuorumReachedForRound(self.round) {
+            Debug!("Advancing to {} round", self.round + 1);
             self.round += 1;
             self.StartTimer();
             self.BroadcastVertex(self.round);
@@ -275,8 +248,7 @@ impl SparseBullshark {
     fn BroadcastVertex(&mut self, round: usize) {
         let v = self.CreateVertex(round);
         self.TryAddToDAG(v.clone());
-        self.rbcast
-            .ReliablyBroadcast(SparseBullsharkMessage::Vertex(v));
+        self.rbcast.ReliablyBroadcast(BullsharkMessage::Vertex(v));
     }
 
     fn TryAddToDAG(&mut self, v: VertexPtr) -> bool {
@@ -315,7 +287,7 @@ impl SparseBullshark {
 }
 
 // Consensus logic
-impl SparseBullshark {
+impl Bullshark {
     fn TryOrdering(&mut self, v: VertexPtr) {
         // Note: leaders are on even rounds
         if v.round % 2 == 1 || v.round == 0 {
@@ -332,17 +304,6 @@ impl SparseBullshark {
                     .iter()
                     .filter(|vote| vote.strong_edges.contains(&anchor))
                     .count();
-
-                Debug!("v.round: {}", v.round);
-                Debug!(
-                    "edges: {:?}",
-                    v.strong_edges
-                        .iter()
-                        .map(|v| v.source)
-                        .collect::<Vec<usize>>()
-                );
-                Debug!("edges total: {:?}", v.strong_edges.iter().count());
-                Debug!("vote_count: {vote_count}");
                 if vote_count >= self.DirectCommitThreshold() {
                     self.OrderAnchors(anchor);
                 }
