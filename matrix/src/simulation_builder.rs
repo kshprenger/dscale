@@ -1,5 +1,10 @@
 use crate::{
-    Simulation, network::BandwidthType, process::ProcessHandle, random::Seed, time::Jiffies,
+    Simulation, metrics,
+    network::BandwidthType,
+    process::ProcessHandle,
+    random::Seed,
+    time::{Jiffies, clock},
+    tso,
 };
 
 // There is a lot of Rc small allocations, so we optimize this too using different allocator
@@ -71,6 +76,9 @@ where
 
     pub fn Build(self) -> Simulation {
         InitLogger();
+
+        tso::Reset();
+        clock::Reset();
 
         Simulation::New(
             self.seed,

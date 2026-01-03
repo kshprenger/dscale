@@ -8,6 +8,10 @@ thread_local! {
     pub(crate) static CLOCK: Cell<Jiffies> = Cell::new(Jiffies(0))
 }
 
+pub(crate) fn Reset() {
+    CLOCK.with(|cell| cell.set(Jiffies(0)));
+}
+
 pub(crate) fn FastForwardClock(future: Jiffies) {
     CLOCK.with(|cell| {
         let present = cell.get();

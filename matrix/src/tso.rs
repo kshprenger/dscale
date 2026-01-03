@@ -11,3 +11,7 @@ pub(crate) fn NextGlobalUniqueId() -> usize {
         result
     })
 }
+
+pub(crate) fn Reset() {
+    TSO.with(|cell| cell.set(0));
+}

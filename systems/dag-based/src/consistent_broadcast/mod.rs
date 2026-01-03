@@ -38,7 +38,7 @@ impl ByzantineConsistentBroadcast {
     }
 
     fn QuorumSize(&self) -> usize {
-        2 * self.AdversaryThreshold() - 1
+        2 * self.AdversaryThreshold() + 1
     }
 
     fn NextUniqueMessageId(&mut self) -> BCBMessageId {
@@ -97,7 +97,7 @@ impl ByzantineConsistentBroadcast {
                     }
                     Some(message_state) => {
                         message_state.1 += 1;
-                        if message_state.1 >= self.QuorumSize() {
+                        if message_state.1 == self.QuorumSize() {
                             Broadcast(BCBMessage::Certificate(self.QuorumSize(), *id));
                         }
                         return None;
