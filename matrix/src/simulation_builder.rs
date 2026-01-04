@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use crate::{
-    Simulation,
+    ProcessHandle, ProcessId, Simulation,
     network::BandwidthType,
-    process::ProcessHandle,
+    process::UniqueProcessHandle,
     random::Seed,
     time::{Jiffies, clock},
     tso,
@@ -22,31 +24,40 @@ fn InitLogger() {
         .try_init();
 }
 
-pub struct SimulationBuilder<F>
-where
-    F: Fn() -> Box<dyn ProcessHandle>,
-{
+pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
     max_network_latency: Jiffies,
-    process_count: usize,
-    factory: F,
+    proc_id: usize,
+    pools: HashMap<String, Vec<(ProcessId, UniqueProcessHandle)>>,
     bandwidth: BandwidthType,
 }
 
-impl<F> SimulationBuilder<F>
-where
-    F: Fn() -> Box<dyn ProcessHandle>,
-{
-    pub fn NewFromFactory(f: F) -> SimulationBuilder<F> {
+impl SimulationBuilder {
+    pub fn NewDefault() -> SimulationBuilder {
         SimulationBuilder {
             seed: 69,
             time_budget: Jiffies(1_000_000),
             max_network_latency: Jiffies(10),
-            process_count: 1,
-            factory: f,
+            proc_id: 1,
+            pools: HashMap::new(),
             bandwidth: BandwidthType::Unbounded,
         }
+    }
+
+    pub fn AddPool<P: ProcessHandle + 'static>(
+        mut self,
+        name: &str,
+        size: usize,
+        factory: impl Fn() -> P,
+    ) -> SimulationBuilder {
+        let pool = self.pools.entry(name.to_string()).or_default();
+        for _ in 0..size {
+            let id = self.proc_id;
+            self.proc_id += 1;
+            pool.push((id, Box::new(factory())));
+        }
+        self
     }
 
     pub fn Seed(mut self, seed: Seed) -> Self {
@@ -61,11 +72,6 @@ where
 
     pub fn MaxLatency(mut self, max_network_latency: Jiffies) -> Self {
         self.max_network_latency = max_network_latency;
-        self
-    }
-
-    pub fn ProcessInstances(mut self, count: usize) -> Self {
-        self.process_count = count;
         self
     }
 
@@ -86,9 +92,7 @@ where
             self.time_budget,
             self.max_network_latency,
             self.bandwidth,
-            (1..=self.process_count)
-                .map(|id| (id, (self.factory)()))
-                .collect(),
+            self.pools,
         )
     }
 }

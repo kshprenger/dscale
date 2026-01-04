@@ -61,8 +61,8 @@ Use `SimulationBuilder` to configure and start the simulation.
 use matrix::SimulationBuilder;
 
 fn main() {
-    let mut simulation = SimulationBuilder::NewFromFactory(|| Box::new(MyProcess))
-        .ProcessInstances(4)
+    let mut simulation = SimulationBuilder::NewDefault()
+        .AddPool("PoolName", 4, || Box::new(MyProcess))
         .Build();
 
     simulation.Run();
@@ -74,11 +74,11 @@ fn main() {
 ### Simulation Control
 
 - **`SimulationBuilder`**: Configures the simulation environment.
-  - `NewFromFactory(Fn() -> Box<dyn ProcessHandle>)`: Sets the factory function to create process instances.
+  - `NewDefault()`: Creates simulation with no processes and with default params.
   - `Seed(u64)`: Sets the random seed for deterministic execution.
   - `TimeBudget(Jiffies)`: Sets the maximum duration of the simulation.
   - `MaxLatency(Jiffies)`: Sets the maximum network latency.
-  - `ProcessInstances(usize)`: Sets the number of nodes in the cluster.
+  - `AddPool<P: ProcessHandle + 'static>(&str, usize, impl Fn() -> P)`: Creates pool of processes with specified name and size.
   - `NICBandwidth(BandwidthType)`: Configures network bandwidth limits.
     - `Bounded(usize)`
     - Or `Unbounded`
@@ -94,6 +94,7 @@ These functions are available globally but must be called within the context of 
 - **`ScheduleTimerAfter(Jiffies) -> TimerId`**: Schedules a timer interrupt for the current process after a delay.
 - **`CurrentId() -> ProcessId`**: Returns the ID of the currently executing process.
 - **`Now() -> Jiffies`**: Current time.
+- **`ListPool(&str) -> Vec<ProcessId>`**: List all processes that are in the pool with specified name. Panics if pool does not exist.
 
 ### Logging & Debugging
 

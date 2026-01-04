@@ -1,4 +1,4 @@
-use std::{cell::RefCell, process::exit, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, process::exit, rc::Rc};
 
 use log::{error, info};
 
@@ -24,8 +24,20 @@ impl Simulation {
         time_budget: Jiffies,
         max_network_latency: Jiffies,
         bandwidth_type: BandwidthType,
-        procs: Vec<(ProcessId, UniqueProcessHandle)>,
+        pools: HashMap<String, Vec<(ProcessId, UniqueProcessHandle)>>,
     ) -> Self {
+        let mut pool_listing = HashMap::new();
+        let mut procs = Vec::new();
+
+        for (name, pool) in pools {
+            let mut ids = Vec::new();
+            for (id, handle) in pool {
+                ids.push(id);
+                procs.push((id, handle));
+            }
+            pool_listing.insert(name, ids);
+        }
+
         let proc_pool = ProcessPool::NewShared(procs);
 
         let network_actor = Rc::new(RefCell::new(Network::New(
@@ -37,7 +49,7 @@ impl Simulation {
 
         let timers_actor = Rc::new(RefCell::new(Timers::New(proc_pool.clone())));
 
-        access::SetupAccess(network_actor.clone(), timers_actor.clone());
+        access::SetupAccess(network_actor.clone(), timers_actor.clone(), pool_listing);
 
         let actors = vec![network_actor as SharedActor, timers_actor as SharedActor];
 

@@ -5,11 +5,11 @@ fn main() {
     metrics::Set::<Vec<Jiffies>>("latency", Vec::new());
     metrics::Set::<usize>("timeouts-fired", 0);
 
-    SimulationBuilder::NewFromFactory(|| Box::new(SparseBullshark::New(20)))
-        .MaxLatency(Jiffies(20))
-        .TimeBudget(Jiffies(6000))
+    SimulationBuilder::NewDefault()
+        .AddPool("Validators", 100, || SparseBullshark::New(10))
+        .MaxLatency(Jiffies(400))
+        .TimeBudget(Jiffies(600000))
         .NICBandwidth(BandwidthType::Unbounded)
-        .ProcessInstances(100)
         .Seed(234565432345)
         .Build()
         .Run();
@@ -18,10 +18,7 @@ fn main() {
         "Vertices ordered: {}",
         metrics::Get::<Vec<Jiffies>>("latency").len()
     );
-    println!(
-        "Latency distribution: {:?}",
-        metrics::Get::<Vec<Jiffies>>("latency")
-    );
+
     println!(
         "Timeouts fired: {}",
         metrics::Get::<usize>("timeouts-fired")

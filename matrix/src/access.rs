@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     Destination, Message, ProcessId,
@@ -13,16 +13,22 @@ pub struct SimulationAccess {
     process_on_execution: ProcessId,
     pub(crate) scheduled_messages: Vec<(ProcessId, Destination, Rc<dyn Message>)>,
     pub(crate) scheduled_timers: Vec<(ProcessId, TimerId, Jiffies)>,
+    pools: HashMap<String, Vec<ProcessId>>,
     network: Rc<RefCell<Network>>,
     timers: Rc<RefCell<Timers>>,
 }
 
 impl SimulationAccess {
-    pub(crate) fn New(network: Rc<RefCell<Network>>, timers: Rc<RefCell<Timers>>) -> Self {
+    pub(crate) fn New(
+        network: Rc<RefCell<Network>>,
+        timers: Rc<RefCell<Timers>>,
+        pools: HashMap<String, Vec<ProcessId>>,
+    ) -> Self {
         Self {
             process_on_execution: 0,
             scheduled_timers: Vec::new(),
             scheduled_messages: Vec::new(),
+            pools,
             network,
             timers,
         }
@@ -30,6 +36,10 @@ impl SimulationAccess {
 }
 
 impl SimulationAccess {
+    fn ListPool(&mut self, name: &str) -> Vec<ProcessId> {
+        self.pools.get(name).expect("Pool does not exist").clone()
+    }
+
     fn Broadcast(&mut self, message: impl Message + 'static) {
         self.scheduled_messages.push((
             self.process_on_execution,
@@ -77,8 +87,13 @@ thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }
 
-pub(crate) fn SetupAccess(network: Rc<RefCell<Network>>, timers: Rc<RefCell<Timers>>) {
-    ACCESS_HANDLE.with_borrow_mut(|access| *access = Some(SimulationAccess::New(network, timers)));
+pub(crate) fn SetupAccess(
+    network: Rc<RefCell<Network>>,
+    timers: Rc<RefCell<Timers>>,
+    pools: HashMap<String, Vec<ProcessId>>,
+) {
+    ACCESS_HANDLE
+        .with_borrow_mut(|access| *access = Some(SimulationAccess::New(network, timers, pools)));
 }
 
 pub(crate) fn WithAccess<F, T>(f: F) -> T
@@ -110,6 +125,10 @@ pub fn SendTo(to: ProcessId, message: impl Message + 'static) {
 
 pub fn CurrentId() -> ProcessId {
     WithAccess(|access| access.CurrentId())
+}
+
+pub fn ListPool(name: &str) -> Vec<ProcessId> {
+    WithAccess(|access| access.ListPool(name))
 }
 
 // Userspace debugger

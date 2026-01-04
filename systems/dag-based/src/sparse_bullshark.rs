@@ -302,22 +302,12 @@ impl SparseBullshark {
         match maybe_anchor {
             None => return,
             Some(anchor) => {
-                let vote_count = v
-                    .strong_edges
+                let vote_count = self.dag[v.round - 1]
                     .iter()
+                    .flatten()
                     .filter(|vote| vote.strong_edges.contains(&anchor))
                     .count();
-
-                Debug!("v.round: {}", v.round);
-                Debug!(
-                    "edges: {:?}",
-                    v.strong_edges
-                        .iter()
-                        .map(|v| v.source)
-                        .collect::<Vec<usize>>()
-                );
-                Debug!("edges total: {:?}", v.strong_edges.iter().count());
-                Debug!("vote_count: {vote_count}");
+                println!("{vote_count}");
                 if vote_count >= self.DirectCommitThreshold() {
                     self.OrderAnchors(anchor);
                 }

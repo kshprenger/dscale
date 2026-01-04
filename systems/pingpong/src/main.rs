@@ -32,6 +32,9 @@ impl ExampleProcess {
 impl ProcessHandle for ExampleProcess {
     fn Bootstrap(&mut self, _configuration: Configuration) {
         if CurrentId() == 1 {
+            assert!(ListPool("ExamplePool").len() == 2);
+            assert!(ListPool("ExamplePool")[0] == 1);
+            assert!(ListPool("ExamplePool")[1] == 2);
             self.timer_id = ScheduleTimerAfter(Jiffies(100));
         }
     }
@@ -64,11 +67,11 @@ impl ProcessHandle for ExampleProcess {
 fn main() {
     let start = Instant::now();
 
-    SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
+    SimulationBuilder::NewDefault()
+        .AddPool("ExamplePool", 2, || ExampleProcess::New())
         .NICBandwidth(matrix::BandwidthType::Unbounded)
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))
-        .ProcessInstances(2)
         .Seed(5)
         .Build()
         .Run();
@@ -77,11 +80,11 @@ fn main() {
 
     let start = Instant::now();
 
-    SimulationBuilder::NewFromFactory(|| Box::new(ExampleProcess::New()))
+    SimulationBuilder::NewDefault()
+        .AddPool("ExamplePool", 2, || ExampleProcess::New())
         .NICBandwidth(matrix::BandwidthType::Bounded(5))
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))
-        .ProcessInstances(2)
         .Seed(5)
         .Build()
         .Run();
