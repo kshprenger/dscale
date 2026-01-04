@@ -33,3 +33,5 @@ pub use network::BandwidthType;
 
 pub use time::Jiffies;
 pub use time::TimerId;
+
+pub use tso::NextGlobalUniqueId;
