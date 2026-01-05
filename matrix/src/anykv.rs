@@ -18,7 +18,7 @@ pub fn Get<T: 'static + Clone>(key: &str) -> T {
             .get(key)
             .and_then(|v| v.downcast_ref::<T>())
             .cloned()
-            .expect(&format!("No metric found for key: {key}"))
+            .expect("No key found")
     })
 }
 
