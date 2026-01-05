@@ -1,9 +1,8 @@
 #![allow(non_snake_case)]
 
-mod access;
 mod actor;
 mod communication;
-pub mod anykv;
+pub mod global;
 mod network;
 mod process;
 mod progress;
@@ -23,11 +22,12 @@ pub use process::ProcessId;
 pub use simulation::Simulation;
 pub use simulation_builder::SimulationBuilder;
 
-pub use access::Broadcast;
-pub use access::CurrentId;
-pub use access::ListPool;
-pub use access::ScheduleTimerAfter;
-pub use access::SendTo;
+pub use global::Broadcast;
+pub use global::CurrentId;
+pub use global::ListPool;
+pub use global::Now;
+pub use global::ScheduleTimerAfter;
+pub use global::SendTo;
 
 pub use network::BandwidthType;
 

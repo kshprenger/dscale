@@ -3,10 +3,7 @@ use std::{cmp::Reverse, collections::BinaryHeap, rc::Rc};
 use log::debug;
 
 use crate::{
-    ProcessId, access,
-    actor::SimulationActor,
-    process::ProcessPool,
-    time::{Jiffies, Now},
+    Now, ProcessId, actor::SimulationActor, global, process::ProcessPool, time::Jiffies,
     tso::NextGlobalUniqueId,
 };
 
@@ -52,7 +49,7 @@ impl SimulationActor for Timers {
 
     fn Step(&mut self) {
         let (_, (process_id, timer_id)) = self.working_timers.pop().expect("Should not be empty").0;
-        access::SetProcess(process_id);
+        global::SetProcess(process_id);
         debug!("Firing timer with TimerId {timer_id} for Process {process_id}");
         self.procs.Get(process_id).OnTimer(timer_id);
     }

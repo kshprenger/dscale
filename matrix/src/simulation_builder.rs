@@ -1,12 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    ProcessHandle, ProcessId, Simulation,
-    network::BandwidthType,
-    process::UniqueProcessHandle,
-    random::Seed,
-    time::{Jiffies, clock},
-    tso,
+    ProcessHandle, ProcessId, Simulation, global, network::BandwidthType,
+    process::UniqueProcessHandle, random::Seed, time::Jiffies, tso,
 };
 
 // There are a lot of Rc small allocations, so we optimize this too using different allocator
@@ -85,7 +81,7 @@ impl SimulationBuilder {
 
         // thread_locals may be reused in other simulations, so we need to reset them
         tso::Reset();
-        clock::Reset();
+        global::clock::Reset();
 
         Simulation::New(
             self.seed,

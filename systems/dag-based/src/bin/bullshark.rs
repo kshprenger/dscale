@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use dag_based::bullshark::Bullshark;
-use matrix::{BandwidthType, SimulationBuilder, anykv, time::Jiffies};
+use matrix::{BandwidthType, SimulationBuilder, global::anykv, time::Jiffies};
 use rayon::prelude::*;
 
 fn main() {

@@ -12,16 +12,16 @@ use crate::Configuration;
 use crate::Destination;
 use crate::Message;
 use crate::MessagePtr;
+use crate::Now;
 use crate::ProcessId;
-use crate::access;
 use crate::actor::SimulationActor;
 use crate::communication::ProcessStep;
 use crate::communication::RoutedMessage;
+use crate::global;
 use crate::process::ProcessPool;
 use crate::random::Randomizer;
 use crate::random::Seed;
 use crate::time::Jiffies;
-use crate::time::Now;
 
 pub(crate) struct Network {
     seed: Seed,
@@ -66,7 +66,7 @@ impl Network {
             dest, source
         );
 
-        access::SetProcess(dest);
+        global::SetProcess(dest);
 
         self.procs
             .Get(dest)
@@ -115,7 +115,7 @@ impl SimulationActor for Network {
                 proc_num: self.procs.Keys().len(),
             };
 
-            access::SetProcess(*id);
+            global::SetProcess(*id);
 
             handle.Bootstrap(config);
         });

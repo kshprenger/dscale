@@ -4,7 +4,7 @@
 
 use std::collections::BTreeSet;
 
-use matrix::*;
+use matrix::{global::anykv, *};
 use rand::{SeedableRng, rngs::StdRng};
 
 use crate::{
@@ -68,7 +68,7 @@ impl ProcessHandle for SparseBullshark {
             round: 0,
             source: CurrentId(),
             strong_edges: Vec::new(),
-            creation_time: time::Now(),
+            creation_time: Now(),
         });
 
         self.rbcast
@@ -214,7 +214,7 @@ impl SparseBullshark {
             round,
             source: CurrentId(),
             strong_edges: self.SampleRandomCandidates(round - 1),
-            creation_time: time::Now(),
+            creation_time: Now(),
         })
     }
 

@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use matrix::*;
+use matrix::{global::anykv, *};
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
@@ -64,7 +64,7 @@ impl ProcessHandle for Bullshark {
             round: 0,
             source: self.self_id,
             strong_edges: Vec::new(),
-            creation_time: time::Now(),
+            creation_time: Now(),
         });
 
         self.rbcast
@@ -186,7 +186,7 @@ impl Bullshark {
                 .flatten() // Remove option
                 .cloned()
                 .collect::<Vec<VertexPtr>>(),
-            creation_time: time::Now(),
+            creation_time: Now(),
         })
     }
 

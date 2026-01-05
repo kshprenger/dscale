@@ -3,13 +3,13 @@ use std::{cell::RefCell, collections::HashMap, process::exit, rc::Rc};
 use log::{error, info};
 
 use crate::{
-    access,
     actor::SharedActor,
+    global,
     network::{BandwidthType, Network},
     process::{ProcessId, ProcessPool, UniqueProcessHandle},
     progress::Bar,
     random::{self},
-    time::{self, Jiffies, timer::Timers},
+    time::{Jiffies, timer::Timers},
 };
 
 pub struct Simulation {
@@ -49,7 +49,7 @@ impl Simulation {
 
         let timers_actor = Rc::new(RefCell::new(Timers::New(proc_pool.clone())));
 
-        access::SetupAccess(network_actor.clone(), timers_actor.clone(), pool_listing);
+        global::SetupAccess(network_actor.clone(), timers_actor.clone(), pool_listing);
 
         let actors = vec![network_actor as SharedActor, timers_actor as SharedActor];
 
@@ -63,7 +63,7 @@ impl Simulation {
     pub fn Run(mut self) {
         self.Start();
 
-        while time::Now() < self.time_budget {
+        while global::Now() < self.time_budget {
             self.Step();
         }
 
@@ -78,7 +78,7 @@ impl Simulation {
     fn Start(&mut self) {
         self.actors.iter_mut().for_each(|actor| {
             actor.borrow_mut().Start();
-            access::Drain(); // Only after Start() to avoid double borrow_mut() of SharedActor
+            global::Drain(); // Only after Start() to avoid double borrow_mut() of SharedActor
         });
     }
 
@@ -89,9 +89,9 @@ impl Simulation {
                 exit(1)
             }
             Some((future, actor)) => {
-                time::FastForwardClock(future);
+                global::FastForwardClock(future);
                 actor.borrow_mut().Step();
-                access::Drain(); // Only after Step() to avoid double borrow_mut() of SharedActor
+                global::Drain(); // Only after Step() to avoid double borrow_mut() of SharedActor
                 self.progress_bar.MakeProgress(future.min(self.time_budget));
             }
         }

@@ -1,5 +1,5 @@
 use dag_based::sparse_bullshark::SparseBullshark;
-use matrix::{BandwidthType, SimulationBuilder, anykv, time::Jiffies};
+use matrix::{BandwidthType, SimulationBuilder, global::anykv, time::Jiffies};
 
 fn main() {
     anykv::Set::<Vec<Jiffies>>("latency", Vec::new());
@@ -19,8 +19,5 @@ fn main() {
         anykv::Get::<Vec<Jiffies>>("latency").len()
     );
 
-    println!(
-        "Timeouts fired: {}",
-        anykv::Get::<usize>("timeouts-fired")
-    );
+    println!("Timeouts fired: {}", anykv::Get::<usize>("timeouts-fired"));
 }
