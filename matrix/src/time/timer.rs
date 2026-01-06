@@ -2,15 +2,12 @@ use std::{cmp::Reverse, collections::BinaryHeap, rc::Rc};
 
 use log::debug;
 
-use crate::{
-    Now, ProcessId, actor::SimulationActor, global, process::ProcessPool, time::Jiffies,
-    tso::GlobalUniqueId,
-};
+use crate::{Now, ProcessId, actor::SimulationActor, global, process::ProcessPool, time::Jiffies};
 
 pub type TimerId = usize;
 
 pub(crate) fn NextTimerId() -> TimerId {
-    GlobalUniqueId()
+    global::GlobalUniqueId()
 }
 
 pub(crate) struct Timers {

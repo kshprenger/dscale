@@ -1,6 +1,9 @@
 mod access;
 pub mod anykv;
 pub(crate) mod clock;
+pub mod tso;
+
+pub use tso::GlobalUniqueId;
 
 pub use clock::Now;
 
@@ -15,3 +18,8 @@ pub(crate) use access::SetProcess;
 pub(crate) use access::SetupAccess;
 
 pub(crate) use clock::FastForwardClock;
+
+pub(crate) fn ResetGlobals() {
+    clock::Reset();
+    tso::Reset();
+}
