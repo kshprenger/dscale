@@ -70,7 +70,7 @@ impl ProcessHandle for ExampleProcess {
 fn main() {
     let start = Instant::now();
     let sim = SimulationBuilder::NewDefault()
-        .AddPool("ExamplePool", 2, || ExampleProcess::New())
+        .AddPool("ExamplePool", 2, ExampleProcess::New)
         .NICBandwidth(matrix::BandwidthType::Unbounded)
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))

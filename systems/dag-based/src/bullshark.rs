@@ -20,7 +20,7 @@ impl Message for BullsharkMessage {
     fn VirtualSize(&self) -> usize {
         // Round, ProcessId
         4 + 4
-            + 131072 // 2^17 = Block of 256 txns by 512 byte each
+            + 3000 * 512 // Block of 3000 txns by 512 byte each
             + match self {
                 BullsharkMessage::Genesis(v) => v.strong_edges.len() * 32, // sha256 block pointers
                 BullsharkMessage::Vertex(v) =>  v.strong_edges.len() * 32, // sha256 block pointers
@@ -210,7 +210,7 @@ impl Bullshark {
     }
 
     fn StartTimer(&mut self) {
-        self.current_timer = ScheduleTimerAfter(Jiffies(400));
+        self.current_timer = ScheduleTimerAfter(Jiffies(2000));
         Debug!("New timer scheduled: {}", self.current_timer);
         self.wait = true;
     }

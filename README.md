@@ -62,7 +62,7 @@ use matrix::SimulationBuilder;
 
 fn main() {
     let mut simulation = SimulationBuilder::NewDefault()
-        .AddPool("PoolName", 4, || Box::new(MyProcess))
+        .AddPool("PoolName", 4, MyProcess::New)
         .Build();
 
     simulation.Run();
@@ -97,6 +97,12 @@ These functions are available globally but must be called within the context of 
 - **`Now() -> Jiffies`**: Current time.
 - **`ListPool(&str) -> Vec<ProcessId>`**: List all processes that are in the pool with specified name. Panics if pool does not exist.
 - **`GlobalUniqueId() -> usize`**: Generates globally-unique id.
+
+### Any Key-Value (for passing any values, metrics etc.)
+
+- **`Get<T>(&str) -> T`**
+- **`Set<T>(&str, T)`**
+- **`Modify<T>(&str,impl FnOnce(&mut T))`**: Modify in-place.
 
 ### Logging & Debugging
 
