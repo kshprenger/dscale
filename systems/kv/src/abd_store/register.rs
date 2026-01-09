@@ -21,11 +21,7 @@ pub(crate) enum RegisterOps {
     RegisterWriteAck(Value, Timestamp),
 }
 
-impl Message for RoutedRegisterOp {
-    fn VirtualSize(&self) -> usize {
-        usize::default()
-    }
-}
+impl Message for RoutedRegisterOp {}
 
 // Manual coroutines
 enum CoroResumeAfterReadQuorum {

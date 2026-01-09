@@ -14,17 +14,8 @@ pub(crate) enum ClientResponse {
     PutAck,
 }
 
-impl Message for ClientReq {
-    fn VirtualSize(&self) -> usize {
-        usize::default()
-    }
-}
-
-impl Message for ClientResponse {
-    fn VirtualSize(&self) -> usize {
-        usize::default()
-    }
-}
+impl Message for ClientReq {}
+impl Message for ClientResponse {}
 
 pub struct Client {
     rng: Option<StdRng>,
