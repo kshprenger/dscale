@@ -41,17 +41,16 @@ impl SimulationBuilder {
         }
     }
 
-    pub fn AddPool<P: ProcessHandle + 'static>(
+    pub fn AddPool<P: ProcessHandle + Default + 'static>(
         mut self,
         name: &str,
         size: usize,
-        factory: impl Fn() -> P,
     ) -> SimulationBuilder {
         let pool = self.pools.entry(name.to_string()).or_default();
         for _ in 0..size {
             let id = self.proc_id;
             self.proc_id += 1;
-            pool.push((id, Box::new(factory())));
+            pool.push((id, Box::new(P::default())));
         }
         self
     }

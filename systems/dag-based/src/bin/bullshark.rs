@@ -13,21 +13,21 @@ fn main() {
 
     (4..600)
         .into_par_iter()
-        .map(|proc_num| {
+        .map(|k_validators| {
             // 1 jiffy == 1 real millisecond
             let sim = SimulationBuilder::NewDefault()
-                .AddPool("Validators", proc_num, Bullshark::New)
+                .AddPool::<Bullshark>("Validators", k_validators)
                 .MaxLatency(Jiffies(400)) // 400 ms of max network latency
                 .TimeBudget(Jiffies(60_000)) // Simulating 1 min of real time execution
-                .NICBandwidth(BandwidthType::Bounded(1 * 1024 * 1024 * 1024 / (8 * 1000))) // 10Gb/sec NICs
-                .Seed(proc_num as u64)
+                .NICBandwidth(BandwidthType::Bounded(1 * 1024 * 1024 * 1024 / (8 * 1000))) // 1Gb/sec NICs
+                .Seed(k_validators as u64)
                 .Build();
 
             anykv::Set::<Vec<Jiffies>>("latency", Vec::new());
             anykv::Set::<usize>("timeouts-fired", 0);
 
             sim.Run();
-            println!("Simulation done for {proc_num} validators");
+            println!("Simulation done for {k_validators} validators");
 
             let ordered = anykv::Get::<Vec<Jiffies>>("latency").len();
             let average_latency = anykv::Get::<Vec<Jiffies>>("latency")
@@ -38,7 +38,7 @@ fn main() {
 
             anykv::Clear();
 
-            (proc_num, ordered, average_latency)
+            (k_validators, ordered, average_latency)
         })
         .collect::<Vec<(usize, usize, f64)>>()
         .into_iter()

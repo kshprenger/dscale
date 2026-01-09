@@ -38,8 +38,8 @@ pub struct SparseBullshark {
     D: usize,
 }
 
-impl SparseBullshark {
-    pub fn New(D: usize) -> Self {
+impl Default for SparseBullshark {
+    fn default() -> Self {
         Self {
             rbcast: ByzantineConsistentBroadcast::New(),
             proc_num: 0,
@@ -51,11 +51,10 @@ impl SparseBullshark {
             wait: true,
             current_timer: 0,
             sampler: None,
-            D,
+            D: anykv::Get::<usize>("D"),
         }
     }
 }
-
 impl ProcessHandle for SparseBullshark {
     fn Bootstrap(&mut self, configuration: Configuration) {
         self.proc_num = configuration.proc_num;

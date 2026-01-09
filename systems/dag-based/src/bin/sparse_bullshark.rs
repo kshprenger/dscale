@@ -4,9 +4,10 @@ use matrix::{BandwidthType, SimulationBuilder, global::anykv, time::Jiffies};
 fn main() {
     anykv::Set::<Vec<Jiffies>>("latency", Vec::new());
     anykv::Set::<usize>("timeouts-fired", 0);
+    anykv::Set::<usize>("D", 10);
 
     SimulationBuilder::NewDefault()
-        .AddPool("Validators", 100, || SparseBullshark::New(10))
+        .AddPool::<SparseBullshark>("Validators", 100)
         .MaxLatency(Jiffies(400))
         .TimeBudget(Jiffies(600000))
         .NICBandwidth(BandwidthType::Unbounded)

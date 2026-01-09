@@ -19,14 +19,9 @@ impl Message for PingPongMessage {
     }
 }
 
+#[derive(Default)]
 struct ExampleProcess {
     timer_id: TimerId,
-}
-
-impl ExampleProcess {
-    fn New() -> Self {
-        Self { timer_id: 0 }
-    }
 }
 
 impl ProcessHandle for ExampleProcess {
@@ -70,8 +65,8 @@ impl ProcessHandle for ExampleProcess {
 fn main() {
     let start = Instant::now();
     let sim = SimulationBuilder::NewDefault()
-        .AddPool("ExamplePool", 2, ExampleProcess::New)
-        .NICBandwidth(matrix::BandwidthType::Unbounded)
+        .AddPool::<ExampleProcess>("ExamplePool", 2)
+        .NICBandwidth(BandwidthType::Unbounded)
         .MaxLatency(Jiffies(10))
         .TimeBudget(Jiffies(100_000_000))
         .Seed(5)

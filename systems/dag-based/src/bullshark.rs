@@ -41,8 +41,8 @@ pub struct Bullshark {
     current_timer: TimerId,
 }
 
-impl Bullshark {
-    pub fn New() -> Self {
+impl Default for Bullshark {
+    fn default() -> Self {
         Self {
             rbcast: ByzantineConsistentBroadcast::New(),
             self_id: 0,
