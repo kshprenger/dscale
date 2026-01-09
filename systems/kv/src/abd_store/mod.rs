@@ -1,4 +1,5 @@
 pub mod client;
+pub mod lin_checker;
 pub mod register;
 pub mod types;
 
