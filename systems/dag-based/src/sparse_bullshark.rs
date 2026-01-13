@@ -2,7 +2,10 @@
 // https://arxiv.org/pdf/2209.05633
 // https://arxiv.org/pdf/2506.13998
 
-use std::collections::BTreeSet;
+use std::{
+    collections::BTreeSet,
+    rc::{Rc, Weak},
+};
 
 use matrix::{
     global::{anykv, configuration},
@@ -131,7 +134,14 @@ impl ProcessHandle for SparseBullshark {
                                     .flatten()
                                     .map(|v| {
                                         v.strong_edges
-                                            .contains(&self.GetAnchor(self.round - 1).unwrap())
+                                            .iter()
+                                            .map(|weak| weak.upgrade().unwrap())
+                                            .any(|v| {
+                                                SameVertex(
+                                                    &v,
+                                                    &self.GetAnchor(self.round - 1).unwrap(),
+                                                )
+                                            })
                                     })
                                     .count()
                                     >= self.QuorumSize()
@@ -178,11 +188,14 @@ impl SparseBullshark {
         self.NonNoneVerticesCountForRound(round) >= self.QuorumSize()
     }
 
-    fn SampleRandomCandidates(&mut self, round: usize) -> Vec<VertexPtr> {
+    fn SampleRandomCandidates(&mut self, round: usize) -> Vec<Weak<Vertex>> {
         let candidates: Vec<VertexPtr> = self.dag[round].iter().flatten().cloned().collect();
 
         if candidates.len() <= self.D {
-            return candidates;
+            return candidates
+                .into_iter()
+                .map(|strong| Rc::downgrade(&strong))
+                .collect();
         }
 
         use rand::prelude::IndexedRandom;
@@ -207,7 +220,10 @@ impl SparseBullshark {
         debug_assert!(random_candidates.len() >= self.D);
         debug_assert!(random_candidates.len() <= self.D + 2);
 
-        random_candidates.into_iter().collect()
+        random_candidates
+            .into_iter()
+            .map(|strong| Rc::downgrade(&strong))
+            .collect()
     }
 
     fn CreateVertex(&mut self, round: usize) -> VertexPtr {
@@ -262,13 +278,14 @@ impl SparseBullshark {
             return false;
         }
 
-        let all_strong_edges_in_the_dag =
-            v.strong_edges
-                .iter()
-                .all(|edge| match self.dag[edge.round][edge.source] {
-                    None => false,
-                    Some(ref vertex) => SameVertex(&edge, vertex),
-                });
+        let all_strong_edges_in_the_dag = v
+            .strong_edges
+            .iter()
+            .map(|weak| weak.upgrade().unwrap())
+            .all(|edge| match self.dag[edge.round][edge.source] {
+                None => false,
+                Some(ref vertex) => SameVertex(&edge, vertex),
+            });
 
         if !all_strong_edges_in_the_dag {
             return false;
@@ -304,10 +321,15 @@ impl SparseBullshark {
         match maybe_anchor {
             None => return,
             Some(anchor) => {
-                let vote_count = self.dag[v.round - 1]
+                let vote_count = v
+                    .strong_edges
                     .iter()
-                    .flatten()
-                    .filter(|vote| vote.strong_edges.contains(&anchor))
+                    .map(|weak| weak.upgrade().unwrap())
+                    .filter(|vote| {
+                        vote.strong_edges
+                            .iter()
+                            .any(|v| SameVertex(&v.upgrade().unwrap(), &anchor))
+                    })
                     .count();
                 println!("{vote_count}");
                 if vote_count >= self.DirectCommitThreshold() {

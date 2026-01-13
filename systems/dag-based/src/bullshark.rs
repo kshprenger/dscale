@@ -1,7 +1,10 @@
 // https://arxiv.org/pdf/2201.05677
 // https://arxiv.org/pdf/2209.05633
 
-use std::collections::BTreeSet;
+use std::{
+    collections::BTreeSet,
+    rc::{Rc, Weak},
+};
 
 use matrix::{
     global::{anykv, configuration},
@@ -137,7 +140,14 @@ impl ProcessHandle for Bullshark {
                                     .flatten()
                                     .map(|v| {
                                         v.strong_edges
-                                            .contains(&self.GetAnchor(self.round - 1).unwrap())
+                                            .iter()
+                                            .map(|weak| weak.upgrade().unwrap())
+                                            .any(|v| {
+                                                SameVertex(
+                                                    &v,
+                                                    &self.GetAnchor(self.round - 1).unwrap(),
+                                                )
+                                            })
                                     })
                                     .count()
                                     >= self.QuorumSize()
@@ -194,7 +204,8 @@ impl Bullshark {
                 .iter()
                 .flatten() // Remove option
                 .cloned()
-                .collect::<Vec<VertexPtr>>(),
+                .map(|strong| Rc::downgrade(&strong))
+                .collect::<Vec<Weak<Vertex>>>(),
             creation_time: Now(),
         })
     }
@@ -242,13 +253,14 @@ impl Bullshark {
             return false;
         }
 
-        let all_strong_edges_in_the_dag =
-            v.strong_edges
-                .iter()
-                .all(|edge| match self.dag[edge.round][edge.source] {
-                    None => false,
-                    Some(ref vertex) => SameVertex(&edge, vertex),
-                });
+        let all_strong_edges_in_the_dag = v
+            .strong_edges
+            .iter()
+            .map(|weak| weak.upgrade().unwrap())
+            .all(|edge| match self.dag[edge.round][edge.source] {
+                None => false,
+                Some(ref vertex) => SameVertex(&edge, vertex),
+            });
 
         if !all_strong_edges_in_the_dag {
             return false;
@@ -287,7 +299,12 @@ impl Bullshark {
                 let vote_count = v
                     .strong_edges
                     .iter()
-                    .filter(|vote| vote.strong_edges.contains(&anchor))
+                    .map(|weak| weak.upgrade().unwrap())
+                    .filter(|vote| {
+                        vote.strong_edges
+                            .iter()
+                            .any(|v| SameVertex(&v.upgrade().unwrap(), &anchor))
+                    })
                     .count();
                 if vote_count >= self.DirectCommitThreshold() {
                     self.OrderAnchors(anchor);

@@ -1,4 +1,8 @@
-use std::{collections::VecDeque, ops::Index, rc::Rc};
+use std::{
+    collections::VecDeque,
+    ops::Index,
+    rc::{Rc, Weak},
+};
 
 use matrix::{
     CurrentId, Now, ProcessId,
@@ -15,13 +19,29 @@ pub fn SameVertex(v: &VertexPtr, u: &VertexPtr) -> bool {
     Rc::ptr_eq(v, u)
 }
 
-#[derive(PartialEq, Eq)]
 pub struct Vertex {
     pub round: usize,
     pub source: ProcessId,
     pub creation_time: time::Jiffies,
-    pub strong_edges: Vec<VertexPtr>,
+
+    // Each vertex is a pointer to real one. (Each vertex is allocated exactly-once during execution)
+    // Each party contains strong Rc references to vertices in their dags.
+    // At the same time in the real dag edges are represented with weak Rc references.
+    // Once all parties GC-ed their dags, Vertices will be deallocated because there will be no more strong Rc references.
+    // Until GC time is is safe for the process to upgrade Weak refs.
+    pub strong_edges: Vec<Weak<Vertex>>,
 }
+
+impl PartialEq for Vertex {
+    fn eq(&self, other: &Self) -> bool {
+        (self.round, self.source).eq(&(other.round, other.source))
+    }
+    fn ne(&self, other: &Self) -> bool {
+        (self.round, self.source).ne(&(other.round, other.source))
+    }
+}
+
+impl Eq for Vertex {}
 
 impl PartialOrd for Vertex {
     fn ge(&self, other: &Self) -> bool {
@@ -59,11 +79,18 @@ impl RoundBasedDAG {
     // "in some deterministic order"
     pub fn OrderFrom(&mut self, v: &VertexPtr) {
         let mut queue = VecDeque::new();
-        queue.push_back(v);
+        queue.push_back(v.clone());
 
         while queue.len() > 0 {
             let curr = queue.pop_front().unwrap();
-            for edge in &curr.strong_edges {
+
+            let strong_edges: Vec<VertexPtr> = curr
+                .strong_edges
+                .iter()
+                .map(|weak| weak.upgrade().unwrap())
+                .collect();
+
+            for edge in strong_edges.into_iter() {
                 let real_round = self.Round(edge.round);
                 if self.ordered[real_round][edge.source] {
                     continue;
@@ -102,12 +129,19 @@ impl RoundBasedDAG {
         self.visited[read_round][v.source] = true;
 
         let mut queue = VecDeque::new();
-        queue.push_back(v);
+        queue.push_back(v.clone());
 
         while queue.len() > 0 {
             let curr = queue.pop_front().unwrap();
-            for edge in &curr.strong_edges {
-                if SameVertex(edge, &u) {
+
+            let strong_edges: Vec<VertexPtr> = curr
+                .strong_edges
+                .iter()
+                .map(|weak| weak.upgrade().unwrap())
+                .collect();
+
+            for edge in strong_edges.into_iter() {
+                if SameVertex(&edge, &u) {
                     return true;
                 } else {
                     let read_round = self.Round(edge.round);
