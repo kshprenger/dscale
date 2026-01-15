@@ -10,8 +10,8 @@ fn main() {
     let file = File::create("results.csv").unwrap();
     let file = Mutex::new(file);
 
-    (4..10000)
-        .step_by(50)
+    (10000..=10000)
+        .step_by(1)
         .par_bridge()
         .into_par_iter()
         .for_each(|k_validators| {

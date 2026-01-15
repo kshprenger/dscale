@@ -71,7 +71,7 @@ impl ByzantineConsistentBroadcast {
         match message.as_ref() {
             BCBMessage::Certificate(_, id) => {
                 match self.messages.remove(&id) {
-                    // Due to network latency we got certificate gathered by some quorum
+                    // Due to network latency we got certificate gathered by some other quorum (not including us)
                     None => {
                         self.waiting_certificates.insert(*id);
                         return None;
@@ -82,6 +82,7 @@ impl ByzantineConsistentBroadcast {
             BCBMessage::Initiate((id, m)) => {
                 if id.process_id != self.process_id {
                     if self.waiting_certificates.contains(&id) {
+                        self.waiting_certificates.remove(&id);
                         return Some(MessagePtr::New(m.clone()));
                     }
                     self.messages.insert(*id, (m.clone(), 0));
