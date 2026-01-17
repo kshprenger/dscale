@@ -56,4 +56,6 @@ impl ProcessHandle for Replica {
         let register = self.FindRegister(register_op.key);
         register.Serve(&register_op.op, from, register_op.key, quorum_size);
     }
+
+    fn OnTimer(&mut self, _id: TimerId) {}
 }

@@ -8,14 +8,12 @@ pub(crate) type UniqueProcessHandle = Box<dyn ProcessHandle>;
 pub(crate) type MutableProcessHandle = RefCell<UniqueProcessHandle>;
 
 pub trait ProcessHandle {
-    // This methods requires process to schedule some initial messages.
+    // This method requires process to schedule some initial messages.
     fn Start(&mut self);
 
-    // Deliver message with source process
+    // Deliver message
     fn OnMessage(&mut self, from: ProcessId, message: MessagePtr);
 
     // Fire timer with id that was returned on ScheduleTimerAfter() call
-    fn OnTimer(&mut self, #[allow(unused)] id: TimerId) {
-        // Default - No timers
-    }
+    fn OnTimer(&mut self, id: TimerId);
 }
