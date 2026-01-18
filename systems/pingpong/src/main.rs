@@ -66,8 +66,11 @@ fn main() {
     let start = Instant::now();
     let mut sim = SimulationBuilder::NewDefault()
         .AddPool::<ExampleProcess>("ExamplePool", 2)
-        .NICBandwidth(BandwidthType::Unbounded)
-        .MaxLatency(Jiffies(10))
+        .NICBandwidth(BandwidthDescription::Unbounded)
+        .LatencyTopology(&[LatencyDescription::WithinPool(
+            "ExamplePool",
+            Distributions::Uniform(Jiffies(0), Jiffies(10)),
+        )])
         .TimeBudget(Jiffies(100_000_000))
         .Seed(5)
         .Build();

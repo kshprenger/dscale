@@ -1,7 +1,10 @@
 use std::{fs::File, sync::Mutex, time::Instant};
 
 use dag_based::bullshark::Bullshark;
-use matrix::{BandwidthType, SimulationBuilder, global::anykv, time::Jiffies};
+use matrix::{
+    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::anykv,
+    time::Jiffies,
+};
 use rayon::prelude::*;
 
 use std::io::Write;
@@ -19,9 +22,14 @@ fn main() {
             // 1 jiffy == 1 real millisecond
             let mut sim = SimulationBuilder::NewDefault()
                 .AddPool::<Bullshark>("Validators", k_validators)
-                .MaxLatency(Jiffies(400)) // 400 ms of max network latency
+                .LatencyTopology(&[LatencyDescription::WithinPool(
+                    "Validators",
+                    Distributions::Uniform(Jiffies(0), Jiffies(400)),
+                )])
                 .TimeBudget(Jiffies(240_000)) // Simulating 4 min of real time execution
-                .NICBandwidth(BandwidthType::Bounded(10 * 1024 * 1024 * 1024 / (8 * 1000))) // 10Gb/sec NICs
+                .NICBandwidth(BandwidthDescription::Bounded(
+                    10 * 1024 * 1024 * 1024 / (8 * 1000), // 10Gb/sec NICs
+                ))
                 .Seed(k_validators as u64)
                 .Build();
 

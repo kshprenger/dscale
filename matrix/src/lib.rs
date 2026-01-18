@@ -10,6 +10,7 @@ mod random;
 mod simulation;
 mod simulation_builder;
 pub mod time;
+mod topology;
 
 pub use communication::MessagePtr;
 pub use communication::{Destination, Message};
@@ -29,7 +30,11 @@ pub use global::Now;
 pub use global::ScheduleTimerAfter;
 pub use global::SendTo;
 
-pub use network::BandwidthType;
+pub use network::BandwidthDescription;
+
+pub use topology::LatencyDescription;
+
+pub use random::Distributions;
 
 pub use time::Jiffies;
 pub use time::TimerId;

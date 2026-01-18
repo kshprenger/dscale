@@ -1,15 +1,15 @@
-use std::{cell::RefCell, collections::HashMap, process::exit, rc::Rc, usize};
+use std::{cell::RefCell, process::exit, rc::Rc, usize};
 
 use log::{error, info};
 
 use crate::{
     actor::SharedActor,
     global,
-    network::{BandwidthType, Network},
-    process::{ProcessId, ProcessPool, UniqueProcessHandle},
+    network::{BandwidthDescription, Network},
     progress::Bar,
     random::{self},
     time::{Jiffies, timer_manager::TimerManager},
+    topology::{HandlerMap, LatencyTopology, PoolListing, Topology},
 };
 
 pub struct Simulation {
@@ -22,34 +22,22 @@ impl Simulation {
     pub(crate) fn New(
         seed: random::Seed,
         time_budget: Jiffies,
-        max_network_latency: Jiffies,
-        bandwidth_type: BandwidthType,
-        pools: HashMap<String, Vec<(ProcessId, UniqueProcessHandle)>>,
+        bandwidth: BandwidthDescription,
+        latency_topology: LatencyTopology,
+        pool_listing: PoolListing,
+        procs: HandlerMap,
     ) -> Self {
-        let mut pool_listing = HashMap::new();
-        let mut procs = Vec::new();
-
-        for (name, pool) in pools {
-            let mut ids = Vec::new();
-            for (id, handle) in pool {
-                ids.push(id);
-                procs.push((id, handle));
-            }
-            pool_listing.insert(name, ids);
-        }
-
-        let proc_pool = ProcessPool::NewShared(procs, pool_listing.clone());
+        let topology = Topology::NewShared(procs, pool_listing.clone(), latency_topology);
 
         let network_actor = Rc::new(RefCell::new(Network::New(
             seed,
-            max_network_latency,
-            bandwidth_type,
-            proc_pool.clone(),
+            bandwidth,
+            topology.clone(),
         )));
 
-        let timers_actor = Rc::new(RefCell::new(TimerManager::New(proc_pool.clone())));
+        let timers_actor = Rc::new(RefCell::new(TimerManager::New(topology.clone())));
 
-        global::configuration::SetupGlobalConfiguration(proc_pool.Size());
+        global::configuration::SetupGlobalConfiguration(topology.Size());
         global::SetupAccess(network_actor.clone(), timers_actor.clone(), pool_listing);
 
         let actors = vec![network_actor as SharedActor, timers_actor as SharedActor];

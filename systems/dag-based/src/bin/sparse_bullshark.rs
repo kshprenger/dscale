@@ -1,5 +1,8 @@
 use dag_based::sparse_bullshark::SparseBullshark;
-use matrix::{BandwidthType, SimulationBuilder, global::anykv, time::Jiffies};
+use matrix::{
+    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::anykv,
+    time::Jiffies,
+};
 
 fn main() {
     anykv::Set::<Vec<Jiffies>>("latency", Vec::new());
@@ -8,9 +11,12 @@ fn main() {
 
     SimulationBuilder::NewDefault()
         .AddPool::<SparseBullshark>("Validators", 100)
-        .MaxLatency(Jiffies(400))
+        .LatencyTopology(&[LatencyDescription::WithinPool(
+            "Validators",
+            Distributions::Uniform(Jiffies(0), Jiffies(400)),
+        )])
         .TimeBudget(Jiffies(600000))
-        .NICBandwidth(BandwidthType::Unbounded)
+        .NICBandwidth(BandwidthDescription::Unbounded)
         .Seed(234565432345)
         .Build()
         .Run();

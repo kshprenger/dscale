@@ -1,10 +1,11 @@
 mod bandwidth;
 mod latency;
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
+pub use bandwidth::BandwidthDescription;
 pub(crate) use bandwidth::BandwidthQueue;
-pub use bandwidth::BandwidthType;
 pub(crate) use latency::LatencyQueue;
 use log::debug;
 
@@ -18,15 +19,17 @@ use crate::communication::ProcessStep;
 use crate::communication::RoutedMessage;
 use crate::global;
 use crate::global::configuration;
-use crate::process::ProcessPool;
 use crate::random::Randomizer;
 use crate::random::Seed;
 use crate::time::Jiffies;
+use crate::topology::Topology;
+
+pub(crate) type NetworkActor = Rc<RefCell<Network>>;
 
 pub(crate) struct Network {
     seed: Seed,
     bandwidth_queue: BandwidthQueue,
-    procs: Rc<ProcessPool>,
+    topology: Rc<Topology>,
 }
 
 impl Network {
@@ -37,8 +40,10 @@ impl Network {
         destination: Destination,
     ) {
         let targets = match destination {
-            Destination::Broadcast => self.procs.Keys().copied().collect::<Vec<ProcessId>>(),
-            Destination::BroadcastWithingPool(pool_name) => self.procs.ListPool(pool_name).to_vec(),
+            Destination::Broadcast => self.topology.Keys().copied().collect::<Vec<ProcessId>>(),
+            Destination::BroadcastWithinPool(pool_name) => {
+                self.topology.ListPool(pool_name).to_vec()
+            }
             Destination::To(to) => vec![to],
         };
 
@@ -69,7 +74,7 @@ impl Network {
 
         global::SetProcess(dest);
 
-        self.procs
+        self.topology
             .Get(dest)
             .OnMessage(source, MessagePtr::New(message));
     }
@@ -78,18 +83,17 @@ impl Network {
 impl Network {
     pub(crate) fn New(
         seed: Seed,
-        max_network_latency: Jiffies,
-        bandwidth_type: BandwidthType,
-        procs: Rc<ProcessPool>,
+        bandwidth_type: BandwidthDescription,
+        topology: Rc<Topology>,
     ) -> Self {
         Self {
             seed,
             bandwidth_queue: BandwidthQueue::New(
                 bandwidth_type,
-                procs.Size(),
-                LatencyQueue::New(Randomizer::New(seed), max_network_latency),
+                topology.Size(),
+                LatencyQueue::New(Randomizer::New(seed), topology.clone()),
             ),
-            procs,
+            topology,
         }
     }
 
@@ -108,7 +112,7 @@ impl Network {
 
 impl SimulationActor for Network {
     fn Start(&mut self) {
-        self.procs.IterMut().for_each(|(id, mut handle)| {
+        self.topology.IterMut().for_each(|(id, mut handle)| {
             debug!("Executing initial step for {id}");
 
             configuration::SetupLocalConfiguration(*id, self.seed);

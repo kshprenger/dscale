@@ -11,8 +11,22 @@ fn main() {
     let mut sim = SimulationBuilder::NewDefault()
         .AddPool::<Replica>(REPLICA_POOL_NAME, 10)
         .AddPool::<Client>(CLIENT_POOL_NAME, 4)
-        .TimeBudget(Jiffies(50000))
-        .MaxLatency(Jiffies(545))
+        .TimeBudget(Jiffies(5000))
+        .LatencyTopology(&[
+            LatencyDescription::WithinPool(
+                REPLICA_POOL_NAME,
+                Distributions::Uniform(Jiffies(0), Jiffies(10)),
+            ),
+            LatencyDescription::WithinPool(
+                CLIENT_POOL_NAME,
+                Distributions::Uniform(Jiffies(0), Jiffies(545)),
+            ),
+            LatencyDescription::BetweenPools(
+                CLIENT_POOL_NAME,
+                REPLICA_POOL_NAME,
+                Distributions::Uniform(Jiffies(0), Jiffies(1212)),
+            ),
+        ])
         .Seed(5444)
         .Build();
 

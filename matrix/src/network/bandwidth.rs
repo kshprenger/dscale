@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-pub enum BandwidthType {
+pub enum BandwidthDescription {
     Unbounded,
     Bounded(usize), // Bytes per Jiffy
 }
@@ -23,13 +23,13 @@ pub(crate) struct BandwidthQueue {
 
 impl BandwidthQueue {
     pub(crate) fn New(
-        bandwidth_type: BandwidthType,
+        bandwidth_type: BandwidthDescription,
         proc_num: usize,
         global_queue: LatencyQueue,
     ) -> Self {
         let bandwidth = match bandwidth_type {
-            BandwidthType::Unbounded => usize::MAX,
-            BandwidthType::Bounded(bound) => bound,
+            BandwidthDescription::Unbounded => usize::MAX,
+            BandwidthDescription::Bounded(bound) => bound,
         };
 
         Self {

@@ -2,6 +2,6 @@ use crate::ProcessId;
 
 pub enum Destination {
     Broadcast,
-    BroadcastWithingPool(&'static str),
+    BroadcastWithinPool(&'static str),
     To(ProcessId),
 }

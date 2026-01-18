@@ -1,8 +1,15 @@
-use std::collections::HashMap;
+use std::{
+    cell::RefCell,
+    collections::{BTreeMap, HashMap},
+};
 
 use crate::{
-    ProcessHandle, ProcessId, Simulation, network::BandwidthType, process::UniqueProcessHandle,
-    random::Seed, time::Jiffies,
+    ProcessHandle, ProcessId, Simulation,
+    network::BandwidthDescription,
+    process::UniqueProcessHandle,
+    random::Seed,
+    time::Jiffies,
+    topology::{LatencyDescription, LatencyTopology},
 };
 
 // There are a lot of Rc small allocations, so we optimize this too using different allocator
@@ -23,10 +30,10 @@ fn InitLogger() {
 pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
-    max_network_latency: Jiffies,
     proc_id: usize,
     pools: HashMap<String, Vec<(ProcessId, UniqueProcessHandle)>>,
-    bandwidth: BandwidthType,
+    latency_topology: LatencyTopology,
+    bandwidth: BandwidthDescription,
 }
 
 impl SimulationBuilder {
@@ -34,10 +41,10 @@ impl SimulationBuilder {
         SimulationBuilder {
             seed: 69,
             time_budget: Jiffies(1_000_000),
-            max_network_latency: Jiffies(10),
             proc_id: 1,
             pools: HashMap::new(),
-            bandwidth: BandwidthType::Unbounded,
+            bandwidth: BandwidthDescription::Unbounded,
+            latency_topology: HashMap::new(),
         }
     }
 
@@ -65,12 +72,52 @@ impl SimulationBuilder {
         self
     }
 
-    pub fn MaxLatency(mut self, max_network_latency: Jiffies) -> Self {
-        self.max_network_latency = max_network_latency;
+    // Should be called only after all AddPool calls
+    pub fn LatencyTopology(mut self, descriptions: &[LatencyDescription]) -> Self {
+        descriptions.iter().for_each(|d| {
+            let (from, to, distr) = match d {
+                LatencyDescription::WithinPool(name, distr) => (*name, *name, distr),
+                LatencyDescription::BetweenPools(pool_from, pool_to, distr) => {
+                    (*pool_from, *pool_to, distr)
+                }
+            };
+
+            let from_vec: Vec<ProcessId> = self
+                .pools
+                .get(from)
+                .expect("No pool found")
+                .iter()
+                .map(|(id, _)| *id)
+                .collect();
+
+            let to_vec: Vec<ProcessId> = self
+                .pools
+                .get(to)
+                .expect("No pool found")
+                .iter()
+                .map(|(id, _)| *id)
+                .collect();
+
+            let cartesian_product = from_vec
+                .iter()
+                .flat_map(|x| to_vec.iter().map(move |y| (*x, *y)));
+
+            let cartesian_product_backwards = from_vec
+                .iter()
+                .flat_map(|x| to_vec.iter().map(move |y| (*y, *x)));
+
+            cartesian_product.for_each(|key| {
+                self.latency_topology.insert(key, distr.clone());
+            });
+
+            cartesian_product_backwards.for_each(|key| {
+                self.latency_topology.insert(key, distr.clone());
+            });
+        });
         self
     }
 
-    pub fn NICBandwidth(mut self, bandwidth: BandwidthType) -> Self {
+    pub fn NICBandwidth(mut self, bandwidth: BandwidthDescription) -> Self {
         self.bandwidth = bandwidth;
         self
     }
@@ -78,12 +125,25 @@ impl SimulationBuilder {
     pub fn Build(self) -> Simulation {
         InitLogger();
 
+        let mut pool_listing = HashMap::new();
+        let mut procs = BTreeMap::new();
+
+        for (name, pool) in self.pools {
+            let mut ids = Vec::new();
+            for (id, handle) in pool {
+                ids.push(id);
+                procs.insert(id, RefCell::new(handle));
+            }
+            pool_listing.insert(name, ids);
+        }
+
         Simulation::New(
             self.seed,
             self.time_budget,
-            self.max_network_latency,
             self.bandwidth,
-            self.pools,
+            self.latency_topology,
+            pool_listing,
+            procs,
         )
     }
 }

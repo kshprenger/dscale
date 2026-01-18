@@ -1,20 +1,22 @@
 use std::collections::BinaryHeap;
+use std::rc::Rc;
 
 use log::debug;
 
 use crate::communication::{RoutedMessage, TimePriorityMessageQueue};
-use crate::{random::Randomizer, time::Jiffies};
+use crate::random::Randomizer;
+use crate::topology::Topology;
 
 pub(crate) struct LatencyQueue {
+    topology: Rc<Topology>,
     randomizer: Randomizer,
-    max_latency: Jiffies,
     queue: TimePriorityMessageQueue,
 }
 impl LatencyQueue {
-    pub(crate) fn New(randomizer: Randomizer, max_latency: Jiffies) -> Self {
+    pub(crate) fn New(randomizer: Randomizer, topology: Rc<Topology>) -> Self {
         Self {
             randomizer,
-            max_latency,
+            topology,
             queue: BinaryHeap::new(),
         }
     }
@@ -24,7 +26,10 @@ impl LatencyQueue {
             "Arrival time before adding latency: {}",
             message.arrival_time
         );
-        message.arrival_time += self.randomizer.RandomFromRange(0, self.max_latency.0);
+        message.arrival_time += self.randomizer.Random(
+            self.topology
+                .GetDistribution(message.step.source, message.step.dest),
+        );
         debug!(
             "Arrival time after adding random latency: {}",
             message.arrival_time

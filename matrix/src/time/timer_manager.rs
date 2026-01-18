@@ -1,8 +1,8 @@
-use std::{cmp::Reverse, collections::BinaryHeap, rc::Rc};
+use std::{cell::RefCell, cmp::Reverse, collections::BinaryHeap, rc::Rc};
 
 use log::debug;
 
-use crate::{Now, ProcessId, actor::SimulationActor, global, process::ProcessPool, time::Jiffies};
+use crate::{Now, ProcessId, actor::SimulationActor, global, time::Jiffies, topology::Topology};
 
 pub type TimerId = usize;
 
@@ -10,13 +10,15 @@ pub(crate) fn NextTimerId() -> TimerId {
     global::GlobalUniqueId()
 }
 
+pub(crate) type TimerManagerActor = Rc<RefCell<TimerManager>>;
+
 pub(crate) struct TimerManager {
     working_timers: BinaryHeap<Reverse<(Jiffies, (ProcessId, TimerId))>>,
-    procs: Rc<ProcessPool>,
+    procs: Rc<Topology>,
 }
 
 impl TimerManager {
-    pub(crate) fn New(procs: Rc<ProcessPool>) -> Self {
+    pub(crate) fn New(procs: Rc<Topology>) -> Self {
         Self {
             working_timers: BinaryHeap::new(),
             procs,

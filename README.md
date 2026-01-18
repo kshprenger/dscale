@@ -8,7 +8,7 @@ To use the matrix, you need to implement the `ProcessHandle` trait for your dist
 
 ### 1. Define Messages
 
-Messages must implement the `Message` trait, which requires defining a `VirtualSize` for bandwidth simulation.
+Messages must implement the `Message` trait, which allows defining a `VirtualSize` for bandwidth simulation.
 
 ```rust
 use matrix::Message;
@@ -19,7 +19,8 @@ struct MyMessage {
 
 impl Message for MyMessage {
     fn VirtualSize(&self) -> usize {
-        // Much bigger than real size, but zero-cost
+        // Size in bytes used for bandwidth simulation.
+        // Can be much bigger than real memory size to simulate heavy payloads.
         1000
     }
 }
@@ -40,7 +41,7 @@ struct MyProcess;
 impl ProcessHandle for MyProcess {
     fn Start(&mut self) {
         Debug!("Starting process {} of {}", CurrentId(), configuration::ProcessNumber());
-        // Schedule initial events or broadcast messages
+        // Schedule initial messages or timers
         ScheduleTimerAfter(Jiffies(100));
     }
 
@@ -59,16 +60,20 @@ impl ProcessHandle for MyProcess {
 
 ### 3. Run the Simulation
 
-Use `SimulationBuilder` to configure and start the simulation.
+Use `SimulationBuilder` to configure the topology, network constraints, and start the simulation.
 
 ```rust
-use matrix::{SimulationBuilder, Jiffies, BandwidthType};
+use matrix::{SimulationBuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
 
 fn main() {
     let simulation = SimulationBuilder::NewDefault()
-        .AddPool::<MyProcess>("PoolName", 4)
-        .NICBandwidth(BandwidthType::Unbounded)
-        .MaxLatency(Jiffies(10))
+        .AddPool::<MyProcess>("Client", 1)
+        .AddPool::<MyProcess>("Server", 3)
+        .LatencyTopology(&[
+            LatencyDescription::WithinPool("Server", Distributions::Uniform(Jiffies(1), Jiffies(5))),
+            LatencyDescription::BetweenPools("Client", "Server", Distributions::Normal(Jiffies(10), Jiffies(2))),
+        ])
+        .NICBandwidth(BandwidthDescription::Bounded(1000)) // 1000 bytes per Jiffy
         .TimeBudget(Jiffies(1_000_000))
         .Build();
 
@@ -81,39 +86,49 @@ fn main() {
 ### Simulation Control
 
 - **`SimulationBuilder`**: Configures the simulation environment.
-  - `NewDefault()`: Creates simulation with no processes and with default params.
+  - `NewDefault()`: Creates simulation with no processes and default parameters.
   - `Seed(u64)`: Sets the random seed for deterministic execution.
   - `TimeBudget(Jiffies)`: Sets the maximum duration of the simulation.
-  - `MaxLatency(Jiffies)`: Sets the maximum network latency.
-  - `AddPool<P: ProcessHandle + Default + 'static>(&str, usize)`: Creates pool of processes with specified name and size.
-  - `NICBandwidth(BandwidthType)`: Configures network bandwidth limits.
-    - `Bounded(usize)`
-    - Or `Unbounded`
-  - `Build() -> Simulation`: Clears global vars and builds simulation
+  - `AddPool<P: ProcessHandle + Default + 'static>(&str, usize)`: Creates a pool of processes.
+  - `LatencyTopology(&[LatencyDescription])`: Configures network latency between pools or within them.
+  - `NICBandwidth(BandwidthDescription)`: Configures network bandwidth limits (per process).
+    - `Bounded(usize)`: Limits bandwidth (bytes per jiffy).
+    - `Unbounded`: No bandwidth limits.
+  - `Build() -> Simulation`: Finalizes configuration and builds the simulation engine.
 - **`Simulation`**: The engine driving the event loop.
   - `Run()`: Starts the simulation loop.
 
+### Network Topology
+
+- **`LatencyDescription`**:
+  - `WithinPool(&str, Distributions)`: Latency for messages between processes in the same pool.
+  - `BetweenPools(&str, &str, Distributions)`: Latency for messages between processes in different pools.
+- **`Distributions`**:
+  - `Uniform(Jiffies, Jiffies)`
+  - `Bernoulli(f64, Jiffies)`
+  - `Normal(Jiffies, Jiffies)`
+
 ### Process Interaction (Context-Aware)
 
-These functions are available globally but must be called within the context of a running process step (e.g., inside `OnMessage`, `Start`, or `OnTimer`).
+These functions are available globally but must be called within the context of a running process step.
 
 - **`Broadcast(impl Message)`**: Sends a message to all other processes.
-- **`BroadcastWithinPool(pool,impl Message)`**: Sends a message to all other processes withing specified pool.
+- **`BroadcastWithinPool(&str, impl Message)`**: Sends a message to all other processes within a specific pool.
 - **`SendTo(ProcessId, impl Message)`**: Sends a message to a specific process.
-- **`ScheduleTimerAfter(Jiffies) -> TimerId`**: Schedules a timer interrupt for the current process after a delay.
+- **`ScheduleTimerAfter(Jiffies) -> TimerId`**: Schedules a timer interrupt for the current process.
 - **`CurrentId() -> ProcessId`**: Returns the ID of the currently executing process.
-- **`Now() -> Jiffies`**: Current time.
-- **`ListPool(&str) -> Vec<ProcessId>`**: List all processes that are in the pool with specified name. Panics if pool does not exist.
-- **`GlobalUniqueId() -> usize`**: Generates globally-unique id.
+- **`Now() -> Jiffies`**: Returns current simulation time.
+- **`ListPool(&str) -> Vec<ProcessId>`**: List all processes in a pool.
+- **`GlobalUniqueId() -> usize`**: Generates a globally unique ID (TSO).
 
 ### Configuration (`matrix::global::configuration`)
 
-- **`Seed() -> u64`**: Returns the specific seed for the current process (derived from global seed and process ID).
+- **`Seed() -> u64`**: Returns the specific seed for the current process.
 - **`ProcessNumber() -> usize`**: Returns total number of processes in the simulation.
 
 ### Any Key-Value (`matrix::global::anykv`)
 
-Useful for passing values, metrics, or shared state between processes or back to the host.
+Useful for passing shared state, metrics, or configuration between processes or back to the host.
 
 - **`Get<T>(&str) -> T`**
 - **`Set<T>(&str, T)`**
@@ -121,33 +136,15 @@ Useful for passing values, metrics, or shared state between processes or back to
 
 ### Logging & Debugging
 
-Matrix integrates with the `log` crate and `env_logger`.
-
-- **`Debug!(fmt, ...)`**: A macro wrapper around `log::debug!` that automatically prepends current simulation time and process ID.
-
-Debug builds (without the `--release` flag) additionally enable monotonous time-tracking.
+- **`Debug!(fmt, ...)`**: A macro that automatically prepends current simulation time and process ID.
 
 ## Logging Configuration (`RUST_LOG`)
 
 Matrix output is controlled via the `RUST_LOG` environment variable.
 
-- **`RUST_LOG=info`**:
-  - Shows high-level simulation status
-  - Progress bar is enabled
-- **`RUST_LOG=debug`**:
-  - Enables the `Debug!` macro output from within processes.
-  - Shows crucial event timepoints during execution
-- **`RUST_LOG=pingpong=debug`**:
-  - Filter events: only `Debug!` macro enabled for user crate (replace `pingpong` with your crate name).
-
-Example run:
-
-```bash
-RUST_LOG=info cargo run --bin pingpong --release            # With progress bar
-RUST_LOG=debug cargo run --bin pingpong --release           # All debug messages
-RUST_LOG=pingpong=debug cargo run --bin pingpong --release  # Only Debug! macro enabled for user crate
-RUST_LOG=matrix=debug cargo run --bin pingpong --release    # All debug messages for matrix crate
-```
+- **`RUST_LOG=info`**: Shows high-level simulation status and a progress bar.
+- **`RUST_LOG=debug`**: Enables the `Debug!` macro output and internal simulation events.
+- **`RUST_LOG=your_crate=debug`**: Filter events only for your specific crate.
 
 ## Thanks to
 

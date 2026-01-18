@@ -2,10 +2,10 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     Destination, Message, ProcessId,
-    network::Network,
+    network::NetworkActor,
     time::{
         Jiffies,
-        timer_manager::{NextTimerId, TimerId, TimerManager},
+        timer_manager::{NextTimerId, TimerId, TimerManagerActor},
     },
 };
 
@@ -14,14 +14,14 @@ pub struct SimulationAccess {
     pub(crate) scheduled_messages: Vec<(ProcessId, Destination, Rc<dyn Message>)>,
     pub(crate) scheduled_timers: Vec<(ProcessId, TimerId, Jiffies)>,
     pools: HashMap<String, Vec<ProcessId>>,
-    network: Rc<RefCell<Network>>,
-    timers: Rc<RefCell<TimerManager>>,
+    network: NetworkActor,
+    timers: TimerManagerActor,
 }
 
 impl SimulationAccess {
     pub(crate) fn New(
-        network: Rc<RefCell<Network>>,
-        timers: Rc<RefCell<TimerManager>>,
+        network: NetworkActor,
+        timers: TimerManagerActor,
         pools: HashMap<String, Vec<ProcessId>>,
     ) -> Self {
         Self {
@@ -43,7 +43,7 @@ impl SimulationAccess {
     fn BroadcastWithinPool(&mut self, pool_name: &'static str, message: impl Message + 'static) {
         self.scheduled_messages.push((
             self.process_on_execution,
-            Destination::BroadcastWithingPool(pool_name),
+            Destination::BroadcastWithinPool(pool_name),
             Rc::new(message),
         ));
     }
@@ -96,8 +96,8 @@ thread_local! {
 }
 
 pub(crate) fn SetupAccess(
-    network: Rc<RefCell<Network>>,
-    timers: Rc<RefCell<TimerManager>>,
+    network: NetworkActor,
+    timers: TimerManagerActor,
     pools: HashMap<String, Vec<ProcessId>>,
 ) {
     ACCESS_HANDLE
