@@ -6,10 +6,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use matrix::{
-    global::{anykv, configuration},
-    *,
-};
+use matrix::{global::configuration, *};
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
@@ -166,7 +163,6 @@ impl ProcessHandle for Bullshark {
     fn OnTimer(&mut self, id: TimerId) {
         if id == self.current_timer {
             Debug!("Timer fired: {id}");
-            anykv::Modify::<usize>("timeouts-fired", |count| *count += 1);
             self.wait = false;
             self.TryAdvanceRound();
         }

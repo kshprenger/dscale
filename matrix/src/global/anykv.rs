@@ -16,19 +16,20 @@ pub fn Get<T: 'static + Clone>(key: &str) -> T {
     ANY_KV.with(|m| {
         m.borrow()
             .get(key)
-            .and_then(|v| v.downcast_ref::<T>())
+            .expect("No key")
+            .downcast_ref::<T>()
             .cloned()
-            .expect("No key found")
+            .expect("Wrong type cast")
     })
 }
 
 pub fn Modify<T: 'static>(key: &str, f: impl FnOnce(&mut T)) {
     ANY_KV.with(|m| {
-        if let Some(value) = m.borrow_mut().get_mut(key) {
-            if let Some(typed_value) = value.downcast_mut::<T>() {
-                f(typed_value);
-            }
-        }
+        f(m.borrow_mut()
+            .get_mut(key)
+            .expect("No key")
+            .downcast_mut::<T>()
+            .expect("Wrong type cast"));
     });
 }
 

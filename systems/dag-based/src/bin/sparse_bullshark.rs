@@ -5,11 +5,10 @@ use matrix::{
 };
 
 fn main() {
-    anykv::Set::<Vec<Jiffies>>("latency", Vec::new());
-    anykv::Set::<usize>("timeouts-fired", 0);
-    anykv::Set::<usize>("D", 10);
+    anykv::Set::<(f64, usize)>("avg_latency", (0.0, 0));
+    anykv::Set::<usize>("D", 7);
 
-    SimulationBuilder::NewDefault()
+    let mut sim = SimulationBuilder::NewDefault()
         .AddPool::<SparseBullshark>("Validators", 100)
         .LatencyTopology(&[LatencyDescription::WithinPool(
             "Validators",
@@ -18,13 +17,12 @@ fn main() {
         .TimeBudget(Jiffies(600000))
         .NICBandwidth(BandwidthDescription::Unbounded)
         .Seed(234565432345)
-        .Build()
-        .Run();
+        .Build();
+
+    sim.Run();
 
     println!(
         "Vertices ordered: {}",
-        anykv::Get::<Vec<Jiffies>>("latency").len()
+        anykv::Get::<(f64, usize)>("avg_latency").1
     );
-
-    println!("Timeouts fired: {}", anykv::Get::<usize>("timeouts-fired"));
 }

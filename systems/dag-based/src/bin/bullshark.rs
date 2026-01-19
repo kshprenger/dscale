@@ -35,7 +35,6 @@ fn main() {
 
             // (avg_latency, total_vertex)
             anykv::Set::<(f64, usize)>("avg_latency", (0.0, 0));
-            anykv::Set::<usize>("timeouts-fired", 0);
 
             sim.Run();
             println!("elapsed: {} millis", start.elapsed().as_millis());

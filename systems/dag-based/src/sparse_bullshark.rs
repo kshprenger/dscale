@@ -26,7 +26,13 @@ pub enum SparseBullsharkMessage {
 
 impl Message for SparseBullsharkMessage {
     fn VirtualSize(&self) -> usize {
-        69
+        // Round, ProcessId
+        4 + 4
+            + 3000 * 512 // Block of 3000 txns by 512 byte each
+            + match self {
+                SparseBullsharkMessage::Genesis(v) => v.strong_edges.len() * 32, // sha256 block pointers
+                SparseBullsharkMessage::Vertex(v) =>  v.strong_edges.len() * 32, // sha256 block pointers
+            }
     }
 }
 
@@ -159,7 +165,6 @@ impl ProcessHandle for SparseBullshark {
 
     fn OnTimer(&mut self, id: TimerId) {
         if id == self.current_timer {
-            anykv::Modify::<usize>("timeouts-fired", |count| *count += 1);
             self.wait = false;
             self.TryAdvanceRound();
         }
@@ -321,14 +326,14 @@ impl SparseBullshark {
         match maybe_anchor {
             None => return,
             Some(anchor) => {
-                let vote_count = v
-                    .strong_edges
+                let vote_count = self.dag[v.round - 1]
                     .iter()
-                    .map(|weak| weak.upgrade().unwrap())
+                    .flatten()
                     .filter(|vote| {
                         vote.strong_edges
                             .iter()
-                            .any(|v| SameVertex(&v.upgrade().unwrap(), &anchor))
+                            .map(|weak| weak.upgrade().unwrap())
+                            .any(|v| SameVertex(&v, &anchor))
                     })
                     .count();
                 if vote_count >= self.DirectCommitThreshold() {
