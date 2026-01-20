@@ -12,7 +12,7 @@ fn main() {
     let file = File::create("results_sparse_bullshark.csv").unwrap();
     let file = Mutex::new(file);
 
-    (150..=1000)
+    (150..=2000)
         .step_by(100)
         .par_bridge()
         .into_par_iter()
@@ -21,14 +21,14 @@ fn main() {
             anykv::Set::<usize>("D", d); // Sample size
 
             let mut sim = SimulationBuilder::NewDefault()
-                .AddPool::<SparseBullshark>("Validators", 1500)
+                .AddPool::<SparseBullshark>("Validators", 3000)
                 .LatencyTopology(&[LatencyDescription::WithinPool(
                     "Validators",
-                    Distributions::Normal(Jiffies(200), Jiffies(20)),
+                    Distributions::Normal(Jiffies(50), Jiffies(10)),
                 )])
-                .TimeBudget(Jiffies(24000_000)) // Simulating 400 min of real time execution
+                .TimeBudget(Jiffies(3600_000)) // Simulating 40 min of real time execution
                 .NICBandwidth(BandwidthDescription::Bounded(
-                    50 * 1024 * 1024 / (8 * 1000), // 50Mb/sec NICs
+                    5 * 1024 * 1024 / (8 * 1000), // 5Mb /sec NICs
                 ))
                 .Seed(d as u64)
                 .Build();

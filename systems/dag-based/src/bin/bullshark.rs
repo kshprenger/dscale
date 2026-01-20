@@ -12,17 +12,17 @@ fn main() {
     let file = File::create("results_bullshark.csv").unwrap();
     let file = Mutex::new(file);
 
-    (1500..=1500).into_iter().for_each(|k_validators| {
+    (3000..=3000).into_iter().for_each(|k_validators| {
         // 1 jiffy == 1 real millisecond
         let mut sim = SimulationBuilder::NewDefault()
             .AddPool::<Bullshark>("Validators", k_validators)
             .LatencyTopology(&[LatencyDescription::WithinPool(
                 "Validators",
-                Distributions::Normal(Jiffies(200), Jiffies(20)),
+                Distributions::Normal(Jiffies(50), Jiffies(10)),
             )])
-            .TimeBudget(Jiffies(24000_000)) // Simulating 400 min of real time execution
+            .TimeBudget(Jiffies(3600_000)) // Simulating hour of real time execution
             .NICBandwidth(BandwidthDescription::Bounded(
-                30 * 1024 * 1024 / (8 * 1000), // 30Mb/sec NICs
+                5 * 1024 * 1024 / (8 * 1000), // 5Mb/sec NICs
             ))
             .Seed(k_validators as u64)
             .Build();
