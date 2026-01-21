@@ -4,9 +4,9 @@ This project provides a fast & deterministic simulation framework for testing an
 
 ## Usage
 
-To use the DScale, you need to implement the `ProcessHandle` trait for your distributed system and the `Message` trait for the data exchanged between processes.
-
 ### 1. Install
+
+In your project
 
 ```shell
 cargo add dscale
@@ -30,6 +30,9 @@ impl Message for MyMessage {
         1000
     }
 }
+
+// Or (if there is no need in bandwidth)
+impl Message for MyMessage {}
 ```
 
 ### 3. Implement Process Logic
@@ -59,7 +62,7 @@ impl ProcessHandle for MyProcess {
 
     fn on_timer(&mut self, _id: TimerId) {
         // Handle timeouts
-        broadcasst(MyMessage { data: 42 });
+        broadcast(MyMessage { data: 42 });
     }
 }
 ```
