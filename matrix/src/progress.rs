@@ -3,7 +3,7 @@ use log::log_enabled;
 
 use crate::time::Jiffies;
 
-const K_PROGRESS_TIMES: usize = 10;
+const K_PROGRESS_TIMES: usize = 20;
 
 pub(crate) struct Bar {
     bar: ProgressBar,
