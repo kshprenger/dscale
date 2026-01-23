@@ -23,7 +23,7 @@ impl Randomizer {
         }
     }
 
-    pub fn RandomLatency(&mut self, d: Distributions) -> usize {
+    pub fn RandomUsize(&mut self, d: Distributions) -> usize {
         match d {
             Distributions::Uniform(Jiffies(from), Jiffies(to)) => {
                 let distr = Uniform::new_inclusive(from, to).expect("Invalid bounds");

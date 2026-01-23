@@ -45,7 +45,7 @@ impl Simulation {
             Randomizer::New(seed),
         );
 
-        let actors = vec![network_actor as SharedActor, timers_actor as SharedActor];
+        let actors: Vec<SharedActor> = vec![network_actor, timers_actor];
 
         Self {
             actors,
@@ -103,11 +103,7 @@ impl Simulation {
             });
         }
 
-        if sha.is_none() {
-            return None;
-        } else {
-            return Some((min_time, sha.unwrap()));
-        }
+        Some((min_time, sha?))
     }
 }
 
