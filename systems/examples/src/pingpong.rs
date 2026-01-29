@@ -1,11 +1,9 @@
 #![allow(non_snake_case)]
 
-use std::time::Instant;
-
 use matrix::{global::anykv, *};
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
-enum PingPongMessage {
+pub enum PingPongMessage {
     Ping,
     Pong,
 }
@@ -20,25 +18,21 @@ impl Message for PingPongMessage {
 }
 
 #[derive(Default)]
-struct ExampleProcess {
+pub struct PingPongProcess {
     timer_id: TimerId,
 }
 
-impl ProcessHandle for ExampleProcess {
+impl ProcessHandle for PingPongProcess {
     fn Start(&mut self) {
-        if CurrentId() == 1 {
-            assert!(ListPool("ExamplePool").len() == 2);
-            assert!(ListPool("ExamplePool")[0] == 1);
-            assert!(ListPool("ExamplePool")[1] == 2);
+        if Rank() == 1 {
             self.timer_id = ScheduleTimerAfter(Jiffies(100));
         }
     }
 
     fn OnMessage(&mut self, from: ProcessId, message: MessagePtr) {
-        assert!(message.Is::<PingPongMessage>());
         let m = message.As::<PingPongMessage>();
 
-        if from == 1 && CurrentId() == 2 {
+        if from == 1 && Rank() == 2 {
             assert!(*m == PingPongMessage::Ping);
             Debug!("Sending Pong");
             anykv::Modify::<usize>("pongs", |p| *p += 1);
@@ -46,7 +40,7 @@ impl ProcessHandle for ExampleProcess {
             return;
         }
 
-        if from == 2 && CurrentId() == 1 {
+        if from == 2 && Rank() == 1 {
             assert!(*m == PingPongMessage::Pong);
             Debug!("Sending Ping");
             anykv::Modify::<usize>("pings", |p| *p += 1);
@@ -60,30 +54,4 @@ impl ProcessHandle for ExampleProcess {
         anykv::Modify::<usize>("pings", |p| *p += 1);
         SendTo(2, PingPongMessage::Ping);
     }
-}
-
-fn main() {
-    let start = Instant::now();
-    let mut sim = SimulationBuilder::NewDefault()
-        .AddPool::<ExampleProcess>("ExamplePool", 2)
-        .NICBandwidth(BandwidthDescription::Unbounded)
-        .LatencyTopology(&[LatencyDescription::WithinPool(
-            "ExamplePool",
-            Distributions::Uniform(Jiffies(0), Jiffies(10)),
-        )])
-        .TimeBudget(Jiffies(100_000_000))
-        .Seed(5)
-        .Build();
-
-    anykv::Set::<usize>("pings", 0);
-    anykv::Set::<usize>("pongs", 0);
-
-    sim.Run();
-
-    println!(
-        "Done, elapsed: {:?}. Pings sent: {}, Pongs sent: {}",
-        start.elapsed(),
-        anykv::Get::<usize>("pings"),
-        anykv::Get::<usize>("pongs"),
-    );
 }
