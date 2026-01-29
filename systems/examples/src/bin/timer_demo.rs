@@ -4,7 +4,6 @@ use examples::timer_demo::LazyPingPong;
 use matrix::{global::anykv, *};
 
 fn main() {
-    let start = Instant::now();
     let mut sim = SimulationBuilder::NewDefault()
         .AddPool::<LazyPingPong>("TimerDemoPool", 2)
         .NICBandwidth(BandwidthDescription::Unbounded)
@@ -16,14 +15,14 @@ fn main() {
         .Seed(42)
         .Build();
 
-    // Initialize counters
     anykv::Set::<usize>("heartbeats", 0);
     anykv::Set::<usize>("pings_received", 0);
     anykv::Set::<usize>("pongs_received", 0);
 
+    let start = Instant::now();
     sim.Run();
-
     let elapsed = start.elapsed();
+
     let heartbeats = anykv::Get::<usize>("heartbeats");
     let pings = anykv::Get::<usize>("pings_received");
     let pongs = anykv::Get::<usize>("pongs_received");
@@ -31,7 +30,6 @@ fn main() {
     println!();
     println!("=== Timer Demo Results ===");
     println!("Simulation completed in: {:?}", elapsed);
-    println!("Simulated time: {} jiffies", Now().0);
     println!("Heartbeats: {}", heartbeats);
     println!("Pings received: {}", pings);
     println!("Pongs received: {}", pongs);
