@@ -1,4 +1,4 @@
-use std::{cell::RefCell, process::exit, rc::Rc, usize};
+use std::{cell::RefCell, process::exit, rc::Rc, time::Duration, usize};
 
 use log::{error, info};
 
@@ -62,7 +62,7 @@ impl Simulation {
         }
 
         // For small simulations progress bar is not fullfilling
-        self.progress_bar.MakeProgress(self.time_budget);
+        self.progress_bar.Finish();
 
         info!("Looks good! ヽ(‘ー`)ノ");
     }
