@@ -9,7 +9,7 @@ use std::{
 use matrix::{global::configuration, *};
 
 use crate::{
-    consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast, ID_SIZE},
+    consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
     dag_utils::{RoundBasedDAG, SameVertex, Vertex, VertexMessage, VertexPtr},
 };
 
