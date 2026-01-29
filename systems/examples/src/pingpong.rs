@@ -10,10 +10,7 @@ pub enum PingPongMessage {
 
 impl Message for PingPongMessage {
     fn VirtualSize(&self) -> usize {
-        match self {
-            PingPongMessage::Ping => 50,
-            PingPongMessage::Pong => 100,
-        }
+        0
     }
 }
 
