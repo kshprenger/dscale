@@ -148,6 +148,8 @@ Matrix output is controlled via the `RUST_LOG` environment variable.
 - **`RUST_LOG=debug`**: Enables the `Debug!` macro output and internal simulation events.
 - **`RUST_LOG=your_crate=debug`**: Filter events only for your specific crate.
 
+- Note `RUST_LOG=debug or RUST_LOG=any=debug` will work only without the `--release` flag.
+
 ## Thanks to
 
 - https://gitlab.com/whirl-framework
