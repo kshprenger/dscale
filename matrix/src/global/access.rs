@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     Destination, Message, ProcessId,
+    actor::EventSubmitter,
     network::NetworkActor,
     random::Randomizer,
     time::{
@@ -37,6 +38,12 @@ impl SimulationAccess {
             timers,
             random,
         }
+    }
+}
+
+fn DrainTo<T: EventSubmitter>(submitter: &Rc<RefCell<T>>, events: &mut Vec<T::Event>) {
+    if !events.is_empty() {
+        submitter.borrow_mut().Submit(events);
     }
 }
 
@@ -86,16 +93,8 @@ impl SimulationAccess {
     }
 
     fn Drain(&mut self) {
-        if !self.scheduled_messages.is_empty() {
-            self.network
-                .borrow_mut()
-                .SubmitMessages(&mut self.scheduled_messages);
-        }
-        if !self.scheduled_timers.is_empty() {
-            self.timers
-                .borrow_mut()
-                .ScheduleTimers(&mut self.scheduled_timers);
-        }
+        DrainTo(&self.network, &mut self.scheduled_messages);
+        DrainTo(&self.timers, &mut self.scheduled_timers);
     }
 
     fn SetProcess(&mut self, id: ProcessId) {

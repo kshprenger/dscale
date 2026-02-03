@@ -9,3 +9,8 @@ pub(crate) trait SimulationActor {
     fn Step(&mut self);
     fn PeekClosest(&self) -> Option<Jiffies>;
 }
+
+pub(crate) trait EventSubmitter {
+    type Event;
+    fn Submit(&mut self, events: &mut Vec<Self::Event>);
+}

@@ -14,7 +14,9 @@ use crate::Message;
 use crate::MessagePtr;
 use crate::Now;
 use crate::ProcessId;
+use crate::actor::EventSubmitter;
 use crate::actor::SimulationActor;
+use crate::communication::MatrixMessage;
 use crate::communication::ProcessStep;
 use crate::communication::RoutedMessage;
 use crate::global;
@@ -29,7 +31,7 @@ pub(crate) type NetworkActor = Rc<RefCell<Network>>;
 pub(crate) struct Network {
     seed: Seed,
     bandwidth_queue: BandwidthQueue,
-    topology: Rc<Topology>,
+    topo: Rc<Topology>,
 }
 
 impl Network {
@@ -40,10 +42,8 @@ impl Network {
         destination: Destination,
     ) {
         let targets = match destination {
-            Destination::Broadcast => self.topology.Keys().copied().collect::<Vec<ProcessId>>(),
-            Destination::BroadcastWithinPool(pool_name) => {
-                self.topology.ListPool(pool_name).to_vec()
-            }
+            Destination::Broadcast => self.topo.Keys().copied().collect::<Vec<ProcessId>>(),
+            Destination::BroadcastWithinPool(pool_name) => self.topo.ListPool(pool_name).to_vec(),
             Destination::To(to) => vec![to],
         };
 
@@ -72,11 +72,11 @@ impl Network {
             dest, source
         );
 
-        global::SetProcess(dest);
-
-        self.topology
-            .Get(dest)
-            .OnMessage(source, MessagePtr::New(message));
+        self.topo.Deliver(
+            source,
+            dest,
+            MatrixMessage::NetworkMessage(MessagePtr::New(message)),
+        );
     }
 }
 
@@ -84,35 +84,23 @@ impl Network {
     pub(crate) fn New(
         seed: Seed,
         bandwidth_type: BandwidthDescription,
-        topology: Rc<Topology>,
+        topo: Rc<Topology>,
     ) -> Self {
         Self {
             seed,
             bandwidth_queue: BandwidthQueue::New(
                 bandwidth_type,
-                topology.Size(),
-                LatencyQueue::New(Randomizer::New(seed), topology.clone()),
+                topo.Size(),
+                LatencyQueue::New(Randomizer::New(seed), topo.clone()),
             ),
-            topology,
+            topo,
         }
-    }
-
-    pub(crate) fn SubmitMessages(
-        &mut self,
-        messages: &mut Vec<(ProcessId, Destination, Rc<dyn Message>)>,
-    ) {
-        messages
-            .drain(..)
-            .into_iter()
-            .for_each(|(from, destination, message)| {
-                self.SubmitSingleMessage(message, from, destination);
-            });
     }
 }
 
 impl SimulationActor for Network {
     fn Start(&mut self) {
-        self.topology.IterMut().for_each(|(id, mut handle)| {
+        self.topo.IterMut().for_each(|(id, mut handle)| {
             debug!("Executing initial step for {id}");
 
             configuration::SetupLocalConfiguration(*id, self.seed);
@@ -136,5 +124,15 @@ impl SimulationActor for Network {
 
     fn PeekClosest(&self) -> Option<Jiffies> {
         self.bandwidth_queue.PeekClosest()
+    }
+}
+
+impl EventSubmitter for Network {
+    type Event = (ProcessId, Destination, Rc<dyn Message>);
+
+    fn Submit(&mut self, events: &mut Vec<Self::Event>) {
+        events.drain(..).for_each(|(from, destination, message)| {
+            self.SubmitSingleMessage(message, from, destination);
+        });
     }
 }
