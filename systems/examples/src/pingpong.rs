@@ -8,11 +8,7 @@ pub enum PingPongMessage {
     Pong,
 }
 
-impl Message for PingPongMessage {
-    fn VirtualSize(&self) -> usize {
-        0
-    }
-}
+impl Message for PingPongMessage {}
 
 #[derive(Default)]
 pub struct PingPongProcess {}
