@@ -7,11 +7,7 @@ pub struct BroadcastMessage {
     pub data: u64,
 }
 
-impl Message for BroadcastMessage {
-    fn VirtualSize(&self) -> usize {
-        0
-    }
-}
+impl Message for BroadcastMessage {}
 
 #[derive(Default)]
 pub struct BroadcastProcess {}
@@ -28,10 +24,8 @@ impl ProcessHandle for BroadcastProcess {
         let msg = message.As::<BroadcastMessage>();
         Debug!("Received broadcast from {}: data={}", from, msg.data);
 
-        // Verify content
         assert_eq!(msg.data, 42);
 
-        // Increment a counter for verification in the main test
         anykv::Modify::<usize>("broadcast_received", |x| *x += 1);
     }
 

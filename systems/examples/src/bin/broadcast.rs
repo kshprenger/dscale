@@ -4,7 +4,6 @@ use examples::broadcast::BroadcastProcess;
 use matrix::{global::anykv, *};
 
 fn main() {
-    // Initialize the counter for received messages
     anykv::Set::<usize>("broadcast_received", 0);
 
     let mut sim = SimulationBuilder::NewDefault()
