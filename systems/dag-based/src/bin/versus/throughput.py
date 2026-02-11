@@ -99,6 +99,121 @@ plt.axhline(
     label="Bullshark 2Gb/sec",
 )
 
+sb_3000 = pd.read_csv("sparse_bullshark_3000.csv", sep=" ", header=None)
+avg_sb_3000 = sb_3000.groupby(0)[1].mean().reset_index()
+
+plt.errorbar(
+    avg_sb_3000[0],
+    avg_sb_3000[1] / secs,
+    fmt="o-",
+    color="green",
+    label="Sparse Bullshark 3Gb/sec",
+    capsize=5,
+)
+
+b_3000 = pd.read_csv("bullshark_3000.csv", sep=" ", header=None)
+mean_b_3000 = b_3000[0].mean()
+
+plt.axhline(
+    y=mean_b_3000 / secs,
+    color="green",
+    linestyle="--",
+    linewidth=2,
+    label="Bullshark 3Gb/sec",
+)
+
+sb_4000 = pd.read_csv("sparse_bullshark_4000.csv", sep=" ", header=None)
+avg_sb_4000 = sb_4000.groupby(0)[1].mean().reset_index()
+
+plt.errorbar(
+    avg_sb_4000[0],
+    avg_sb_4000[1] / secs,
+    fmt="o-",
+    color="blue",
+    label="Sparse Bullshark 4Gb/sec",
+    capsize=5,
+)
+
+b_4000 = pd.read_csv("bullshark_4000.csv", sep=" ", header=None)
+mean_b_4000 = b_4000[0].mean()
+
+plt.axhline(
+    y=mean_b_4000 / secs,
+    color="blue",
+    linestyle="--",
+    linewidth=2,
+    label="Bullshark 4Gb/sec",
+)
+
+sb_5000 = pd.read_csv("sparse_bullshark_5000.csv", sep=" ", header=None)
+avg_sb_5000 = sb_5000.groupby(0)[1].mean().reset_index()
+
+plt.errorbar(
+    avg_sb_5000[0],
+    avg_sb_5000[1] / secs,
+    fmt="o-",
+    color="orange",
+    label="Sparse Bullshark 5Gb/sec",
+    capsize=5,
+)
+
+b_5000 = pd.read_csv("bullshark_5000.csv", sep=" ", header=None)
+mean_b_5000 = b_5000[0].mean()
+
+plt.axhline(
+    y=mean_b_5000 / secs,
+    color="orange",
+    linestyle="--",
+    linewidth=2,
+    label="Bullshark 5Gb/sec",
+)
+
+sb_6000 = pd.read_csv("sparse_bullshark_6000.csv", sep=" ", header=None)
+avg_sb_6000 = sb_6000.groupby(0)[1].mean().reset_index()
+
+plt.errorbar(
+    avg_sb_6000[0],
+    avg_sb_6000[1] / secs,
+    fmt="o-",
+    color="brown",
+    label="Sparse Bullshark 6Gb/sec",
+    capsize=5,
+)
+
+b_6000 = pd.read_csv("bullshark_6000.csv", sep=" ", header=None)
+mean_b_6000 = b_6000[0].mean()
+
+plt.axhline(
+    y=mean_b_6000 / secs,
+    color="brown",
+    linestyle="--",
+    linewidth=2,
+    label="Bullshark 6Gb/sec",
+)
+
+# sb_7000 = pd.read_csv("sparse_bullshark_7000.csv", sep=" ", header=None)
+# avg_sb_7000 = sb_7000.groupby(0)[1].mean().reset_index()
+
+# plt.errorbar(
+#     avg_sb_7000[0],
+#     avg_sb_7000[1] / secs,
+#     fmt="o-",
+#     color="cyan",
+#     label="Sparse Bullshark 7Gb/sec",
+#     capsize=5,
+# )
+
+b_7000 = pd.read_csv("bullshark_7000.csv", sep=" ", header=None)
+mean_b_7000 = b_7000[0].mean()
+
+plt.axhline(
+    y=mean_b_7000 / secs,
+    color="cyan",
+    linestyle="--",
+    linewidth=2,
+    label="Bullshark 7Gb/sec",
+)
+
 
 plt.xticks(avg_sb_2000[0])
 y_min = 0
