@@ -1,7 +1,7 @@
 [package]
 name = "dscale"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Konstantin Shprenger <konstantin@shprenger.com>"]
 license = "MIT"
 description = "A fast & deterministic simulation framework for testing and benchmarking distributed systems"
