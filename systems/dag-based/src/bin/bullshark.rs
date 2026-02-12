@@ -10,7 +10,7 @@ use std::io::Write;
 
 fn main() {
     let k_validators = 1000;
-    let mb_per_sec = [8000, 9000, 10000, 11000];
+    let mb_per_sec = [2000, 4000, 6000];
 
     mb_per_sec.into_iter().for_each(|bandwidth| {
         let file = Mutex::new(File::create(format!("bullshark_{}.csv", bandwidth)).unwrap());
