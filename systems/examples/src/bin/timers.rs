@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use dscale::{global::anykv, *};
-use examples::timer_demo::LazyPingPong;
+use examples::timers::LazyPingPong;
 
 fn main() {
     let mut sim = SimulationBuilder::NewDefault()
