@@ -8,15 +8,16 @@
 use std::{
     cell::RefCell,
     collections::{BTreeMap, HashMap},
+    rc::Rc,
 };
 
 use crate::{
     ProcessHandle, ProcessId, Simulation,
     network::BandwidthDescription,
-    process::UniqueProcessHandle,
+    process::MutableProcessHandle,
     random::Seed,
     time::Jiffies,
-    topology::{LatencyDescription, LatencyTopology},
+    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology},
 };
 
 fn init_logger() {
@@ -74,7 +75,7 @@ pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
     proc_id: usize,
-    pools: HashMap<String, Vec<(ProcessId, UniqueProcessHandle)>>,
+    pools: HashMap<String, Vec<(ProcessId, MutableProcessHandle)>>,
     latency_topology: LatencyTopology,
     bandwidth: BandwidthDescription,
 }
@@ -151,13 +152,25 @@ impl SimulationBuilder {
         name: &str,
         size: usize,
     ) -> SimulationBuilder {
-        let pool = self.pools.entry(name.to_string()).or_default();
-        for _ in 0..size {
+        (0..size).for_each(|_| {
             let id = self.proc_id;
             self.proc_id += 1;
-            pool.push((id, Box::new(P::default())));
-        }
+            let handle = Rc::new(RefCell::new(P::default()));
+            self.add_to_pool::<P>(name, id, handle.clone());
+            self.add_to_pool::<P>(GLOBAL_POOL, id, handle.clone());
+        });
+
         self
+    }
+
+    fn add_to_pool<P: ProcessHandle + Default + 'static>(
+        &mut self,
+        name: &str,
+        id: usize,
+        handle: MutableProcessHandle,
+    ) {
+        let pool = self.pools.entry(name.to_string()).or_default();
+        pool.push((id, handle));
     }
 
     /// Sets the random seed for deterministic simulation execution.
@@ -430,7 +443,7 @@ impl SimulationBuilder {
             let mut ids = Vec::new();
             for (id, handle) in pool {
                 ids.push(id);
-                procs.insert(id, RefCell::new(handle));
+                procs.insert(id, handle);
             }
             pool_listing.insert(name, ids);
         }

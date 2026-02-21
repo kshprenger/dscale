@@ -4,7 +4,7 @@
 //! by all processes in DScale simulations, as well as the `ProcessId` type used
 //! for process identification throughout the system.
 
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{MessagePtr, time::timer_manager::TimerId};
 
@@ -58,8 +58,7 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 /// [`ProcessHandle::on_message`]: ProcessHandle::on_message
 pub type ProcessId = usize;
 
-pub(crate) type UniqueProcessHandle = Box<dyn ProcessHandle>;
-pub(crate) type MutableProcessHandle = RefCell<UniqueProcessHandle>;
+pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 
 /// Core trait that defines the behavior of a process in DScale simulations.
 ///

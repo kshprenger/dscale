@@ -95,7 +95,7 @@ fn main() {
   - `default`: Creates simulation with no processes and default parameters.
   - `seed`: Sets the random seed for deterministic execution.
   - `time_budget`: Sets the maximum duration of the simulation.
-  - `add_pool`: Creates a pool of processes.
+  - `add_pool`: Creates a pool of processes. (At the same time all procs become part of GLOBAL_POOL)
   - `latency_topology`: Configures network latency between pools or within them.
   - `nic_bandwidth`: Configures network bandwidth limits (per process).
     - `Bounded`: Limits bandwidth (bytes per jiffy).
@@ -106,6 +106,8 @@ fn main() {
 
 ### Network Topology
 
+- **`GLOBAL_POOL`**:
+  - Contains all processes. Simple broadcast uses this pool
 - **`LatencyDescription`**:
   - `WithinPool`: Latency for messages between processes in the same pool.
   - `BetweenPools`: Latency for messages between processes in different pools.
@@ -118,7 +120,7 @@ fn main() {
 
 These functions are available globally but must be called within the context of a running process step.
 
-- **`broadcasst`**: Sends a message to all other processes.
+- **`broadcasst`**: Sends a message to all other processes. (GLOBAL_POOL)
 - **`broadcasst_within_pool`**: Sends a message to all other processes within a specific pool.
 - **`send_to`**: Sends a message to a specific process.
 - **`send_random_from_pool`**: Sends a message to random process whithin pool.

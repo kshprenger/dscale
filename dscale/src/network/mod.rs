@@ -43,16 +43,13 @@ impl Network {
         destination: Destination,
     ) {
         let targets = match destination {
-            Destination::Broadcast => self.nursery.keys().copied().collect::<Vec<ProcessId>>(),
-            Destination::BroadcastWithinPool(pool_name) => {
-                self.topology.list_pool(pool_name).to_vec()
-            }
-            Destination::To(to) => vec![to],
+            Destination::BroadcastWithinPool(pool_name) => self.topology.list_pool(pool_name),
+            Destination::To(to) => &[to],
         };
 
         debug!("Submitting message from {source}, targets of the message: {targets:?}",);
 
-        targets.into_iter().for_each(|target| {
+        targets.into_iter().copied().for_each(|target| {
             let routed_message = RoutedMessage {
                 arrival_time: now() + Jiffies(1), // Without any latency message will arrive on next timepoint;
                 step: ProcessStep {
