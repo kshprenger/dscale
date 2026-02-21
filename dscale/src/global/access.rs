@@ -9,7 +9,7 @@ use crate::{
         Jiffies,
         timer_manager::{TimerId, TimerManagerActor, next_timer_id},
     },
-    topology::Topology,
+    topology::{GLOBAL_POOL, Topology},
 };
 
 pub struct SimulationAccess {
@@ -68,7 +68,7 @@ impl SimulationAccess {
     fn broadcast(&mut self, message: impl Message + 'static) {
         self.scheduled_messages.push((
             self.process_on_execution,
-            Destination::Broadcast,
+            Destination::BroadcastWithinPool(GLOBAL_POOL),
             Rc::new(message),
         ));
     }

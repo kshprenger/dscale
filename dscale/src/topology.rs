@@ -12,6 +12,10 @@ use crate::{ProcessId, random::Distributions};
 pub(crate) type LatencyTopology = HashMap<(ProcessId, ProcessId), Distributions>;
 pub(crate) type PoolListing = HashMap<String, Vec<ProcessId>>;
 
+/// Default pool for all processes within simulation.
+/// Broadcasts by default use this pool.
+pub const GLOBAL_POOL: &str = "global_pool";
+
 /// Describes network latency characteristics for different process relationships.
 ///
 /// `LatencyDescription` allows you to configure different latency patterns

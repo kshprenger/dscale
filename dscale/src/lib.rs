@@ -35,6 +35,7 @@ pub use global::send_to;
 
 pub use network::BandwidthDescription;
 
+pub use topology::GLOBAL_POOL;
 pub use topology::LatencyDescription;
 
 pub use random::Distributions;
