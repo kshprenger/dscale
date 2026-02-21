@@ -6,7 +6,13 @@ This project provides a fast & deterministic simulation framework for testing an
 
 To use the DScale, you need to implement the `ProcessHandle` trait for your distributed system and the `Message` trait for the data exchanged between processes.
 
-### 1. Define Messages
+### 1. Install
+
+```shell
+cargo add dscale
+```
+
+### 2. Define Messages
 
 Messages must implement the `Message` trait, which allows defining a `virtual_size` for bandwidth simulation.
 
@@ -26,7 +32,7 @@ impl Message for MyMessage {
 }
 ```
 
-### 2. Implement Process Logic
+### 3. Implement Process Logic
 
 Implement `ProcessHandle` to define how your process reacts to initialization, messages, and timers.
 
@@ -58,7 +64,7 @@ impl ProcessHandle for MyProcess {
 }
 ```
 
-### 3. run the Simulation
+### 4. Run the Simulation
 
 Use `Simulationbuilder` to configure the topology, network constraints, and start the simulation.
 
@@ -86,59 +92,59 @@ fn main() {
 ### Simulation Control
 
 - **`SimulationBuilder`**: Configures the simulation environment.
-  - `default()`: Creates simulation with no processes and default parameters.
-  - `seed(u64)`: Sets the random seed for deterministic execution.
-  - `time_budget(Jiffies)`: Sets the maximum duration of the simulation.
-  - `add_pool<P: ProcessHandle + Default + 'static>(&str, usize)`: Creates a pool of processes.
-  - `latency_topology(&[LatencyDescription])`: Configures network latency between pools or within them.
-  - `nic_bandwidth(BandwidthDescription)`: Configures network bandwidth limits (per process).
-    - `Bounded(usize)`: Limits bandwidth (bytes per jiffy).
+  - `default`: Creates simulation with no processes and default parameters.
+  - `seed`: Sets the random seed for deterministic execution.
+  - `time_budget`: Sets the maximum duration of the simulation.
+  - `add_pool`: Creates a pool of processes.
+  - `latency_topology`: Configures network latency between pools or within them.
+  - `nic_bandwidth`: Configures network bandwidth limits (per process).
+    - `Bounded`: Limits bandwidth (bytes per jiffy).
     - `Unbounded`: No bandwidth limits.
-  - `build() -> Simulation`: Finalizes configuration and builds the simulation engine.
+  - `build`: Finalizes configuration and builds the simulation engine.
 - **`Simulation`**: The engine driving the event loop.
-  - `run()`: Starts the simulation loop.
+  - `run`: Starts the simulation loop.
 
 ### Network Topology
 
 - **`LatencyDescription`**:
-  - `WithinPool(&str, Distributions)`: Latency for messages between processes in the same pool.
-  - `BetweenPools(&str, &str, Distributions)`: Latency for messages between processes in different pools.
+  - `WithinPool`: Latency for messages between processes in the same pool.
+  - `BetweenPools`: Latency for messages between processes in different pools.
 - **`Distributions`**:
-  - `Uniform(Jiffies, Jiffies)`
-  - `Bernoulli(f64, Jiffies)`
-  - `Normal(Jiffies, Jiffies)`
+  - `Uniform`
+  - `Bernoulli`
+  - `Normal`
 
 ### Process Interaction (Context-Aware)
 
 These functions are available globally but must be called within the context of a running process step.
 
-- **`broadcasst(impl Message)`**: Sends a message to all other processes.
-- **`broadcasst_within_pool(&str, impl Message)`**: Sends a message to all other processes within a specific pool.
-- **`send_to(ProcessId, impl Message)`**: Sends a message to a specific process.
-- **`send_random_from_pool(&str, impl Message)`**: Sends a message to random process whithin pool.
-- **`schedule_timer_after(Jiffies) -> TimerId`**: Schedules a timer interrupt for the current process.
-- **`rank() -> ProcessId`**: Returns the ID of the currently executing process.
-- **`now() -> Jiffies`**: Returns current simulation time.
-- **`list_pool(&str) -> Vec<ProcessId>`**: List all processes in a pool.
-- **`choose_from_pool(&str) -> ProcessId`**: Choose random process id from specified pool.
-- **`global_unique_id() -> usize`**: Generates a globally unique ID.
+- **`broadcasst`**: Sends a message to all other processes.
+- **`broadcasst_within_pool`**: Sends a message to all other processes within a specific pool.
+- **`send_to`**: Sends a message to a specific process.
+- **`send_random_from_pool`**: Sends a message to random process whithin pool.
+- **`schedule_timer_after`**: Schedules a timer interrupt for the current process.
+- **`rank`**: Returns the ID of the currently executing process.
+- **`now`**: Returns current simulation time.
+- **`list_pool`**: List all processes in a pool.
+- **`choose_from_pool`**: Choose random process id from specified pool.
+- **`global_unique_id`**: Generates a globally unique ID.
 
 ### Configuration (`dscale::global::configuration`)
 
-- **`seed() -> u64`**: Returns the specific seed for the current process.
-- **`process_number() -> usize`**: Returns total number of processes in the simulation.
+- **`seed`**: Returns the specific seed for the current process.
+- **`process_number`**: Returns total number of processes in the simulation.
 
 ### Any Key-Value (`dscale::global::anykv`)
 
 Useful for passing shared state, metrics, or configuration between processes or back to the host.
 
-- **`get<T>(&str) -> T`**
-- **`set<T>(&str, T)`**
-- **`modify<T>(&str, impl FnOnce(&mut T))`**: Modify in-place.
+- **`get -> T`**
+- **`set(T)`**
+- **`modify`**: Modify in-place.
 
 ### Helpers (`dscale::helpers`)
 
-- **`debug_process!(fmt, ...)`**: A macro that automatically prepends current simulation time and process ID.
+- **`debug_process!`**: A macro that automatically prepends current simulation time and process ID.
 - **`Combiner`**: Structure which allows combining any values up to some known threshols. Can be useful for waiting for quorums.
 
 ## Logging Configuration (`RUST_LOG`)
