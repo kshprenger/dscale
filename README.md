@@ -154,10 +154,10 @@ Useful for passing shared state, metrics, or configuration between processes or 
 DScale output is controlled via the `RUST_LOG` environment variable.
 
 - **`RUST_LOG=info`**: Shows high-level simulation status and a progress bar.
-- **`RUST_LOG=debug`**: Enables the `debug_process!` macro output and internal simulation events.
-- **`RUST_LOG=your_crate=debug`**: Filter events only for your specific crate.
+- **`RUST_LOG=debug`**: Enables all `debug_process!` macro output and all internal simulation events.
+- **`RUST_LOG=full::path::to::your::file::or::crate=debug`**: Filter events only for your specific file or crate.
 
-- Note `RUST_LOG=debug or RUST_LOG=any=debug` will work only without the `--release` flag.
+- Note `RUST_LOG=debug or RUST_LOG=any::path=debug` will work only without the `--release` flag.
 
 ## Thanks to
 
