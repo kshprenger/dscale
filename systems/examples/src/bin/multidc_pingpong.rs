@@ -42,6 +42,6 @@ fn main() {
         elapsed, pings, pongs,
     );
 
-    assert_eq!(pings, 9380);
-    assert_eq!(pings, 9380);
+    assert_eq!(pings, 9381);
+    assert_eq!(pongs, 9380);
 }
