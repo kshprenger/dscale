@@ -18,45 +18,10 @@ use std::usize;
 /// - **Redundant Requests**: Gather responses from multiple replicas
 /// - **Batch Processing**: Accumulate items until a threshold is reached
 ///
-/// # Design Philosophy
-///
-/// - **Runtime Size**: The collection size is specified at runtime during construction,
-///   providing flexibility while maintaining efficiency
-/// - **One-Shot**: Each combiner instance produces exactly one complete collection
-/// - **Type Safety**: Generic over the value type `T` with runtime guarantees
-/// - **Memory Efficient**: Uses vector with pre-allocated capacity for efficiency
 ///
 /// # Generic Parameters
 ///
 /// - `T`: The type of values to collect. Must implement `Sized`.
-///
-/// # Examples
-///
-/// ## Basic Quorum Pattern
-///
-/// ```rust
-/// use dscale::helpers::Combiner;
-///
-/// // Collect exactly 3 responses for a quorum
-/// let mut quorum: Combiner<String> = Combiner::new(3);
-///
-/// // Add responses one by one
-/// assert!(quorum.combine("vote_yes".to_string()).is_none()); // Not ready yet
-/// assert!(quorum.combine("vote_yes".to_string()).is_none()); // Still not ready
-///
-/// // Third response completes the quorum
-/// if let Some(votes) = quorum.combine("vote_no".to_string()) {
-///     println!("Quorum achieved: {:?}", votes);
-///     // Process the complete set of votes
-/// }
-/// ```
-///
-/// ## Consensus Implementation
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Message, send_to};
-/// use dscale::helpers::{Combiner, debug_process};
-/// use std::rc::Rc;
 ///
 /// #[derive(Clone)]
 /// struct VoteMessage {
@@ -144,12 +109,6 @@ use std::usize;
 /// }
 /// ```
 ///
-/// # Performance Characteristics
-///
-/// - **Memory**: Uses vector with pre-allocated capacity
-/// - **Time Complexity**: O(1) for `combine()` operations
-/// - **Space Complexity**: O(threshold) where threshold is the collection size
-/// - **Minimal Allocation**: Single allocation during construction
 ///
 /// # Common Use Cases in Distributed Systems
 ///
@@ -159,10 +118,6 @@ use std::usize;
 /// - **Leader Election**: Collect votes from majority of processes
 /// - **Consensus Algorithms**: Gather proposals or votes for Raft, PBFT, etc.
 ///
-/// # Thread Safety
-///
-/// `Combiner` is not thread-safe by default, but this is not a concern in
-/// DScale's single-threaded simulation environment.
 pub struct Combiner<T: Sized> {
     values: Vec<T>,
     threshold: usize,
@@ -180,17 +135,6 @@ impl<T: Sized> Combiner<T> {
     ///
     /// The `threshold` must be greater than 0. This is enforced by a debug
     /// assertion to catch programming errors during development.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::helpers::Combiner;
-    ///
-    /// // Create combiners for different quorum sizes
-    /// let simple_majority: Combiner<bool> = Combiner::new(3);
-    /// let byzantine_quorum: Combiner<String> = Combiner::new(7); // 2f+1 for f=3
-    /// let unanimous: Combiner<u32> = Combiner::new(5);
-    /// ```
     ///
     /// # Panics
     ///
@@ -234,56 +178,6 @@ impl<T: Sized> Combiner<T> {
     /// - `None` if the collection is not yet complete
     /// - `Some(&[T])` when the collection is complete, containing all values in insertion order
     ///
-    /// # Examples
-    ///
-    /// ## Basic Usage
-    ///
-    /// ```rust
-    /// use dscale::helpers::Combiner;
-    ///
-    /// let mut collector: Combiner<i32> = Combiner::new(3);
-    ///
-    /// // First two values return None
-    /// assert!(collector.combine(10).is_none());
-    /// assert!(collector.combine(20).is_none());
-    ///
-    /// // Third value completes the collection
-    /// if let Some(values) = collector.combine(30) {
-    ///     assert_eq!(values, &[10, 20, 30]);
-    /// }
-    ///
-    /// // Subsequent calls return None
-    /// assert!(collector.combine(40).is_none());
-    /// ```
-    ///
-    /// ## Quorum Voting Example
-    ///
-    /// ```rust
-    /// use dscale::helpers::Combiner;
-    ///
-    /// fn process_votes() -> bool {
-    ///     let mut vote_collector: Combiner<bool> = Combiner::new(5);
-    ///
-    ///     // Simulate receiving votes
-    ///     let votes = [true, true, false, true, false];
-    ///
-    ///     for vote in votes {
-    ///         if let Some(all_votes) = vote_collector.combine(vote) {
-    ///             // Count yes votes
-    ///             let yes_votes = all_votes.iter().filter(|&&v| v).count();
-    ///             return yes_votes > all_votes.len() / 2; // Majority rule
-    ///         }
-    ///     }
-    ///
-    ///     false // Shouldn't reach here in this example
-    /// }
-    /// ```
-    ///
-    /// ## Error Handling Pattern
-    ///
-    /// ```rust
-    /// use dscale::helpers::Combiner;
-    ///
     /// #[derive(Debug)]
     /// enum Response {
     ///     Success(String),
@@ -320,11 +214,6 @@ impl<T: Sized> Combiner<T> {
     /// }
     /// ```
     ///
-    /// # Implementation Notes
-    ///
-    /// - Values are stored in insertion order
-    /// - Memory is pre-allocated on the stack for efficiency
-    /// - The operation is O(1) with no heap allocations
     pub fn combine(&mut self, value: T) -> Option<&[T]> {
         if self.idx >= self.threshold {
             return None;

@@ -36,31 +36,6 @@ use std::{
 /// - Simulation time budgets
 /// - Progress tracking
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{Jiffies, schedule_timer_after, now};
-/// use dscale::helpers::debug_process;
-///
-/// // Creating jiffies
-/// let delay = Jiffies(100);
-/// let timeout = Jiffies(5000);
-///
-/// // Arithmetic operations
-/// let total_time = delay + timeout;  // Jiffies(5100)
-/// let doubled = delay * 2;           // Not directly supported, use usize * Jiffies
-/// let remaining = timeout - delay;   // Jiffies(4900)
-///
-/// // In a process context
-/// fn schedule_work() {
-///     let current_time = now();
-///     debug_process!("Current time: {}", current_time);
-///
-///     // Schedule a timer for 1000 jiffies from now
-///     schedule_timer_after(Jiffies(1000));
-/// }
-/// ```
-///
 /// # Conversion and Display
 ///
 /// Jiffies implement `Display` and `Debug` for easy logging:

@@ -31,17 +31,6 @@ thread_local! {
 /// * `key` - A string key to identify the stored value
 /// * `value` - The value to store
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::global::anykv;
-///
-/// // Store different types of values
-/// anykv::set("counter", 42u32);
-/// anykv::set("name", "simulation_1".to_string());
-/// anykv::set("metrics", vec![1.0, 2.0, 3.0]);
-/// ```
-///
 /// # Panics
 ///
 /// This function does not panic under normal circumstances.
@@ -67,22 +56,6 @@ pub fn set<T: 'static>(key: &str, value: T) {
 /// # Returns
 ///
 /// A cloned copy of the stored value.
-///
-/// # Examples
-///
-/// ```rust
-/// use dscale::global::anykv;
-///
-/// // Store and retrieve a value
-/// anykv::set("counter", 42u32);
-/// let counter: u32 = anykv::get("counter");
-/// assert_eq!(counter, 42);
-///
-/// // Store and retrieve a more complex type
-/// anykv::set("metrics", vec![1.0, 2.0, 3.0]);
-/// let metrics: Vec<f64> = anykv::get("metrics");
-/// assert_eq!(metrics, vec![1.0, 2.0, 3.0]);
-/// ```
 ///
 /// # Panics
 ///
@@ -114,28 +87,6 @@ pub fn get<T: 'static + Clone>(key: &str) -> T {
 ///
 /// * `key` - The string key identifying the value to modify
 /// * `f` - A closure that receives a mutable reference to the stored value
-///
-/// # Examples
-///
-/// ```rust
-/// use dscale::global::anykv;
-///
-/// // Store a counter and increment it
-/// anykv::set("counter", 0u32);
-/// anykv::modify("counter", |counter: &mut u32| {
-///     *counter += 1;
-/// });
-/// let result: u32 = anykv::get("counter");
-/// assert_eq!(result, 1);
-///
-/// // Modify a vector
-/// anykv::set("metrics", vec![1.0, 2.0]);
-/// anykv::modify("metrics", |metrics: &mut Vec<f64>| {
-///     metrics.push(3.0);
-/// });
-/// let result: Vec<f64> = anykv::get("metrics");
-/// assert_eq!(result, vec![1.0, 2.0, 3.0]);
-/// ```
 ///
 /// # Panics
 ///

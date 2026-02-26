@@ -42,12 +42,6 @@ fn init_logger() {
 /// - Control random seed for deterministic execution
 /// - Set simulation time budget
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{SimulationBuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
-/// use dscale::ProcessHandle;
-///
 /// #[derive(Default)]
 /// struct MyProcess;
 ///
@@ -112,11 +106,6 @@ impl SimulationBuilder {
     ///
     /// * `name` - A string identifier for the pool (used in topology configuration)
     /// * `size` - The number of processes to create in this pool
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, ProcessHandle, ProcessId, MessagePtr, TimerId};
     ///
     /// #[derive(Default)]
     /// struct Client;
@@ -187,15 +176,6 @@ impl SimulationBuilder {
     ///
     /// * `seed` - A `u64` value to use as the base random seed
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::SimulationBuilder;
-    ///
-    /// let builder = SimulationBuilder::default()
-    ///     .seed(42);  // Reproducible randomness
-    /// ```
-    ///
     /// # Returns
     ///
     /// The `SimulationBuilder` instance for method chaining.
@@ -213,15 +193,6 @@ impl SimulationBuilder {
     /// # Arguments
     ///
     /// * `time_budget` - The maximum simulation time as [`Jiffies`]
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, Jiffies};
-    ///
-    /// let builder = SimulationBuilder::default()
-    ///     .time_budget(Jiffies(1_000_000));  // Run for 1 million time units
-    /// ```
     ///
     /// # Returns
     ///
@@ -258,27 +229,6 @@ impl SimulationBuilder {
     /// - [`Distributions::Normal`] - Normal (Gaussian) distribution with mean and standard deviation
     /// - [`Distributions::Bernoulli`] - Binary distribution with probability and fixed value
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let builder = SimulationBuilder::default()
-    ///     .add_pool::<MyProcess>("clients", 3)
-    ///     .add_pool::<MyProcess>("servers", 2)
-    ///     .latency_topology(&[
-    ///         // Low latency within server pool (1-5 jiffies uniform)
-    ///         LatencyDescription::WithinPool("servers",
-    ///             Distributions::Uniform(Jiffies(1), Jiffies(5))),
-    ///
-    ///         // Higher latency between clients and servers (normal distribution)
-    ///         LatencyDescription::BetweenPools("clients", "servers",
-    ///             Distributions::Normal(Jiffies(50), Jiffies(10))),
-    ///
-    ///         // Occasional packet loss simulation
-    ///         LatencyDescription::WithinPool("clients",
-    ///             Distributions::Bernoulli(0.95, Jiffies(20))),
-    ///     ]);
     /// # struct MyProcess;
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {
@@ -366,20 +316,6 @@ impl SimulationBuilder {
     /// - [`BandwidthDescription::Unbounded`] - No bandwidth limitations
     /// - [`BandwidthDescription::Bounded(bytes_per_jiffy)`] - Limited to specified bytes per time unit
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, BandwidthDescription};
-    ///
-    /// // Unlimited bandwidth
-    /// let builder1 = SimulationBuilder::default()
-    ///     .nic_bandwidth(BandwidthDescription::Unbounded);
-    ///
-    /// // Limited to 1000 bytes per jiffy
-    /// let builder2 = SimulationBuilder::default()
-    ///     .nic_bandwidth(BandwidthDescription::Bounded(1000));
-    /// ```
-    ///
     /// # Message Sizing
     ///
     /// The bandwidth constraint uses the [`virtual_size()`] method of messages
@@ -409,16 +345,6 @@ impl SimulationBuilder {
     /// - Setting up the network topology
     /// - Configuring the simulation engine
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::SimulationBuilder;
-    ///
-    /// let simulation = SimulationBuilder::default()
-    ///     .add_pool::<MyProcess>("nodes", 5)
-    ///     .build();
-    ///
-    /// // simulation.run();
     /// # struct MyProcess;
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {

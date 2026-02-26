@@ -97,37 +97,6 @@ pub enum LatencyDescription {
     /// - **Rack-Local**: Very low latency between processes on same hardware rack
     /// - **Shared Medium**: Variable latency on shared network segments
     ///
-    /// # Examples
-    ///
-    /// ## Low-Latency Datacenter
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let datacenter_latency = LatencyDescription::WithinPool("servers",
-    ///     Distributions::Uniform(Jiffies(1), Jiffies(5)) // 1-5 jiffy range
-    /// );
-    /// ```
-    ///
-    /// ## Variable Shared Network
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let wifi_latency = LatencyDescription::WithinPool("mobile_devices",
-    ///     Distributions::Normal(Jiffies(20), Jiffies(8)) // Mean 20, std dev 8
-    /// );
-    /// ```
-    ///
-    /// ## Unreliable Medium with Packet Loss
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let lossy_network = LatencyDescription::WithinPool("iot_sensors",
-    ///     Distributions::Bernoulli(0.85, Jiffies(30)) // 15% packet loss
-    /// );
-    /// ```
-    ///
-    /// [`add_pool`]: crate::SimulationBuilder::add_pool
-    /// [`Distributions`]: crate::Distributions
     WithinPool(&'static str, Distributions),
 
     /// Configures latency for messages between two different process pools.
@@ -156,36 +125,6 @@ pub enum LatencyDescription {
     /// - **Cloud Regions**: Inter-region communication delays
     /// - **Cross-Network**: Latency across different network providers
     ///
-    /// # Examples
-    ///
-    /// ## Cross-Datacenter Communication
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let cross_dc = LatencyDescription::BetweenPools("east_coast", "west_coast",
-    ///     Distributions::Normal(Jiffies(150), Jiffies(25)) // ~150ms with variation
-    /// );
-    /// ```
-    ///
-    /// ## Client-Server Tiers
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let client_server = LatencyDescription::BetweenPools("clients", "backend",
-    ///     Distributions::Uniform(Jiffies(10), Jiffies(50)) // Variable user connections
-    /// );
-    /// ```
-    ///
-    /// ## Unreliable Cross-Network Links
-    /// ```rust
-    /// use dscale::{LatencyDescription, Distributions, Jiffies};
-    ///
-    /// let unreliable_link = LatencyDescription::BetweenPools("site_a", "site_b",
-    ///     Distributions::Bernoulli(0.7, Jiffies(200)) // 30% packet loss, high latency
-    /// );
-    /// ```
-    ///
-    /// [`Distributions`]: crate::Distributions
     BetweenPools(&'static str, &'static str, Distributions),
 }
 

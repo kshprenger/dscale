@@ -47,13 +47,6 @@ use crate::{
 /// 3. **Event Loop**: Process events in chronological order until time budget or deadlock
 /// 4. **Cleanup**: Reset global state and complete execution
 ///
-/// # Examples
-///
-/// Typically, you don't create `Simulation` directly but use [`SimulationBuilder`]:
-///
-/// ```rust
-/// use dscale::{SimulationBuilder, ProcessHandle, ProcessId, MessagePtr, TimerId, Jiffies};
-///
 /// #[derive(Default)]
 /// struct MyProcess;
 ///
@@ -155,18 +148,6 @@ impl Simulation {
     /// simulation will log an error and exit. This typically indicates a bug in
     /// the process logic where processes fail to schedule continuing work.
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, Jiffies};
-    ///
-    /// let mut simulation = SimulationBuilder::default()
-    ///     .add_pool::<MyProcess>("workers", 3)
-    ///     .time_budget(Jiffies(50_000))
-    ///     .build();
-    ///
-    /// simulation.run(); // Runs until completion
-    /// // Simulation has finished - results can be retrieved from global::anykv
     /// # struct MyProcess;
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {

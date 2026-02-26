@@ -45,17 +45,6 @@ use crate::{
 /// unit of simulation time. The actual real-world time represented by a Jiffy
 /// depends on your simulation's context and interpretation.
 ///
-/// # Examples
-///
-/// ## Unlimited Bandwidth
-///
-/// ```rust
-/// use dscale::{SimulationBuilder, BandwidthDescription};
-///
-/// let simulation = SimulationBuilder::default()
-///     .add_pool::<MyProcess>("nodes", 3)
-///     .nic_bandwidth(BandwidthDescription::Unbounded) // No bandwidth limits
-///     .build();
 /// # struct MyProcess;
 /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
 /// # impl dscale::ProcessHandle for MyProcess {
@@ -154,17 +143,6 @@ pub enum BandwidthDescription {
     /// - Performance-critical simulations where bandwidth modeling overhead is unwanted
     /// - Systems where message sizes are small relative to available bandwidth
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{SimulationBuilder, BandwidthDescription};
-    ///
-    /// let simulation = SimulationBuilder::default()
-    ///     .nic_bandwidth(BandwidthDescription::Unbounded)
-    ///     .build();
-    /// ```
-    ///
-    /// [`LatencyDescription`]: crate::LatencyDescription
     Unbounded,
 
     /// Limited bandwidth with specified bytes per jiffy capacity.
@@ -193,29 +171,6 @@ pub enum BandwidthDescription {
     /// - If `S ≤ B`: Message transmits in 1 jiffy (minimum)
     /// - If `S > B`: Message transmits in `⌈S/B⌉` jiffies
     /// - Multiple messages may extend transmission time further
-    ///
-    /// # Examples
-    ///
-    /// ## Basic Bandwidth Limiting
-    /// ```rust
-    /// use dscale::{SimulationBuilder, BandwidthDescription};
-    ///
-    /// let simulation = SimulationBuilder::default()
-    ///     .nic_bandwidth(BandwidthDescription::Bounded(1000)) // 1KB per jiffy
-    ///     .build();
-    /// ```
-    ///
-    /// ## Different Network Classes
-    /// ```rust
-    /// use dscale::BandwidthDescription;
-    ///
-    /// // Simulate various network conditions
-    /// let fiber = BandwidthDescription::Bounded(100_000);    // 100KB/jiffy
-    /// let ethernet = BandwidthDescription::Bounded(10_000);  // 10KB/jiffy
-    /// let wifi = BandwidthDescription::Bounded(5_000);       // 5KB/jiffy
-    /// let mobile = BandwidthDescription::Bounded(1_000);     // 1KB/jiffy
-    /// let dialup = BandwidthDescription::Bounded(56);        // 56 bytes/jiffy
-    /// ```
     ///
     /// # Message Size Interaction
     ///

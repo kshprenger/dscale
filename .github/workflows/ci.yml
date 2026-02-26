@@ -47,5 +47,5 @@ jobs:
             ${{ runner.os }}-cargo-build-${{ matrix.binary }}-${{ hashFiles('**/Cargo.lock') }}-
             ${{ runner.os }}-cargo-build-${{ matrix.binary }}-
 
-      - name: Verify DScale
+      - name: Sanity check
         run: cargo run --bin ${{ matrix.binary }} --release --package examples

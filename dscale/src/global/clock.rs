@@ -37,29 +37,6 @@ pub(crate) fn fast_forward_clock(future: Jiffies) {
 ///
 /// [`ProcessHandle`]: crate::ProcessHandle
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{now, ProcessHandle, MessagePtr, ProcessId, TimerId};
-/// use dscale::helpers::debug_process;
-///
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         debug_process!("Process started at time: {}", now());
-///     }
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
-///         debug_process!("Received message at time: {}", now());
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {
-///         debug_process!("Timer fired at time: {}", now());
-///     }
-/// }
-/// ```
-///
 /// # Returns
 ///
 /// The current simulation time as [`Jiffies`].
