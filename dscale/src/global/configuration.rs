@@ -35,26 +35,6 @@ pub(crate) fn setup_local_configuration(id: ProcessId, base_seed: Seed) {
 ///
 /// [`ProcessHandle`]: crate::ProcessHandle
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
-/// use dscale::global::configuration;
-/// use dscale::helpers::debug_process;
-///
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         let my_seed = configuration::seed();
-///         debug_process!("My process seed: {}", my_seed);
-///     }
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
-///     fn on_timer(&mut self, id: TimerId) {}
-/// }
-/// ```
-///
 /// # Returns
 ///
 /// The unique random seed for the current process as a `u64`.
@@ -74,27 +54,6 @@ pub fn seed() -> Seed {
 /// including from within [`ProcessHandle`] methods.
 ///
 /// [`ProcessHandle`]: crate::ProcessHandle
-///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, rank};
-/// use dscale::global::configuration;
-/// use dscale::helpers::debug_process;
-///
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         let total = configuration::process_number();
-///         let my_id = rank();
-///         debug_process!("I am process {} of {}", my_id, total);
-///     }
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
-///     fn on_timer(&mut self, id: TimerId) {}
-/// }
-/// ```
 ///
 /// # Returns
 ///

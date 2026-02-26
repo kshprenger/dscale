@@ -15,47 +15,6 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 /// by the simulation engine when processes are created through
 /// [`SimulationBuilder::add_pool`].
 ///
-/// Process IDs are used for:
-/// - Message routing with [`send_to`]
-/// - Identifying message senders in [`ProcessHandle::on_message`]
-/// - Process identification in logging and debugging
-/// - Pool membership queries
-///
-/// # Properties
-///
-/// - **Unique**: Each process has a distinct ID within a simulation
-/// - **Stable**: IDs don't change during simulation execution
-/// - **Sequential**: IDs are assigned in order of process creation
-/// - **Deterministic**: Same configuration produces same ID assignments
-///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, rank, send_to};
-/// use dscale::helpers::debug_process;
-///
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         let my_id: ProcessId = rank();
-///         debug_process!("My process ID is: {}", my_id);
-///     }
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
-///         debug_process!("Received message from process {}", from);
-///
-///         // Echo back to sender
-///         // send_to(from, SomeMessage);
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {}
-/// }
-/// ```
-///
-/// [`SimulationBuilder::add_pool`]: crate::SimulationBuilder::add_pool
-/// [`send_to`]: crate::send_to
-/// [`ProcessHandle::on_message`]: ProcessHandle::on_message
 pub type ProcessId = usize;
 
 pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
@@ -94,28 +53,6 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 /// - **Topology**: [`list_pool`], [`choose_from_pool`]
 /// - **Utilities**: [`global_unique_id`]
 ///
-/// # Examples
-///
-/// ## Basic Process Implementation
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Message};
-/// use dscale::{send_to, schedule_timer_after, broadcast, rank, Jiffies};
-/// use dscale::helpers::debug_process;
-/// use std::rc::Rc;
-///
-/// // Define a message type
-/// struct PingMessage {
-///     sequence: u32,
-/// }
-///
-/// impl Message for PingMessage {
-///     fn virtual_size(&self) -> usize {
-///         4 // 4 bytes for u32
-///     }
-/// }
-///
-/// // Process implementation
 /// #[derive(Default)]
 /// struct PingPongProcess {
 ///     sequence: u32,
@@ -275,14 +212,6 @@ pub trait ProcessHandle {
     /// Failure to schedule continuing work may result in process deadlock
     /// where the process has no more events to process.
     ///
-    /// # Examples
-    ///
-    /// ## Simple Initialization
-    /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
-    /// use dscale::{schedule_timer_after, rank, Jiffies};
-    /// use dscale::helpers::debug_process;
-    ///
     /// #[derive(Default)]
     /// struct SimpleProcess;
     ///
@@ -358,20 +287,6 @@ pub trait ProcessHandle {
     /// - Messages are delivered in the order determined by network latency simulation
     /// - The simulation clock advances to the message delivery time before calling this method
     /// - Multiple messages may be delivered to the same process at the same simulation time
-    ///
-    /// # Examples
-    ///
-    /// ## Basic Message Handling
-    /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Message};
-    /// use dscale::helpers::debug_process;
-    /// use std::rc::Rc;
-    ///
-    /// struct PingMessage { id: u32 }
-    /// struct PongMessage { id: u32 }
-    ///
-    /// impl Message for PingMessage {}
-    /// impl Message for PongMessage {}
     ///
     /// #[derive(Default)]
     /// struct EchoProcess;
@@ -476,14 +391,6 @@ pub trait ProcessHandle {
     /// - Timers fire at exactly the scheduled simulation time
     /// - The simulation clock is advanced to the timer's time before calling this method
     /// - Multiple timers may fire at the same simulation time
-    ///
-    /// # Examples
-    ///
-    /// ## Basic Timer Handling
-    /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
-    /// use dscale::{schedule_timer_after, Jiffies, now};
-    /// use dscale::helpers::debug_process;
     ///
     /// #[derive(Default)]
     /// struct TimerProcess {

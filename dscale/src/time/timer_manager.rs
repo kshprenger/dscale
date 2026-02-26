@@ -33,44 +33,6 @@ use crate::{
 /// 1. **Scheduling**: Returned by [`schedule_timer_after`] to identify the timer
 /// 2. **Handling**: Passed to [`ProcessHandle::on_timer`] when the timer fires
 ///
-/// # Examples
-///
-/// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, schedule_timer_after, Jiffies};
-/// use dscale::helpers::debug_process;
-///
-/// struct MyProcess {
-///     heartbeat_timer: Option<TimerId>,
-///     timeout_timer: Option<TimerId>,
-/// }
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         // Schedule a recurring heartbeat
-///         self.heartbeat_timer = Some(schedule_timer_after(Jiffies(1000)));
-///
-///         // Schedule a timeout
-///         self.timeout_timer = Some(schedule_timer_after(Jiffies(5000)));
-///     }
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
-///         // Cancel timeout on message receipt
-///         self.timeout_timer = None;
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {
-///         if Some(id) == self.heartbeat_timer {
-///             debug_process!("Heartbeat timer fired");
-///             // Reschedule heartbeat
-///             self.heartbeat_timer = Some(schedule_timer_after(Jiffies(1000)));
-///         } else if Some(id) == self.timeout_timer {
-///             debug_process!("Timeout occurred");
-///             self.timeout_timer = None;
-///         }
-///     }
-/// }
-/// ```
-///
 /// # Implementation Details
 ///
 /// - Timer IDs are implemented as `usize` values

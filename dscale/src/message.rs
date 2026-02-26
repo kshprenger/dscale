@@ -35,54 +35,6 @@ use crate::{process_handle::ProcessId, time::Jiffies};
 /// information through the [`Any`] trait. This allows safe runtime type
 /// checking and downcasting when handling messages.
 ///
-/// # Examples
-///
-/// ## Simple Message Implementation
-///
-/// ```rust
-/// use dscale::Message;
-///
-/// struct PingMessage {
-///     sequence: u32,
-///     timestamp: u64,
-/// }
-///
-/// impl Message for PingMessage {
-///     fn virtual_size(&self) -> usize {
-///         8 // 4 bytes for sequence + 4 bytes for timestamp
-///     }
-/// }
-/// ```
-///
-/// ## Large Payload Simulation
-///
-/// ```rust
-/// use dscale::Message;
-///
-/// struct FileTransferMessage {
-///     filename: String,
-///     // Simulate a large file without storing actual data
-/// }
-///
-/// impl Message for FileTransferMessage {
-///     fn virtual_size(&self) -> usize {
-///         // Simulate 1MB file transfer
-///         1_000_000 + self.filename.len()
-///     }
-/// }
-/// ```
-///
-/// ## Default Implementation
-///
-/// ```rust
-/// use dscale::Message;
-///
-/// struct HeartbeatMessage;
-///
-/// // Uses default virtual_size() of 0 bytes
-/// impl Message for HeartbeatMessage {}
-/// ```
-///
 /// # Message Handling
 ///
 /// Messages are received in process implementations through [`ProcessHandle::on_message`]:
@@ -144,52 +96,6 @@ pub trait Message: Any {
     /// no bandwidth and is transmitted instantaneously (subject only to latency).
     /// This is suitable for small control messages.
     ///
-    /// # Examples
-    ///
-    /// ## Control Message (Zero Size)
-    /// ```rust
-    /// use dscale::Message;
-    ///
-    /// struct AckMessage;
-    ///
-    /// impl Message for AckMessage {
-    ///     // Uses default implementation - 0 bytes
-    /// }
-    /// ```
-    ///
-    /// ## Data Message (Explicit Size)
-    /// ```rust
-    /// use dscale::Message;
-    ///
-    /// struct DataMessage {
-    ///     payload: Vec<u8>,
-    /// }
-    ///
-    /// impl Message for DataMessage {
-    ///     fn virtual_size(&self) -> usize {
-    ///         self.payload.len() + 8 // payload + header overhead
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// ## Simulated Large Message
-    /// ```rust
-    /// use dscale::Message;
-    ///
-    /// struct ImageMessage {
-    ///     width: u32,
-    ///     height: u32,
-    ///     // Actual image data not stored to save memory
-    /// }
-    ///
-    /// impl Message for ImageMessage {
-    ///     fn virtual_size(&self) -> usize {
-    ///         // Simulate uncompressed RGB image
-    ///         (self.width * self.height * 3) as usize
-    ///     }
-    /// }
-    /// ```
-    ///
     /// # Returns
     ///
     /// The virtual size in bytes as a [`usize`]. Should be 0 or positive.
@@ -219,68 +125,6 @@ pub trait Message: Any {
 /// 1. **Receiving Messages**: In [`ProcessHandle::on_message`] implementations
 /// 2. **Internal Routing**: By the simulation engine for message delivery
 ///
-/// # Examples
-///
-/// ## Basic Message Handling
-///
-/// ```rust
-/// use dscale::{MessagePtr, ProcessHandle, ProcessId, TimerId, Message};
-/// use std::rc::Rc;
-///
-/// struct PingMessage { id: u32 }
-/// struct PongMessage { id: u32 }
-///
-/// impl Message for PingMessage {}
-/// impl Message for PongMessage {}
-///
-/// struct EchoProcess;
-///
-/// impl ProcessHandle for EchoProcess {
-///     fn start(&mut self) {}
-///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
-///         // Safe type checking and extraction
-///         if let Some(ping) = message.try_as::<PingMessage>() {
-///             println!("Received ping with ID: {}", ping.id);
-///         } else if message.is::<PongMessage>() {
-///             // Alternative: check type without extracting
-///             let pong = message.as_type::<PongMessage>();
-///             println!("Received pong with ID: {}", pong.id);
-///         }
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {}
-/// }
-/// ```
-///
-/// ## Pattern Matching on Message Types
-///
-/// ```rust
-/// use dscale::{MessagePtr, Message};
-/// use std::rc::Rc;
-///
-/// struct RequestMessage { data: String }
-/// struct ResponseMessage { result: i32 }
-/// struct ErrorMessage { code: u32, description: String }
-///
-/// impl Message for RequestMessage {}
-/// impl Message for ResponseMessage {}
-/// impl Message for ErrorMessage {}
-///
-/// fn handle_message(message: MessagePtr) {
-///     if let Some(req) = message.try_as::<RequestMessage>() {
-///         println!("Processing request: {}", req.data);
-///     } else if let Some(resp) = message.try_as::<ResponseMessage>() {
-///         println!("Received response: {}", resp.result);
-///     } else if let Some(err) = message.try_as::<ErrorMessage>() {
-///         eprintln!("Error {}: {}", err.code, err.description);
-///     } else {
-///         println!("Unknown message type");
-///     }
-/// }
-/// ```
-///
-/// [`ProcessHandle::on_message`]: crate::ProcessHandle::on_message
 pub struct MessagePtr(pub Rc<dyn Message>);
 
 impl MessagePtr {
@@ -300,10 +144,6 @@ impl MessagePtr {
     /// * `Some(Rc<T>)` - If the message is of type `T`
     /// * `None` - If the message is not of type `T`
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{MessagePtr, Message};
     /// # use std::rc::Rc;
     ///
     /// struct PingMessage { id: u32 }
@@ -344,10 +184,6 @@ impl MessagePtr {
     ///
     /// `true` if the message is of type `T`, `false` otherwise.
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{MessagePtr, Message};
     /// # use std::rc::Rc;
     ///
     /// struct ImportantMessage;
@@ -391,10 +227,6 @@ impl MessagePtr {
     ///
     /// Panics if the message is not of type `T`.
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use dscale::{MessagePtr, Message};
     /// # use std::rc::Rc;
     ///
     /// struct StatusMessage { code: u32 }
