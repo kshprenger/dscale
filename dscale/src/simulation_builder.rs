@@ -82,7 +82,7 @@ impl Default for SimulationBuilder {
             proc_id: 1,
             pools: HashMap::new(),
             bandwidth: BandwidthDescription::Unbounded,
-            latency_topology: HashMap::new(),
+            latency_topology: BTreeMap::new(),
         }
     }
 }
