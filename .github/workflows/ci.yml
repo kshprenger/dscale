@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        binary: [pingpong, timers, broadcast, multidc_pingpong, bandwidth]
+        binary: [ring, timers, broadcast, multidc_pingpong, bandwidth]
 
     steps:
       - name: Checkout code

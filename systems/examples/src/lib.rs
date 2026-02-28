@@ -3,5 +3,5 @@
 pub mod bandwidth;
 pub mod broadcast;
 pub mod multidc_pingpong;
-pub mod pingpong;
+pub mod ring;
 pub mod timers;
