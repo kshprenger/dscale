@@ -41,7 +41,7 @@ impl Nursery {
         }
     }
 
-    pub(crate) fn keys(&self) -> Keys<'_, ProcessId, MutableProcessHandle> {
+    pub(crate) fn keys(&self) -> impl Iterator<Item = &ProcessId> {
         self.procs.keys()
     }
 
