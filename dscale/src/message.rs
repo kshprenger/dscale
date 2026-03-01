@@ -252,14 +252,14 @@ impl MessagePtr {
 }
 
 #[derive(Clone)]
-pub struct ProcessStep {
+pub(crate) struct ProcessStep {
     pub(crate) source: Rank,
     pub(crate) dest: Rank,
     pub(crate) message: Rc<dyn Message>,
 }
 
 #[derive(Clone)]
-pub struct RoutedMessage {
+pub(crate) struct RoutedMessage {
     pub(crate) arrival_time: Jiffies,
     pub(crate) step: ProcessStep,
 }
@@ -296,4 +296,4 @@ impl Ord for RoutedMessage {
     }
 }
 
-pub type TimePriorityMessageQueue = BinaryHeap<Reverse<RoutedMessage>>;
+pub(crate) type TimePriorityMessageQueue = BinaryHeap<Reverse<RoutedMessage>>;
