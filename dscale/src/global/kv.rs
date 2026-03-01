@@ -103,6 +103,6 @@ pub fn modify<T: 'static>(key: &str, f: impl FnOnce(&mut T)) {
     });
 }
 
-pub fn drop_kv() {
+pub(crate) fn drop_kv() {
     ANY_KV.take();
 }
