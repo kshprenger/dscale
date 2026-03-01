@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 use examples::broadcast::BroadcastProcess;
 
 fn main() {
-    anykv::set::<usize>("broadcast_received", 0);
+    kv::set::<usize>("broadcast_received", 0);
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<BroadcastProcess>("BroadcastPool", 5)
@@ -21,7 +21,7 @@ fn main() {
     sim.run();
     let elapsed = start.elapsed();
 
-    let received_count = anykv::get::<usize>("broadcast_received");
+    let received_count = kv::get::<usize>("broadcast_received");
     println!(
         "Done, elapsed: {:?}. Broadcast messages received: {}",
         elapsed, received_count

@@ -1,5 +1,5 @@
 use dscale::{
-    global::{anykv, configuration},
+    global::{kv, configuration},
     *,
 };
 
@@ -67,7 +67,7 @@ impl ProcessHandle for Client {
             }
         }
 
-        anykv::modify::<ExecutionHistory>("linearizable_history", |h| {
+        kv::modify::<ExecutionHistory>("linearizable_history", |h| {
             h.push(self.current_op.clone());
         });
 

@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 use examples::multidc_pingpong::{PingProcess, PongProcess};
 
 fn main() {
@@ -27,15 +27,15 @@ fn main() {
         .seed(5)
         .build();
 
-    anykv::set::<usize>("pings", 0);
-    anykv::set::<usize>("pongs", 0);
+    kv::set::<usize>("pings", 0);
+    kv::set::<usize>("pongs", 0);
 
     let start = Instant::now();
     sim.run();
     let elapsed = start.elapsed();
 
-    let pings = anykv::get::<usize>("pings");
-    let pongs = anykv::get::<usize>("pongs");
+    let pings = kv::get::<usize>("pings");
+    let pongs = kv::get::<usize>("pongs");
 
     println!(
         "Done, elapsed: {:?}. Pings sent: {}, Pongs sent: {}",

@@ -1,4 +1,4 @@
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct BroadcastMessage {
@@ -24,7 +24,7 @@ impl ProcessHandle for BroadcastProcess {
 
         assert_eq!(msg.data, 42);
 
-        anykv::modify::<usize>("broadcast_received", |x| *x += 1);
+        kv::modify::<usize>("broadcast_received", |x| *x += 1);
     }
 
     fn on_timer(&mut self, _id: TimerId) {

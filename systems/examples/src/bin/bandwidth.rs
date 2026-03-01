@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 use examples::bandwidth::{Receiver, Sender};
 
 fn main() {
@@ -22,8 +22,8 @@ fn main() {
 }
 
 fn run_unbounded() -> usize {
-    anykv::set::<usize>("messages_sent", 0);
-    anykv::set::<usize>("messages_received", 0);
+    kv::set::<usize>("messages_sent", 0);
+    kv::set::<usize>("messages_received", 0);
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<Sender>("Senders", 1)
@@ -42,8 +42,8 @@ fn run_unbounded() -> usize {
     sim.run();
     let elapsed = start.elapsed();
 
-    let sent = anykv::get::<usize>("messages_sent");
-    let received = anykv::get::<usize>("messages_received");
+    let sent = kv::get::<usize>("messages_sent");
+    let received = kv::get::<usize>("messages_received");
     println!(
         "  Elapsed: {:?}, sent: {}, received: {}",
         elapsed, sent, received
@@ -53,8 +53,8 @@ fn run_unbounded() -> usize {
 }
 
 fn run_bounded() -> usize {
-    anykv::set::<usize>("messages_sent", 0);
-    anykv::set::<usize>("messages_received", 0);
+    kv::set::<usize>("messages_sent", 0);
+    kv::set::<usize>("messages_received", 0);
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<Sender>("Senders", 1)
@@ -74,8 +74,8 @@ fn run_bounded() -> usize {
     sim.run();
     let elapsed = start.elapsed();
 
-    let sent = anykv::get::<usize>("messages_sent");
-    let received = anykv::get::<usize>("messages_received");
+    let sent = kv::get::<usize>("messages_sent");
+    let received = kv::get::<usize>("messages_received");
     println!(
         "  Elapsed: {:?}, sent: {}, received: {}",
         elapsed, sent, received

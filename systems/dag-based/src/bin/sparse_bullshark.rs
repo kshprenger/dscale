@@ -2,7 +2,7 @@ use std::{fs::File, sync::Mutex};
 
 use dag_based::sparse_bullshark::SparseBullshark;
 use dscale::{
-    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::anykv,
+    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::kv,
     time::Jiffies,
 };
 use rayon::prelude::*;
@@ -23,9 +23,9 @@ fn main() {
         let product = samples.flat_map(|x| seeds.iter().map(move |y| (x, y)));
 
         product.par_bridge().into_par_iter().for_each(|(d, seed)| {
-            anykv::set::<(f64, usize)>("avg_latency", (0.0, 0));
-            anykv::set::<(f64, usize)>("avg_virtual_size", (0.0, 0));
-            anykv::set::<usize>("D", d); // Sample size
+            kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
+            kv::set::<(f64, usize)>("avg_virtual_size", (0.0, 0));
+            kv::set::<usize>("D", d); // Sample size
 
             let mut sim = SimulationBuilder::default()
                 .add_pool::<SparseBullshark>("Validators", k_validators)
@@ -41,14 +41,14 @@ fn main() {
                 .build();
 
             // (avg_latency, total_vertex)
-            anykv::set::<(f64, usize)>("avg_latency", (0.0, 0));
+            kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
 
             sim.run();
 
-            let ordered = anykv::get::<(f64, usize)>("avg_latency").1;
-            let avg_latency = anykv::get::<(f64, usize)>("avg_latency").0;
-            let load = anykv::get::<usize>("avg_network_load"); // Bytes per jiffy at single NIC
-            let avg_virtual_size_of_message = anykv::get::<(f64, usize)>("avg_virtual_size");
+            let ordered = kv::get::<(f64, usize)>("avg_latency").1;
+            let avg_latency = kv::get::<(f64, usize)>("avg_latency").0;
+            let load = kv::get::<usize>("avg_network_load"); // Bytes per jiffy at single NIC
+            let avg_virtual_size_of_message = kv::get::<(f64, usize)>("avg_virtual_size");
 
             writeln!(
                 file.lock().unwrap(),

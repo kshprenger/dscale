@@ -7,15 +7,15 @@
 //! The configuration system uses the global key-value store internally and provides
 //! type-safe access to commonly used configuration parameters.
 
-use crate::{Rank, global::anykv, random::Seed, rank};
+use crate::{Rank, global::kv, random::Seed, rank};
 
 pub(crate) fn setup_global_configuration(proc_num: usize) {
-    anykv::set::<usize>("proc_num", proc_num)
+    kv::set::<usize>("proc_num", proc_num)
 }
 
 pub(crate) fn setup_local_configuration(id: Rank, base_seed: Seed) {
     // Prevent resonance between procs by changing seed a little bit
-    anykv::set::<u64>(&format!("seeds/{}", id), base_seed + id as u64)
+    kv::set::<u64>(&format!("seeds/{}", id), base_seed + id as u64)
 }
 
 /// Returns the random seed for the currently executing process.
@@ -39,7 +39,7 @@ pub(crate) fn setup_local_configuration(id: Rank, base_seed: Seed) {
 ///
 /// The unique random seed for the current process as a `u64`.
 pub fn seed() -> Seed {
-    anykv::get::<u64>(&format!("seeds/{}", rank()))
+    kv::get::<u64>(&format!("seeds/{}", rank()))
 }
 
 /// Returns the total number of processes in the simulation.
@@ -59,5 +59,5 @@ pub fn seed() -> Seed {
 ///
 /// The total number of processes in the simulation.
 pub fn process_number() -> usize {
-    anykv::get::<usize>("proc_num")
+    kv::get::<usize>("proc_num")
 }

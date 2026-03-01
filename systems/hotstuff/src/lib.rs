@@ -3,7 +3,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use dscale::{
-    global::{anykv, configuration::process_number},
+    global::{kv, configuration::process_number},
     helpers::Combiner,
     *,
 };
@@ -78,7 +78,7 @@ impl ProcessHandle for ChainedHotstuff {
 
 impl Default for ChainedHotstuff {
     fn default() -> Self {
-        let genesis_node = anykv::get::<Rc<Node>>(B0);
+        let genesis_node = kv::get::<Rc<Node>>(B0);
         Self {
             pending_quorums: HashMap::new(),
             vheight: 0,
@@ -115,7 +115,7 @@ impl ChainedHotstuff {
         if self.b_exec.height < b.height {
             self.on_commit(b.parent.clone().unwrap());
             if rank() == b.creator {
-                anykv::modify::<(f64, usize)>(
+                kv::modify::<(f64, usize)>(
                     "avg_latency",
                     |(prev_avg_latency, prev_total_ordered)| {
                         let vertex_latency = now() - b.creation_time;

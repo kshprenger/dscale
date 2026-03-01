@@ -6,7 +6,7 @@ use std::{
 
 use dscale::{
     Message, Rank,
-    global::{anykv, configuration::process_number},
+    global::{kv, configuration::process_number},
     now, rank,
     time::{self},
 };
@@ -122,7 +122,7 @@ impl RoundBasedDAG {
                 } else {
                     self.ordered[real_round][edge.source] = true;
                     if rank() == edge.source {
-                        anykv::modify::<(f64, usize)>(
+                        kv::modify::<(f64, usize)>(
                             "avg_latency",
                             |(prev_avg_latency, prev_total_ordered)| {
                                 let vertex_latency = now() - edge.creation_time;

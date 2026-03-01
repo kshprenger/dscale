@@ -2,7 +2,7 @@ use std::{fs::File, sync::Mutex};
 
 use dag_based::bullshark::Bullshark;
 use dscale::{
-    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::anykv,
+    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::kv,
     time::Jiffies,
 };
 use rayon::prelude::*;
@@ -18,7 +18,7 @@ fn main() {
         let seeds = [4567898765, 33333, 982039];
 
         seeds.into_par_iter().for_each(|seed| {
-            anykv::set::<(f64, usize)>("avg_latency", (0.0, 0));
+            kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
 
             let mut sim = SimulationBuilder::default()
                 .add_pool::<Bullshark>("Validators", k_validators)
@@ -34,13 +34,13 @@ fn main() {
                 .build();
 
             // (avg_latency, total_vertex)
-            anykv::set::<(f64, usize)>("avg_latency", (0.0, 0));
+            kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
 
             sim.run();
 
-            let ordered = anykv::get::<(f64, usize)>("avg_latency").1;
-            let avg_latency = anykv::get::<(f64, usize)>("avg_latency").0;
-            let load = anykv::get::<usize>("avg_network_load"); // Bytes per jiffy at single NIC
+            let ordered = kv::get::<(f64, usize)>("avg_latency").1;
+            let avg_latency = kv::get::<(f64, usize)>("avg_latency").0;
+            let load = kv::get::<usize>("avg_network_load"); // Bytes per jiffy at single NIC
 
             writeln!(file.lock().unwrap(), "{} {} {}", ordered, avg_latency, load).unwrap();
         });

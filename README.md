@@ -140,7 +140,7 @@ These functions are available globally but must be called within the context of 
 - **`seed`**: Returns the specific seed for the current process.
 - **`process_number`**: Returns total number of processes in the simulation.
 
-### Any Key-Value (`dscale::global::anykv`)
+### Any Key-Value (`dscale::global::kv`)
 
 Useful for passing shared state, metrics, or configuration between processes or back to the host.
 

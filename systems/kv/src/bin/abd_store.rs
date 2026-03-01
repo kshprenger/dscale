@@ -1,10 +1,10 @@
-use dscale::{global::anykv, *};
-use kv::abd_store::{
+use ::kv::abd_store::{
     Replica,
     client::{Client, ExecutionHistory},
     lin_checker::check_linearizable,
     types::{CLIENT_POOL_NAME, REPLICA_POOL_NAME},
 };
+use dscale::{global::kv, *};
 
 fn main() {
     // 1 jiffy == 1ms
@@ -30,7 +30,7 @@ fn main() {
         .seed(5444)
         .build();
 
-    anykv::set::<ExecutionHistory>("linearizable_history", ExecutionHistory::new());
+    kv::set::<ExecutionHistory>("linearizable_history", ExecutionHistory::new());
 
     sim.run();
 
@@ -40,9 +40,9 @@ fn main() {
     );
     println!("{}", "-".repeat(75));
 
-    let history = anykv::get::<ExecutionHistory>("linearizable_history");
+    let history = kv::get::<ExecutionHistory>("linearizable_history");
 
-    for el in anykv::get::<ExecutionHistory>("linearizable_history") {
+    for el in kv::get::<ExecutionHistory>("linearizable_history") {
         let result = el
             .result
             .map(|v| v.to_string())
