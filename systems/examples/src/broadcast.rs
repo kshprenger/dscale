@@ -18,7 +18,7 @@ impl ProcessHandle for BroadcastProcess {
         }
     }
 
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         let msg = message.as_type::<BroadcastMessage>();
         debug_process!("Received broadcast from {}: data={}", from, msg.data);
 

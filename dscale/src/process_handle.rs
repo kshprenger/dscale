@@ -1,7 +1,7 @@
 //! Process trait and identification types for DScale simulations.
 //!
 //! This module defines the core `ProcessHandle` trait that must be implemented
-//! by all processes in DScale simulations, as well as the `ProcessId` type used
+//! by all processes in DScale simulations, as well as the `Rank` type used
 //! for process identification throughout the system.
 
 use std::{cell::RefCell, rc::Rc};
@@ -10,12 +10,12 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 
 /// Unique identifier for a process within a simulation.
 ///
-/// `ProcessId` is a numeric identifier that uniquely identifies each process
+/// `Rank` is a numeric identifier that uniquely identifies each process
 /// within a single simulation run. Process IDs are assigned automatically
 /// by the simulation engine when processes are created through
 /// [`SimulationBuilder::add_pool`].
 ///
-pub type ProcessId = usize;
+pub type Rank = usize;
 
 pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 
@@ -70,7 +70,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 ///         schedule_timer_after(Jiffies(1000));
 ///     }
 ///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
 ///         if let Some(ping) = message.try_as::<PingMessage>() {
 ///             debug_process!("Received ping {} from {}", ping.sequence, from);
 ///
@@ -93,7 +93,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 /// ## State Management Pattern
 ///
 /// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, schedule_timer_after, Jiffies};
+/// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, schedule_timer_after, Jiffies};
 /// use dscale::global::anykv;
 ///
 /// #[derive(Default)]
@@ -120,7 +120,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 ///         schedule_timer_after(Jiffies(100));
 ///     }
 ///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
 ///         match self.state {
 ///             ProcessState::Active => {
 ///                 // Handle messages normally
@@ -224,7 +224,7 @@ pub trait ProcessHandle {
     ///         schedule_timer_after(Jiffies(100));
     ///     }
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///     fn on_timer(&mut self, id: TimerId) {
     ///         debug_process!("Timer fired - doing work");
     ///         // Schedule next timer for continuing work
@@ -235,7 +235,7 @@ pub trait ProcessHandle {
     ///
     /// ## Client-Server Initialization
     /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Message};
+    /// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, Message};
     /// use dscale::{list_pool, send_to, choose_from_pool};
     /// use std::rc::Rc;
     ///
@@ -254,7 +254,7 @@ pub trait ProcessHandle {
     ///         send_to(server_id, RequestMessage);
     ///     }
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///     fn on_timer(&mut self, id: TimerId) {}
     /// }
     /// ```
@@ -269,7 +269,7 @@ pub trait ProcessHandle {
     ///
     /// # Parameters
     ///
-    /// * `from` - The [`ProcessId`] of the process that sent the message
+    /// * `from` - The [`Rank`] of the process that sent the message
     /// * `message` - A [`MessagePtr`] containing the message data
     ///
     /// # Message Handling
@@ -294,7 +294,7 @@ pub trait ProcessHandle {
     /// impl ProcessHandle for EchoProcess {
     ///     fn start(&mut self) {}
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
     ///         if let Some(ping) = message.try_as::<PingMessage>() {
     ///             debug_process!("Received ping {} from {}", ping.id, from);
     ///             // Echo back with pong
@@ -312,7 +312,7 @@ pub trait ProcessHandle {
     ///
     /// ## State-Based Message Handling
     /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Message};
+    /// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, Message};
     ///
     /// struct JoinMessage;
     /// struct DataMessage { payload: Vec<u8> }
@@ -322,13 +322,13 @@ pub trait ProcessHandle {
     /// #[derive(Default)]
     /// struct StatefulProcess {
     ///     joined: bool,
-    ///     peers: Vec<ProcessId>,
+    ///     peers: Vec<Rank>,
     /// }
     ///
     /// impl ProcessHandle for StatefulProcess {
     ///     fn start(&mut self) {}
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
     ///         if let Some(_join) = message.try_as::<JoinMessage>() {
     ///             if !self.peers.contains(&from) {
     ///                 self.peers.push(from);
@@ -367,7 +367,7 @@ pub trait ProcessHandle {
     /// [`MessagePtr::is`]: crate::MessagePtr::is
     /// [`MessagePtr::as_type`]: crate::MessagePtr::as_type
     /// [`Message`]: crate::Message
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr);
+    fn on_message(&mut self, from: Rank, message: MessagePtr);
 
     /// Handle a timer event scheduled by this process.
     ///
@@ -403,7 +403,7 @@ pub trait ProcessHandle {
     ///         self.heartbeat_timer = Some(schedule_timer_after(Jiffies(1000)));
     ///     }
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///
     ///     fn on_timer(&mut self, id: TimerId) {
     ///         if Some(id) == self.heartbeat_timer {
@@ -418,7 +418,7 @@ pub trait ProcessHandle {
     ///
     /// ## Multiple Timer Types
     /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
+    /// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId};
     /// use dscale::{schedule_timer_after, Jiffies};
     /// use dscale::helpers::debug_process;
     ///
@@ -436,7 +436,7 @@ pub trait ProcessHandle {
     ///         self.cleanup_timer = Some(schedule_timer_after(Jiffies(60000)));
     ///     }
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
     ///         // Reset timeout on any message
     ///         self.timeout_timer = Some(schedule_timer_after(Jiffies(5000)));
     ///     }
@@ -458,7 +458,7 @@ pub trait ProcessHandle {
     ///
     /// ## State Machine with Timers
     /// ```rust
-    /// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
+    /// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId};
     /// use dscale::{schedule_timer_after, Jiffies};
     ///
     /// #[derive(Default)]
@@ -481,7 +481,7 @@ pub trait ProcessHandle {
     ///         self.transition_timer = Some(schedule_timer_after(Jiffies(100)));
     ///     }
     ///
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///
     ///     fn on_timer(&mut self, id: TimerId) {
     ///         if Some(id) == self.transition_timer {

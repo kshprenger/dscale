@@ -55,7 +55,7 @@ use crate::{
 ///         // Process initialization
 ///     }
 ///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
 ///         // Handle incoming messages
 ///     }
 ///
@@ -152,7 +152,7 @@ impl Simulation {
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {
     /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {}
+    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
     /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
     /// # }
     /// ```

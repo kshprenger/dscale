@@ -4,7 +4,7 @@ use crate::destination::Destination;
 use crate::now;
 
 use crate::{
-    Message, ProcessId,
+    Message, Rank,
     actor::EventSubmitter,
     debug_process,
     network::NetworkActor,
@@ -17,9 +17,9 @@ use crate::{
 };
 
 pub struct SimulationAccess {
-    process_on_execution: ProcessId,
-    pub(crate) scheduled_messages: Vec<(ProcessId, Destination, Rc<dyn Message>)>,
-    pub(crate) scheduled_timers: Vec<(ProcessId, TimerId, Jiffies)>,
+    process_on_execution: Rank,
+    pub(crate) scheduled_messages: Vec<(Rank, Destination, Rc<dyn Message>)>,
+    pub(crate) scheduled_timers: Vec<(Rank, TimerId, Jiffies)>,
     topology: Rc<Topology>,
     random: Randomizer,
     network: NetworkActor,
@@ -52,11 +52,11 @@ fn drain_to<T: EventSubmitter>(submitter: &Rc<RefCell<T>>, events: &mut Vec<T::E
 }
 
 impl SimulationAccess {
-    fn list_pool(&mut self, name: &str) -> &[ProcessId] {
+    fn list_pool(&mut self, name: &str) -> &[Rank] {
         self.topology.list_pool(name)
     }
 
-    fn choose_from_pool(&mut self, name: &str) -> ProcessId {
+    fn choose_from_pool(&mut self, name: &str) -> Rank {
         self.random
             .choose_from_slice(&self.topology.list_pool(name))
     }
@@ -69,7 +69,7 @@ impl SimulationAccess {
         ));
     }
 
-    fn send_to(&mut self, to: ProcessId, message: impl Message + 'static) {
+    fn send_to(&mut self, to: Rank, message: impl Message + 'static) {
         self.scheduled_messages.push((
             self.process_on_execution,
             Destination::To(to),
@@ -94,17 +94,17 @@ impl SimulationAccess {
         drain_to(&self.timers, &mut self.scheduled_timers);
     }
 
-    fn set_process(&mut self, id: ProcessId) {
+    fn set_process(&mut self, id: Rank) {
         self.process_on_execution = id
     }
 
-    fn rank(&self) -> ProcessId {
+    fn rank(&self) -> Rank {
         self.process_on_execution
     }
 }
 
 // Any actor makes step -> Buffering outcoming events -> Drain them to all actors
-// Before any process step actor should ensure corrent ProcessId on execution via access::set_process()
+// Before any process step actor should ensure corrent Rank on execution via access::set_process()
 thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }
@@ -131,7 +131,7 @@ where
     ACCESS_HANDLE.with_borrow_mut(|access| f(access.as_mut().expect("Out of simulation context")))
 }
 
-pub(crate) fn set_process(id: ProcessId) {
+pub(crate) fn set_process(id: Rank) {
     with_access(|access| access.set_process(id));
 }
 
@@ -154,7 +154,7 @@ pub fn broadcast_within_pool(pool: &'static str, message: impl Message + 'static
     with_access(|access| access.broadcast_within_pool(pool, message));
 }
 
-pub fn send_to(to: ProcessId, message: impl Message + 'static) {
+pub fn send_to(to: Rank, message: impl Message + 'static) {
     debug_process!("Access: send to: {to}");
     with_access(|access| access.send_to(to, message));
 }
@@ -169,16 +169,16 @@ pub fn send_random_from_pool(pool: &'static str, message: impl Message + 'static
     with_access(|access| access.send_random_from_pool(pool, message));
 }
 
-pub fn rank() -> ProcessId {
+pub fn rank() -> Rank {
     with_access(|access| access.rank())
 }
 
-pub fn list_pool(name: &str) -> Vec<ProcessId> {
+pub fn list_pool(name: &str) -> Vec<Rank> {
     debug_process!("Access: listing pool: {name}");
     with_access(|access| access.list_pool(name).to_vec())
 }
 
-pub fn choose_from_pool(name: &str) -> ProcessId {
+pub fn choose_from_pool(name: &str) -> Rank {
     debug_process!("Access: choosing random from pool: {name}");
     with_access(|access| access.choose_from_pool(name))
 }

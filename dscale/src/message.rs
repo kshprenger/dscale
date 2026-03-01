@@ -7,7 +7,7 @@
 
 use std::{any::Any, cmp::Reverse, collections::BinaryHeap, rc::Rc};
 
-use crate::{process_handle::ProcessId, time::Jiffies};
+use crate::{process_handle::Rank, time::Jiffies};
 
 /// Core trait for all message types in DScale simulations.
 ///
@@ -40,7 +40,7 @@ use crate::{process_handle::ProcessId, time::Jiffies};
 /// Messages are received in process implementations through [`ProcessHandle::on_message`]:
 ///
 /// ```rust
-/// use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId};
+/// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId};
 /// use std::rc::Rc;
 ///
 /// struct MyProcess;
@@ -48,7 +48,7 @@ use crate::{process_handle::ProcessId, time::Jiffies};
 /// impl ProcessHandle for MyProcess {
 ///     fn start(&mut self) {}
 ///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
 ///         if let Some(ping) = message.try_as::<PingMessage>() {
 ///             println!("Received ping with sequence: {}", ping.sequence);
 ///         }
@@ -253,8 +253,8 @@ impl MessagePtr {
 
 #[derive(Clone)]
 pub struct ProcessStep {
-    pub(crate) source: ProcessId,
-    pub(crate) dest: ProcessId,
+    pub(crate) source: Rank,
+    pub(crate) dest: Rank,
     pub(crate) message: Rc<dyn Message>,
 }
 

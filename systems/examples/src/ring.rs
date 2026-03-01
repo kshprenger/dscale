@@ -23,7 +23,7 @@ impl ProcessHandle for Ring {
         }
     }
 
-    fn on_message(&mut self, _from: ProcessId, _message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, _message: MessagePtr) {
         pass_next();
     }
 

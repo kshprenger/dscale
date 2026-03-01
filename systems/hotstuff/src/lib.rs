@@ -17,7 +17,7 @@ pub struct Node {
     pub id: NodeId,
     pub parent: Option<Rc<Node>>,
     pub height: usize,
-    pub creator: ProcessId,
+    pub creator: Rank,
     pub creation_time: Jiffies,
 }
 
@@ -42,7 +42,7 @@ impl ProcessHandle for ChainedHotstuff {
             broadcast(HSMessage::Propose(self.create_leaf()));
         }
     }
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         debug_process!("Got message from {from}");
         match message.as_type::<HSMessage>().as_ref() {
             HSMessage::Propose(b_new) => {
@@ -145,7 +145,7 @@ impl ChainedHotstuff {
         })
     }
 
-    fn get_next_leader(&self) -> ProcessId {
+    fn get_next_leader(&self) -> Rank {
         (self.vheight % process_number()) + 1
     }
 

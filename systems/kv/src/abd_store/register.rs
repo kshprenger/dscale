@@ -107,13 +107,7 @@ impl MWMRAtomicRegister {
         );
     }
 
-    pub(crate) fn serve(
-        &mut self,
-        op: &RegisterOps,
-        from: ProcessId,
-        key: Key,
-        quorum_size: usize,
-    ) {
+    pub(crate) fn serve(&mut self, op: &RegisterOps, from: Rank, key: Key, quorum_size: usize) {
         match *op {
             RegisterOps::RegisterReadRequest(r_) => {
                 send_to(

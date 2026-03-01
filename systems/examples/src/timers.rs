@@ -32,7 +32,7 @@ impl ProcessHandle for LazyPingPong {
         }
     }
 
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         let m = message.as_type::<LazyPingPongMessage>();
 
         match m.as_ref() {

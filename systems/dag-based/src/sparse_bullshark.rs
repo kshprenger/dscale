@@ -69,7 +69,7 @@ impl ProcessHandle for SparseBullshark {
     }
 
     // DAG construction: part 1
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         if let Some(bs_message) = self.rbcast.process(from, message.as_type::<BCBMessage>()) {
             match bs_message.as_type::<VertexMessage>().as_ref() {
                 VertexMessage::Genesis(v) => {
@@ -232,11 +232,11 @@ impl SparseBullshark {
         vertex
     }
 
-    fn bad_vertex(&self, v: &VertexPtr, from: ProcessId) -> bool {
+    fn bad_vertex(&self, v: &VertexPtr, from: Rank) -> bool {
         v.strong_edges.len() > self.D + 2 || from != v.source
     }
 
-    fn get_leader_id(&self, round: usize) -> ProcessId {
+    fn get_leader_id(&self, round: usize) -> Rank {
         return round % self.proc_num + 1;
     }
 

@@ -5,7 +5,7 @@ use std::{
 };
 
 use dscale::{
-    Message, ProcessId,
+    Message, Rank,
     global::{anykv, configuration::process_number},
     now, rank,
     time::{self},
@@ -24,7 +24,7 @@ pub fn same_vertex(v: &VertexPtr, u: &VertexPtr) -> bool {
 
 pub struct Vertex {
     pub round: usize,
-    pub source: ProcessId,
+    pub source: Rank,
     pub creation_time: time::Jiffies,
 
     // Each vertex is a pointer to real one. (Each vertex is allocated exactly-once during execution)
@@ -76,7 +76,7 @@ pub enum VertexMessage {
 
 impl Message for VertexMessage {
     fn virtual_size(&self) -> usize {
-        // Round, ProcessId
+        // Round, Rank
         4 + 4
             + certificate_size()
                 * match self {

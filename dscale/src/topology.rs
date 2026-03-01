@@ -10,10 +10,10 @@ use std::{
     rc::Rc,
 };
 
-use crate::{ProcessId, random::Distributions};
+use crate::{Rank, random::Distributions};
 
-pub(crate) type LatencyTopology = BTreeMap<(ProcessId, ProcessId), Distributions>;
-pub(crate) type PoolListing = HashMap<String, Vec<ProcessId>>;
+pub(crate) type LatencyTopology = BTreeMap<(Rank, Rank), Distributions>;
+pub(crate) type PoolListing = HashMap<String, Vec<Rank>>;
 
 /// Default pool for all processes within simulation.
 /// Broadcasts by default use this pool.
@@ -74,7 +74,7 @@ pub const GLOBAL_POOL: &str = "global_pool";
 /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
 /// # impl dscale::ProcessHandle for MyProcess {
 /// #     fn start(&mut self) {}
-/// #     fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {}
+/// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
 /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
 /// # }
 /// ```
@@ -147,7 +147,7 @@ impl Topology {
         })
     }
 
-    pub(crate) fn get_distribution(&self, from: ProcessId, to: ProcessId) -> Distributions {
+    pub(crate) fn get_distribution(&self, from: Rank, to: Rank) -> Distributions {
         self.latency_topology
             .get(&(from, to))
             .copied()

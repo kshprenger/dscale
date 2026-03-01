@@ -36,7 +36,7 @@ impl ProcessHandle for Replica {
         self.proc_num = process_number()
     }
 
-    fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {
+    fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {
         if let Some(client_op) = message.try_as::<ClientReq>() {
             match *client_op {
                 ClientReq::GetRequest(key) => {

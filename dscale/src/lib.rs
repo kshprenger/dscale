@@ -19,7 +19,7 @@ pub use message::Message;
 pub use message::MessagePtr;
 
 pub use process_handle::ProcessHandle;
-pub use process_handle::ProcessId;
+pub use process_handle::Rank;
 
 pub use simulation::Simulation;
 pub use simulation_builder::SimulationBuilder;
