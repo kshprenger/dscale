@@ -1,4 +1,4 @@
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 
 // This demo shows 2 data centers: in first one there are pingers processes,
 // in the second one - pongers processes. Pingers send ping to a single random pong process and vice versa.
@@ -17,13 +17,13 @@ pub struct PingProcess {}
 impl ProcessHandle for PingProcess {
     fn start(&mut self) {
         send_random_from_pool("Pongers", Ping);
-        anykv::modify::<usize>("pings", |p| *p += 1);
+        kv::modify::<usize>("pings", |p| *p += 1);
     }
 
     fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Pong>();
         send_random_from_pool("Pongers", Ping);
-        anykv::modify::<usize>("pings", |p| *p += 1);
+        kv::modify::<usize>("pings", |p| *p += 1);
     }
 
     fn on_timer(&mut self, _id: TimerId) {}
@@ -38,7 +38,7 @@ impl ProcessHandle for PongProcess {
     fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Ping>();
         send_random_from_pool("Pingers", Pong);
-        anykv::modify::<usize>("pongs", |p| *p += 1);
+        kv::modify::<usize>("pongs", |p| *p += 1);
     }
 
     fn on_timer(&mut self, _id: TimerId) {}

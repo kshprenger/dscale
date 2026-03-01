@@ -1,4 +1,4 @@
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum LazyPingPongMessage {
@@ -38,7 +38,7 @@ impl ProcessHandle for LazyPingPong {
         match m.as_ref() {
             LazyPingPongMessage::Ping => {
                 debug_process!("Received Ping from Process {}", from);
-                anykv::modify::<usize>("pings_received", |count| *count += 1);
+                kv::modify::<usize>("pings_received", |count| *count += 1);
 
                 // Schedule a delayed response using a timer
                 let timer_id = schedule_timer_after(Jiffies(500));
@@ -47,7 +47,7 @@ impl ProcessHandle for LazyPingPong {
 
             LazyPingPongMessage::DelayedPong => {
                 debug_process!("Received DelayedPong from Process {}", from);
-                anykv::modify::<usize>("pongs_received", |count| *count += 1);
+                kv::modify::<usize>("pongs_received", |count| *count += 1);
 
                 // Send another ping if we haven't reached the limit
                 self.ping_count += 1;
@@ -65,7 +65,7 @@ impl ProcessHandle for LazyPingPong {
         if let Some(heartbeat_id) = self.heartbeat_timer {
             if timer_id == heartbeat_id {
                 debug_process!("Heartbeat timer fired");
-                anykv::modify::<usize>("heartbeats", |count| *count += 1);
+                kv::modify::<usize>("heartbeats", |count| *count += 1);
 
                 // Reschedule the heartbeat timer for continuous operation
                 let new_timer_id = schedule_timer_after(Jiffies(1000));

@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 use examples::timers::LazyPingPong;
 
 fn main() {
@@ -15,17 +15,17 @@ fn main() {
         .seed(42)
         .build();
 
-    anykv::set::<usize>("heartbeats", 0);
-    anykv::set::<usize>("pings_received", 0);
-    anykv::set::<usize>("pongs_received", 0);
+    kv::set::<usize>("heartbeats", 0);
+    kv::set::<usize>("pings_received", 0);
+    kv::set::<usize>("pongs_received", 0);
 
     let start = Instant::now();
     sim.run();
     let elapsed = start.elapsed();
 
-    let heartbeats = anykv::get::<usize>("heartbeats");
-    let pings = anykv::get::<usize>("pings_received");
-    let pongs = anykv::get::<usize>("pongs_received");
+    let heartbeats = kv::get::<usize>("heartbeats");
+    let pings = kv::get::<usize>("pings_received");
+    let pongs = kv::get::<usize>("pongs_received");
 
     println!();
     println!("Simulation completed in: {:?}", elapsed);

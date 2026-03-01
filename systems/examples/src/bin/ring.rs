@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use dscale::{global::anykv, *};
+use dscale::{global::kv, *};
 use examples::ring::Ring;
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
         .seed(5)
         .build();
 
-    anykv::set::<usize>("passes", 0);
+    kv::set::<usize>("passes", 0);
 
     let start = Instant::now();
     sim.run();
@@ -26,11 +26,11 @@ fn main() {
     println!(
         "Elapsed: {:?}. Passes: {}",
         elapsed,
-        anykv::get::<usize>("passes"),
+        kv::get::<usize>("passes"),
     );
 
     println!(
         "DScale performance: steps/sec {:.2}",
-        anykv::get::<usize>("passes") as f64 / elapsed.as_secs_f64()
+        kv::get::<usize>("passes") as f64 / elapsed.as_secs_f64()
     );
 }

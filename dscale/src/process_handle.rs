@@ -94,7 +94,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 ///
 /// ```rust
 /// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, schedule_timer_after, Jiffies};
-/// use dscale::global::anykv;
+/// use dscale::global::kv;
 ///
 /// #[derive(Default)]
 /// struct StatefulProcess {
@@ -114,7 +114,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 ///         self.state = ProcessState::Initializing;
 ///
 ///         // Initialize state in global storage
-///         anykv::set("process_count", 0u32);
+///         kv::set("process_count", 0u32);
 ///
 ///         // Transition to active after delay
 ///         schedule_timer_after(Jiffies(100));
@@ -135,7 +135,7 @@ pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
 ///         match self.state {
 ///             ProcessState::Initializing => {
 ///                 self.state = ProcessState::Active;
-///                 anykv::modify("process_count", |count: &mut u32| *count += 1);
+///                 kv::modify("process_count", |count: &mut u32| *count += 1);
 ///             }
 ///             ProcessState::Active => {
 ///                 // Handle periodic work

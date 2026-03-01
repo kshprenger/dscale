@@ -8,7 +8,7 @@ use std::{
 };
 
 use dscale::{
-    global::{anykv, configuration},
+    global::{kv, configuration},
     *,
 };
 use rand::{SeedableRng, rngs::StdRng};
@@ -45,7 +45,7 @@ impl Default for SparseBullshark {
             wait: true,
             current_timer: 0,
             sampler: None,
-            D: anykv::get::<usize>("D"),
+            D: kv::get::<usize>("D"),
         }
     }
 }
@@ -224,7 +224,7 @@ impl SparseBullshark {
         });
 
         let virtual_size = VertexMessage::Vertex(vertex.clone()).virtual_size();
-        anykv::modify::<(f64, usize)>("avg_virtual_size", |(avg, count)| {
+        kv::modify::<(f64, usize)>("avg_virtual_size", |(avg, count)| {
             *avg = (virtual_size as f64 + (*avg * *count as f64)) / (*count + 1) as f64;
             *count += 1;
         });

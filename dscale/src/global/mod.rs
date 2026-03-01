@@ -1,7 +1,7 @@
 mod access;
-pub mod anykv;
 pub(crate) mod clock;
 pub mod configuration;
+pub mod kv;
 pub mod tso;
 
 pub use tso::global_unique_id;
@@ -27,6 +27,6 @@ pub(crate) use clock::fast_forward_clock;
 pub(crate) fn drop_all() {
     clock::drop_clock();
     tso::drop_tso();
-    anykv::drop_anykv();
+    kv::drop_kv();
     access::drop_access();
 }

@@ -1,5 +1,5 @@
 use dscale::{
-    global::{anykv, configuration::process_number},
+    global::{kv, configuration::process_number},
     *,
 };
 
@@ -12,7 +12,7 @@ impl Message for RingMessage {}
 pub struct Ring {}
 
 fn pass_next() {
-    anykv::modify::<usize>("passes", |p| *p += 1);
+    kv::modify::<usize>("passes", |p| *p += 1);
     send_to(((rank() + 1) % process_number()) + 1, RingMessage {});
 }
 
