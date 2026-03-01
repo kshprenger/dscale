@@ -47,7 +47,7 @@ use std::usize;
 ///         // send_to(3, VoteMessage { proposal_id: 1, vote: false });
 ///     }
 ///
-///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
 ///         if let Some(vote_msg) = message.try_as::<VoteMessage>() {
 ///             if vote_msg.proposal_id == self.proposal_id {
 ///                 if let Some(ref mut collector) = self.vote_collector {

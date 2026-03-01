@@ -20,7 +20,7 @@ impl ProcessHandle for Sender {
         schedule_timer_after(Jiffies(1));
     }
 
-    fn on_message(&mut self, _from: ProcessId, _message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, _message: MessagePtr) {
         // Sender doesn't receive messages
     }
 
@@ -37,7 +37,7 @@ pub struct Receiver {}
 impl ProcessHandle for Receiver {
     fn start(&mut self) {}
 
-    fn on_message(&mut self, _from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.as_type::<DataMessage>();
         anykv::modify::<usize>("messages_received", |x| *x += 1);
     }

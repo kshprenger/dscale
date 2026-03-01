@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
-use dscale::{Message, ProcessId};
+use dscale::{Message, Rank};
 
 #[derive(Clone, PartialEq, Eq, Hash, Copy)]
 pub struct BCBMessageId {
-    pub(super) process_id: ProcessId,
+    pub(super) process_id: Rank,
     pub(super) message_id: usize,
 }
 

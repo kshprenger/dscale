@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::{
-    ProcessHandle, ProcessId, Simulation,
+    ProcessHandle, Rank, Simulation,
     network::BandwidthDescription,
     process_handle::MutableProcessHandle,
     random::Seed,
@@ -47,7 +47,7 @@ fn init_logger() {
 ///
 /// impl ProcessHandle for MyProcess {
 ///     fn start(&mut self) {}
-///     fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {}
+///     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
 ///     fn on_timer(&mut self, id: dscale::TimerId) {}
 /// }
 ///
@@ -69,7 +69,7 @@ pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
     proc_id: usize,
-    pools: HashMap<String, Vec<(ProcessId, MutableProcessHandle)>>,
+    pools: HashMap<String, Vec<(Rank, MutableProcessHandle)>>,
     latency_topology: LatencyTopology,
     bandwidth: BandwidthDescription,
 }
@@ -95,7 +95,7 @@ impl SimulationBuilder {
     /// (e.g., "clients", "servers", "coordinators") and for configuring network
     /// topology between different groups.
     ///
-    /// Each process in the pool will have a unique [`ProcessId`] and will be
+    /// Each process in the pool will have a unique [`Rank`] and will be
     /// initialized using the [`Default`] trait implementation of the process type.
     ///
     /// # Type Parameters
@@ -115,13 +115,13 @@ impl SimulationBuilder {
     ///
     /// impl ProcessHandle for Client {
     ///     fn start(&mut self) {}
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///     fn on_timer(&mut self, id: TimerId) {}
     /// }
     ///
     /// impl ProcessHandle for Server {
     ///     fn start(&mut self) {}
-    ///     fn on_message(&mut self, from: ProcessId, message: MessagePtr) {}
+    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
     ///     fn on_timer(&mut self, id: TimerId) {}
     /// }
     ///
@@ -134,7 +134,7 @@ impl SimulationBuilder {
     ///
     /// The `SimulationBuilder` instance for method chaining.
     ///
-    /// [`ProcessId`]: crate::ProcessId
+    /// [`Rank`]: crate::Rank
     /// [`ProcessHandle`]: crate::ProcessHandle
     pub fn add_pool<P: ProcessHandle + Default + 'static>(
         mut self,
@@ -233,7 +233,7 @@ impl SimulationBuilder {
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {
     /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {}
+    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
     /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
     /// # }
     /// ```
@@ -262,7 +262,7 @@ impl SimulationBuilder {
                 }
             };
 
-            let from_vec: Vec<ProcessId> = self
+            let from_vec: Vec<Rank> = self
                 .pools
                 .get(from)
                 .expect("No pool found")
@@ -270,7 +270,7 @@ impl SimulationBuilder {
                 .map(|(id, _)| *id)
                 .collect();
 
-            let to_vec: Vec<ProcessId> = self
+            let to_vec: Vec<Rank> = self
                 .pools
                 .get(to)
                 .expect("No pool found")
@@ -349,7 +349,7 @@ impl SimulationBuilder {
     /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
     /// # impl dscale::ProcessHandle for MyProcess {
     /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {}
+    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
     /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
     /// # }
     /// ```

@@ -20,7 +20,7 @@ impl ProcessHandle for PingProcess {
         anykv::modify::<usize>("pings", |p| *p += 1);
     }
 
-    fn on_message(&mut self, _from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Pong>();
         send_random_from_pool("Pongers", Ping);
         anykv::modify::<usize>("pings", |p| *p += 1);
@@ -35,7 +35,7 @@ pub struct PongProcess {}
 impl ProcessHandle for PongProcess {
     fn start(&mut self) {}
 
-    fn on_message(&mut self, _from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Ping>();
         send_random_from_pool("Pingers", Pong);
         anykv::modify::<usize>("pongs", |p| *p += 1);

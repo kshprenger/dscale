@@ -40,7 +40,7 @@ impl Message for MyMessage {}
 Implement `ProcessHandle` to define how your process reacts to initialization, messages, and timers.
 
 ```rust
-use dscale::{ProcessHandle, ProcessId, MessagePtr, TimerId, Jiffies};
+use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, Jiffies};
 use dscale::{broadcasst, send_to, schedule_timer_after, rank, debug_process};
 use dscale::global::configuration;
 
@@ -54,7 +54,7 @@ impl ProcessHandle for MyProcess {
         schedule_timer_after(Jiffies(100));
     }
 
-    fn on_message(&mut self, from: ProcessId, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         if let Some(msg) = message.try_as::<MyMessage>() {
             debug_process!("Received message from {}: {}", from, msg.data);
         }

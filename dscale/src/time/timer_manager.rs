@@ -9,7 +9,7 @@ use std::{cell::RefCell, cmp::Reverse, collections::BinaryHeap, rc::Rc};
 use log::debug;
 
 use crate::{
-    ProcessId,
+    Rank,
     actor::{EventSubmitter, SimulationActor},
     dscale_message::DScaleMessage,
     global, now,
@@ -52,7 +52,7 @@ pub(crate) fn next_timer_id() -> TimerId {
 pub(crate) type TimerManagerActor = Rc<RefCell<TimerManager>>;
 
 pub(crate) struct TimerManager {
-    working_timers: BinaryHeap<Reverse<(Jiffies, (ProcessId, TimerId))>>,
+    working_timers: BinaryHeap<Reverse<(Jiffies, (Rank, TimerId))>>,
     nursery: Rc<Nursery>,
 }
 
@@ -83,7 +83,7 @@ impl SimulationActor for TimerManager {
 }
 
 impl EventSubmitter for TimerManager {
-    type Event = (ProcessId, TimerId, Jiffies);
+    type Event = (Rank, TimerId, Jiffies);
 
     fn submit(&mut self, events: &mut Vec<Self::Event>) {
         events.drain(..).for_each(|(source, timer_id, after)| {

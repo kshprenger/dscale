@@ -9,7 +9,7 @@ use crate::abd_store::types::{Key, Value};
 
 #[derive(Default, Clone)]
 pub struct ExecutionHistoryEntry {
-    pub client: ProcessId,
+    pub client: Rank,
     pub operation: String,
     pub result: Option<Value>,
     pub start: Jiffies,
@@ -52,7 +52,7 @@ impl ProcessHandle for Client {
         schedule_timer_after(Jiffies(100));
     }
 
-    fn on_message(&mut self, from: dscale::ProcessId, message: dscale::MessagePtr) {
+    fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {
         let response = message.as_type::<ClientResponse>();
         self.current_op.client = rank();
         self.current_op.end = now();

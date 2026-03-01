@@ -11,7 +11,7 @@ use log::debug;
 
 use crate::Message;
 use crate::MessagePtr;
-use crate::ProcessId;
+use crate::Rank;
 use crate::actor::EventSubmitter;
 use crate::actor::SimulationActor;
 use crate::destination::Destination;
@@ -39,7 +39,7 @@ impl Network {
     fn submit_single_message(
         &mut self,
         message: Rc<dyn Message>,
-        source: ProcessId,
+        source: Rank,
         destination: Destination,
     ) {
         let targets = match destination {
@@ -120,7 +120,7 @@ impl SimulationActor for Network {
 }
 
 impl EventSubmitter for Network {
-    type Event = (ProcessId, Destination, Rc<dyn Message>);
+    type Event = (Rank, Destination, Rc<dyn Message>);
 
     fn submit(&mut self, events: &mut Vec<Self::Event>) {
         events.drain(..).for_each(|(from, destination, message)| {

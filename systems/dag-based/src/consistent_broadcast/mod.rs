@@ -7,7 +7,7 @@ use std::{
     rc::Rc,
 };
 
-use dscale::{Message, MessagePtr, ProcessId, broadcast, rank, send_to};
+use dscale::{Message, MessagePtr, Rank, broadcast, rank, send_to};
 
 use crate::consistent_broadcast::message::BCBMessageId;
 
@@ -17,7 +17,7 @@ use crate::consistent_broadcast::message::BCBMessageId;
 pub struct ByzantineConsistentBroadcast {
     messages: HashMap<BCBMessageId, (Rc<dyn Message>, usize)>, // usize -> signature count, once it reaches 2f+1 message pops out
     waiting_certificates: HashSet<BCBMessageId>,
-    process_id: ProcessId,
+    process_id: Rank,
     message_id: usize,
     proc_num: usize,
 }
@@ -53,11 +53,7 @@ impl ByzantineConsistentBroadcast {
         self.proc_num = proc_num;
     }
 
-    pub(crate) fn process(
-        &mut self,
-        from: ProcessId,
-        message: Rc<BCBMessage>,
-    ) -> Option<MessagePtr> {
+    pub(crate) fn process(&mut self, from: Rank, message: Rc<BCBMessage>) -> Option<MessagePtr> {
         match message.as_ref() {
             BCBMessage::Certificate(_, id) => {
                 match self.messages.remove(&id) {
