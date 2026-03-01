@@ -69,7 +69,7 @@ impl ProcessHandle for MyProcess {
 
 ### 4. Run the Simulation
 
-Use `Simulationbuilder` to configure the topology, network constraints, and start the simulation.
+Use `SimulationbBuilder` to configure the topology, network constraints, and start the simulation.
 
 ```rust
 use dscale::{Simulationbuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
