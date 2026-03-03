@@ -5,14 +5,11 @@
 //! modeling different latency patterns within process pools and between
 //! different pools to create realistic network topologies.
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-};
+use std::{collections::HashMap, rc::Rc};
 
 use crate::{Rank, random::Distributions};
 
-pub(crate) type LatencyTopology = BTreeMap<(Rank, Rank), Distributions>;
+pub(crate) type LatencyTopology = Vec<Vec<Option<Distributions>>>;
 pub(crate) type PoolListing = HashMap<String, Vec<Rank>>;
 
 /// Default pool for all processes within simulation.
@@ -148,10 +145,7 @@ impl Topology {
     }
 
     pub(crate) fn get_distribution(&self, from: Rank, to: Rank) -> Distributions {
-        self.latency_topology
-            .get(&(from, to))
-            .copied()
-            .expect("No distr found")
+        self.latency_topology[from][to].expect("No distr found")
     }
 
     pub(crate) fn list_pool(&self, pool_name: &str) -> &[usize] {

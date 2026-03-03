@@ -1,5 +1,5 @@
 use dscale::{
-    global::{kv, configuration::process_number},
+    global::{configuration::process_number, kv},
     *,
 };
 
@@ -13,12 +13,12 @@ pub struct Ring {}
 
 fn pass_next() {
     kv::modify::<usize>("passes", |p| *p += 1);
-    send_to(((rank() + 1) % process_number()) + 1, RingMessage {});
+    send_to((rank() + 1) % process_number(), RingMessage {});
 }
 
 impl ProcessHandle for Ring {
     fn start(&mut self) {
-        if rank() == 1 {
+        if rank() == 0 {
             pass_next();
         }
     }

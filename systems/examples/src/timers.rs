@@ -26,9 +26,9 @@ impl ProcessHandle for LazyPingPong {
             timer_id
         );
 
-        // Process 1 starts by sending a ping
-        if rank() == 1 {
-            send_to(2, LazyPingPongMessage::Ping);
+        // Process 0 starts by sending a ping
+        if rank() == 0 {
+            send_to(1, LazyPingPongMessage::Ping);
         }
     }
 
@@ -76,8 +76,8 @@ impl ProcessHandle for LazyPingPong {
 
         // This must be a delayed response timer
         debug_process!("Delayed response timer fired - sending DelayedPong");
-        if rank() == 2 {
-            send_to(1, LazyPingPongMessage::DelayedPong);
+        if rank() == 1 {
+            send_to(0, LazyPingPongMessage::DelayedPong);
         }
     }
 }

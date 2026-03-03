@@ -25,7 +25,7 @@ impl ProcessHandle for Sender {
     }
 
     fn on_timer(&mut self, _id: TimerId) {
-        send_to(2, DataMessage { real_payload: 42 });
+        send_to(1, DataMessage { real_payload: 42 });
         kv::modify::<usize>("messages_sent", |x| *x += 1);
         schedule_timer_after(Jiffies(1));
     }

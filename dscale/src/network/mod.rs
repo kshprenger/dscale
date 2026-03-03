@@ -98,8 +98,8 @@ impl Network {
 impl SimulationActor for Network {
     fn start(&mut self) {
         self.nursery.keys().for_each(|id| {
-            configuration::setup_local_configuration(*id, self.seed);
-            self.nursery.start_single(*id);
+            configuration::setup_local_configuration(id, self.seed);
+            self.nursery.start_single(id);
         });
     }
 

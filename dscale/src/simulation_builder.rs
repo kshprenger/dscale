@@ -5,11 +5,7 @@
 //! network topology, bandwidth constraints, timing parameters, and other simulation
 //! settings in a fluent, type-safe manner.
 
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, HashMap},
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     ProcessHandle, Rank, Simulation,
@@ -79,10 +75,10 @@ impl Default for SimulationBuilder {
         SimulationBuilder {
             seed: 69,
             time_budget: Jiffies(1_000_000),
-            proc_id: 1,
+            proc_id: 0,
             pools: HashMap::new(),
             bandwidth: BandwidthDescription::Unbounded,
-            latency_topology: BTreeMap::new(),
+            latency_topology: Vec::new(),
         }
     }
 }
@@ -286,12 +282,30 @@ impl SimulationBuilder {
                 .iter()
                 .flat_map(|x| to_vec.iter().map(move |y| (*y, *x)));
 
-            cartesian_product.for_each(|key| {
-                self.latency_topology.insert(key, distr.clone());
+            // Ensure matrix is large enough
+            let max_rank = from_vec
+                .iter()
+                .chain(to_vec.iter())
+                .copied()
+                .max()
+                .unwrap_or(0)
+                + 1;
+            if self.latency_topology.len() < max_rank {
+                self.latency_topology
+                    .resize_with(max_rank, || vec![None; max_rank]);
+            }
+            for row in &mut self.latency_topology {
+                if row.len() < max_rank {
+                    row.resize(max_rank, None);
+                }
+            }
+
+            cartesian_product.for_each(|(from, to)| {
+                self.latency_topology[from][to] = Some(distr.clone());
             });
 
-            cartesian_product_backwards.for_each(|key| {
-                self.latency_topology.insert(key, distr.clone());
+            cartesian_product_backwards.for_each(|(from, to)| {
+                self.latency_topology[from][to] = Some(distr.clone());
             });
         });
         self
@@ -359,20 +373,32 @@ impl SimulationBuilder {
     /// A configured [`Simulation`] ready to run.
     ///
     /// [`Simulation`]: crate::Simulation
-    pub fn build(self) -> Simulation {
+    pub fn build(mut self) -> Simulation {
         init_logger();
 
         let mut pool_listing = HashMap::new();
-        let mut procs = BTreeMap::new();
+        let mut procs: Vec<Option<MutableProcessHandle>> = vec![None; self.proc_id];
+
+        // Ensure latency_topology matrix is sized for all processes
+        let n = self.proc_id;
+        self.latency_topology.resize_with(n, || vec![None; n]);
+        for row in &mut self.latency_topology {
+            row.resize(n, None);
+        }
 
         for (name, pool) in self.pools {
             let mut ids = Vec::new();
             for (id, handle) in pool {
                 ids.push(id);
-                procs.insert(id, handle);
+                procs[id] = Some(handle);
             }
             pool_listing.insert(name, ids);
         }
+
+        let procs: Vec<MutableProcessHandle> = procs
+            .into_iter()
+            .map(|opt| opt.expect("Uninitialized process slot"))
+            .collect();
 
         Simulation::new(
             self.seed,
