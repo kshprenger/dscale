@@ -3,7 +3,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use dscale::{
-    global::{kv, configuration::process_number},
+    global::{configuration::process_number, kv},
     helpers::Combiner,
     *,
 };
@@ -38,7 +38,7 @@ pub struct ChainedHotstuff {
 
 impl ProcessHandle for ChainedHotstuff {
     fn start(&mut self) {
-        if rank() == 1 {
+        if rank() == 0 {
             broadcast(HSMessage::Propose(self.create_leaf()));
         }
     }
@@ -146,7 +146,7 @@ impl ChainedHotstuff {
     }
 
     fn get_next_leader(&self) -> Rank {
-        (self.vheight % process_number()) + 1
+        self.vheight % process_number()
     }
 
     fn quorum_size(&self) -> usize {
