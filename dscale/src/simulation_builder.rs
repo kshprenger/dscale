@@ -17,14 +17,7 @@ use crate::{
 };
 
 fn init_logger() {
-    let _ = env_logger::Builder::from_default_env()
-        .format(|buf, record| {
-            let module_path = record.module_path().unwrap_or("unknown");
-            let crate_name = module_path.split("::").next().unwrap_or(module_path);
-            use std::io::Write;
-            writeln!(buf, "[{}] {}", crate_name, record.args())
-        })
-        .try_init();
+    let _ = env_logger::Builder::from_default_env().try_init();
 }
 
 /// Builder for configuring and creating DScale simulations.
