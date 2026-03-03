@@ -129,7 +129,7 @@ These functions are available globally but must be called within the context of 
 - **`send_random`**: Sends a message to random process. (from GLOBAL_POOL)
 - **`send_random_from_pool`**: Sends a message to random process within specific pool.
 - **`schedule_timer_after`**: Schedules a timer interrupt for the current process.
-- **`rank`**: Returns the ID of the currently executing process.
+- **`rank`**: Returns the ID of the currently executing process. (Ranks start with 0)
 - **`now`**: Returns current simulation time.
 - **`list_pool`**: List all processes in a pool.
 - **`choose_from_pool`**: Choose random process id from specified pool.
