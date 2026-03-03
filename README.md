@@ -41,7 +41,7 @@ Implement `ProcessHandle` to define how your process reacts to initialization, m
 
 ```rust
 use dscale::{ProcessHandle, Rank, MessagePtr, TimerId, Jiffies};
-use dscale::{broadcasst, send_to, schedule_timer_after, rank, debug_process};
+use dscale::{broadcast, send_to, schedule_timer_after, rank, debug_process};
 use dscale::global::configuration;
 
 #[derive(Default)]
@@ -69,10 +69,10 @@ impl ProcessHandle for MyProcess {
 
 ### 4. Run the Simulation
 
-Use `SimulationbBuilder` to configure the topology, network constraints, and start the simulation.
+Use `SimulationBuilder` to configure the topology, network constraints, and start the simulation.
 
 ```rust
-use dscale::{Simulationbuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
+use dscale::{SimulationBuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
 
 fn main() {
     let simulation = SimulationBuilder::default()
@@ -123,8 +123,8 @@ fn main() {
 
 These functions are available globally but must be called within the context of a running process step.
 
-- **`broadcasst`**: Sends a message to all other processes. (GLOBAL_POOL)
-- **`broadcasst_within_pool`**: Sends a message to all other processes within a specific pool.
+- **`broadcast`**: Sends a message to all other processes. (GLOBAL_POOL)
+- **`broadcast_within_pool`**: Sends a message to all other processes within a specific pool.
 - **`send_to`**: Sends a message to a specific process.
 - **`send_random`**: Sends a message to random process. (from GLOBAL_POOL)
 - **`send_random_from_pool`**: Sends a message to random process within specific pool.
