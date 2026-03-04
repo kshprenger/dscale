@@ -77,13 +77,13 @@ pub enum Distributions {
 }
 
 pub struct Randomizer {
-    rnd: rand::rngs::StdRng,
+    rnd: rand::rngs::SmallRng,
 }
 
 impl Randomizer {
     pub fn new(seed: Seed) -> Self {
         Self {
-            rnd: rand::rngs::StdRng::seed_from_u64(seed),
+            rnd: rand::rngs::SmallRng::seed_from_u64(seed),
         }
     }
 
