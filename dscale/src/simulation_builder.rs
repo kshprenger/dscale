@@ -13,7 +13,7 @@ use crate::{
     process_handle::MutableProcessHandle,
     random::Seed,
     time::Jiffies,
-    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology},
+    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing},
 };
 
 fn init_logger() {
@@ -369,7 +369,7 @@ impl SimulationBuilder {
     pub fn build(mut self) -> Simulation {
         init_logger();
 
-        let mut pool_listing = HashMap::new();
+        let mut pool_listing = PoolListing::default();
         let mut procs: Vec<Option<MutableProcessHandle>> = vec![None; self.proc_id];
 
         // Ensure latency_topology matrix is sized for all processes

@@ -5,12 +5,14 @@
 //! modeling different latency patterns within process pools and between
 //! different pools to create realistic network topologies.
 
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
+
+use rustc_hash::FxHashMap;
 
 use crate::{Rank, random::Distributions};
 
 pub(crate) type LatencyTopology = Vec<Vec<Option<Distributions>>>;
-pub(crate) type PoolListing = HashMap<String, Vec<Rank>>;
+pub(crate) type PoolListing = FxHashMap<String, Vec<Rank>>;
 
 /// Default pool for all processes within simulation.
 /// Broadcasts by default use this pool.

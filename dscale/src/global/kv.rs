@@ -10,10 +10,11 @@
 
 use std::any::Any;
 use std::cell::RefCell;
-use std::collections::HashMap;
+
+use rustc_hash::FxHashMap;
 
 thread_local! {
-    pub(crate) static ANY_KV: RefCell<HashMap<String, Box<dyn Any>>> = RefCell::new(HashMap::new());
+    pub(crate) static ANY_KV: RefCell<FxHashMap<String, Box<dyn Any>>> = RefCell::new(FxHashMap::default());
 }
 
 /// Stores a value of any type in the global key-value store.
