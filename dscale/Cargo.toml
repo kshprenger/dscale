@@ -21,3 +21,4 @@ log = { version = "0.4.29", features = ["release_max_level_info"] }
 mimalloc = "0.1.48"
 rand = "0.9.2"
 rand_distr = "0.5.1"
+rustc-hash = "2.1.1"
