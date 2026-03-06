@@ -104,7 +104,7 @@ impl SimulationAccess {
 }
 
 // Any actor makes step -> Buffering outcoming events -> Drain them to all actors
-// Before any process step actor should ensure corrent Rank on execution via access::set_process()
+// Before any process step actor should ensure corrent Rank on execution via [access]:set_process()
 thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }
@@ -140,32 +140,32 @@ pub(crate) fn schedule() {
 }
 
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {
-    debug_process!("Access: scheduling timer after {after}");
+    debug_process!("[Access] scheduling timer after {after}");
     with_access(|access| access.schedule_timer_after(after))
 }
 
 pub fn broadcast(message: impl Message + 'static) {
-    debug_process!("Access: broadcasting globally");
+    debug_process!("[Access] broadcasting globally");
     with_access(|access| access.broadcast_within_pool(GLOBAL_POOL, message));
 }
 
 pub fn broadcast_within_pool(pool: &'static str, message: impl Message + 'static) {
-    debug_process!("Access: broadcasting within: {pool}");
+    debug_process!("[Access] broadcasting within: {pool}");
     with_access(|access| access.broadcast_within_pool(pool, message));
 }
 
 pub fn send_to(to: Rank, message: impl Message + 'static) {
-    debug_process!("Access: send to: {to}");
+    debug_process!("[Access] send to: {to}");
     with_access(|access| access.send_to(to, message));
 }
 
 pub fn send_random(message: impl Message + 'static) {
-    debug_process!("Access: sending random in GLOBAL_POOL");
+    debug_process!("[Access] sending random in GLOBAL_POOL");
     with_access(|access| access.send_random_from_pool(GLOBAL_POOL, message));
 }
 
 pub fn send_random_from_pool(pool: &'static str, message: impl Message + 'static) {
-    debug_process!("Access: sending random from pool: {pool}");
+    debug_process!("[Access] sending random from pool: {pool}");
     with_access(|access| access.send_random_from_pool(pool, message));
 }
 
@@ -174,11 +174,11 @@ pub fn rank() -> Rank {
 }
 
 pub fn list_pool(name: &str) -> Vec<Rank> {
-    debug_process!("Access: listing pool: {name}");
+    debug_process!("[Access] listing pool: {name}");
     with_access(|access| access.list_pool(name).to_vec())
 }
 
 pub fn choose_from_pool(name: &str) -> Rank {
-    debug_process!("Access: choosing random from pool: {name}");
+    debug_process!("[Access] choosing random from pool: {name}");
     with_access(|access| access.choose_from_pool(name))
 }

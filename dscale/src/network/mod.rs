@@ -47,7 +47,7 @@ impl Network {
             Destination::To(to) => &[to],
         };
 
-        debug!("Submitting message from {source}, targets of the message: {targets:?}",);
+        debug!("Targets: P{source} -> P{targets:?}");
 
         targets.into_iter().copied().for_each(|target| {
             let routed_message = RoutedMessage {
