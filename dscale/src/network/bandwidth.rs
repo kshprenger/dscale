@@ -7,8 +7,6 @@
 
 use std::collections::BinaryHeap;
 
-use log::debug;
-
 use crate::{
     message::{RoutedMessage, TimePriorityMessageQueue},
     network::LatencyQueue,
@@ -224,7 +222,6 @@ impl BandwidthQueue {
     }
 
     pub(crate) fn push(&mut self, message: RoutedMessage) {
-        debug!("Submitted message with base time: {}", message.arrival_time);
         self.global_queue.push(message);
     }
 
@@ -267,7 +264,6 @@ impl BandwidthQueue {
 
 impl BandwidthQueue {
     fn move_message_from_latency_queue_to_buffers(&mut self) {
-        debug!("Moving message from latency queue to buffers");
         let mut message = self
             .global_queue
             .pop()
