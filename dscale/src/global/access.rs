@@ -104,7 +104,7 @@ impl SimulationAccess {
 }
 
 // Any actor makes step -> Buffering outcoming events -> Drain them to all actors
-// Before any process step actor should ensure corrent Rank on execution via [access]:set_process()
+// Before any process step actor should ensure corrent Rank on execution via access::set_process()
 thread_local! {
     pub(crate) static ACCESS_HANDLE: RefCell<Option<SimulationAccess>> = RefCell::new(None);
 }
