@@ -75,7 +75,7 @@ Use `SimulationBuilder` to configure the topology, network constraints, and star
 use dscale::{SimulationBuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
 
 fn main() {
-    let simulation = SimulationBuilder::default()
+    let mut simulation = SimulationBuilder::default()
         .add_pool::<MyProcess>("Client", 1)
         .add_pool::<MyProcess>("Server", 3)
         .latency_topology(&[
