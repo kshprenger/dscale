@@ -7,3 +7,4 @@ lto = "fat"           # Link Time Optimization: enables cross-crate optimization
 codegen-units = 1     # Reduces parallelism in code generation for better optimization
 panic = "abort"       # Removes stack unwinding code, slightly smaller and faster binary
 opt-level = 3         # Maximum optimization
+debug = true          # Pretty flamegraph without loosing performance
