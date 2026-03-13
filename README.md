@@ -1,6 +1,6 @@
 # DScale
 
-This project provides a fast & deterministic simulation framework for testing and benchmarking distributed systems. It simulates network latency, bandwidth constraints, and process execution in a single-threaded, event-driven environment.
+This project provides a fast & deterministic simulation framework for testing and benchmarking distributed systems. It simulates network latency, bandwidth constraints and process execution in a single-threaded, event-driven environment.
 
 ## Usage
 
