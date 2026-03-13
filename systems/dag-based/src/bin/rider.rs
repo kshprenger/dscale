@@ -11,7 +11,7 @@ fn main() {
             "Validators",
             Distributions::Normal(Jiffies(50), Jiffies(10)),
         )])
-        .time_budget(Jiffies(3600_000))
+        .time_budget(Jiffies(3600_00))
         .nic_bandwidth(BandwidthDescription::Unbounded)
         .seed(123)
         .build();
