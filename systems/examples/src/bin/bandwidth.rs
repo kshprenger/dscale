@@ -39,7 +39,7 @@ fn run_unbounded() -> usize {
         .build();
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let sent = kv::get::<usize>("messages_sent");
@@ -67,11 +67,12 @@ fn run_bounded() -> usize {
             Distributions::Uniform(Jiffies(10), Jiffies(10)),
         )])
         .time_budget(Jiffies(10_000))
+        .simple()
         .seed(42)
         .build();
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let sent = kv::get::<usize>("messages_sent");

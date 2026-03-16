@@ -11,8 +11,7 @@ impl Message for BroadcastMessage {}
 pub struct BroadcastProcess {}
 
 impl ProcessHandle for BroadcastProcess {
-    fn start(&mut self) {
-        // Process with rank 0 starts the broadcast
+    fn on_start(&mut self) {
         if rank() == 0 {
             schedule_timer_after(Jiffies(100));
         }

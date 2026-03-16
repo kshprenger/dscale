@@ -4,11 +4,11 @@
 
 use std::{
     collections::BTreeSet,
-    rc::{Rc, Weak},
+    sync::{Arc, Weak},
 };
 
 use dscale::{
-    global::{kv, configuration},
+    global::{configuration, kv},
     *,
 };
 use rand::{SeedableRng, rngs::StdRng};
@@ -50,11 +50,11 @@ impl Default for SparseBullshark {
     }
 }
 impl ProcessHandle for SparseBullshark {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.proc_num = configuration::process_number();
         self.sampler = Some(StdRng::seed_from_u64(configuration::seed()));
         self.dag.set_round_size(configuration::process_number());
-        self.rbcast.start(configuration::process_number());
+        self.rbcast.on_start(configuration::process_number());
 
         // Shared genesis vertices
         let genesis_vertex = VertexPtr::new(Vertex {
@@ -71,7 +71,7 @@ impl ProcessHandle for SparseBullshark {
     // DAG construction: part 1
     fn on_message(&mut self, from: Rank, message: MessagePtr) {
         if let Some(bs_message) = self.rbcast.process(from, message.as_type::<BCBMessage>()) {
-            match bs_message.as_type::<VertexMessage>().as_ref() {
+            match bs_message.as_type::<VertexMessage>() {
                 VertexMessage::Genesis(v) => {
                     debug_assert!(v.round == 0);
                     self.dag.add_vertex(v.clone());
@@ -182,7 +182,7 @@ impl SparseBullshark {
         if candidates.len() <= self.D {
             return candidates
                 .into_iter()
-                .map(|strong| Rc::downgrade(&strong))
+                .map(|strong| Arc::downgrade(&strong))
                 .collect();
         }
 
@@ -210,7 +210,7 @@ impl SparseBullshark {
 
         random_candidates
             .into_iter()
-            .map(|strong| Rc::downgrade(&strong))
+            .map(|strong| Arc::downgrade(&strong))
             .collect()
     }
 

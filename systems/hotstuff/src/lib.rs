@@ -1,6 +1,6 @@
 // https://arxiv.org/pdf/1803.05069
 
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, sync::Arc};
 
 use dscale::{
     global::{configuration::process_number, kv},
@@ -15,15 +15,15 @@ type NodeId = usize;
 
 pub struct Node {
     pub id: NodeId,
-    pub parent: Option<Rc<Node>>,
+    pub parent: Option<Arc<Node>>,
     pub height: usize,
     pub creator: Rank,
     pub creation_time: Jiffies,
 }
 
 pub enum HSMessage {
-    Propose(Rc<Node>),
-    Vote(Rc<Node>),
+    Propose(Arc<Node>),
+    Vote(Arc<Node>),
 }
 
 impl Message for HSMessage {}
@@ -31,20 +31,20 @@ impl Message for HSMessage {}
 pub struct ChainedHotstuff {
     pending_quorums: HashMap<NodeId, Combiner<()>>,
     vheight: usize,
-    b_lock: Rc<Node>,
-    b_exec: Rc<Node>,
-    b_leaf: Rc<Node>,
+    b_lock: Arc<Node>,
+    b_exec: Arc<Node>,
+    b_leaf: Arc<Node>,
 }
 
 impl ProcessHandle for ChainedHotstuff {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         if rank() == 0 {
             broadcast(HSMessage::Propose(self.create_leaf()));
         }
     }
     fn on_message(&mut self, from: Rank, message: MessagePtr) {
         debug_process!("Got message from {from}");
-        match message.as_type::<HSMessage>().as_ref() {
+        match message.as_type::<HSMessage>() {
             HSMessage::Propose(b_new) => {
                 if b_new.height > self.vheight
                     && (self.extends(b_new) || b_new.height > self.b_lock.height)
@@ -78,7 +78,7 @@ impl ProcessHandle for ChainedHotstuff {
 
 impl Default for ChainedHotstuff {
     fn default() -> Self {
-        let genesis_node = kv::get::<Rc<Node>>(B0);
+        let genesis_node = kv::get::<Arc<Node>>(B0);
         Self {
             pending_quorums: HashMap::new(),
             vheight: 0,
@@ -91,7 +91,7 @@ impl Default for ChainedHotstuff {
 
 // Internals
 impl ChainedHotstuff {
-    fn update(&mut self, b_star: Rc<Node>) {
+    fn update(&mut self, b_star: Arc<Node>) {
         let b__ = b_star.parent.clone();
         let b_ = b__.map(|b__| b__.parent.clone()).flatten();
         let b = b_.clone().map(|b_| b_.parent.clone()).flatten();
@@ -111,7 +111,7 @@ impl ChainedHotstuff {
         }
     }
 
-    fn on_commit(&mut self, b: Rc<Node>) {
+    fn on_commit(&mut self, b: Arc<Node>) {
         if self.b_exec.height < b.height {
             self.on_commit(b.parent.clone().unwrap());
             if rank() == b.creator {
@@ -134,9 +134,9 @@ impl ChainedHotstuff {
 
 // Utils
 impl ChainedHotstuff {
-    fn create_leaf(&self) -> Rc<Node> {
+    fn create_leaf(&self) -> Arc<Node> {
         let parent = self.b_leaf.clone();
-        Rc::new(Node {
+        Arc::new(Node {
             id: global_unique_id(),
             parent: Some(parent.clone()),
             height: parent.height + 1,
@@ -153,7 +153,7 @@ impl ChainedHotstuff {
         (process_number() * 2) / 3 + 1
     }
 
-    fn extends(&self, child: &Rc<Node>) -> bool {
-        Rc::ptr_eq(child.parent.as_ref().unwrap(), &self.b_lock)
+    fn extends(&self, child: &Arc<Node>) -> bool {
+        Arc::ptr_eq(child.parent.as_ref().unwrap(), &self.b_lock)
     }
 }

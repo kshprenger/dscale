@@ -20,7 +20,7 @@ fn main() {
     kv::set::<usize>("pongs_received", 0);
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let heartbeats = kv::get::<usize>("heartbeats");

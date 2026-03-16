@@ -2,6 +2,7 @@
 
 pub mod bandwidth;
 pub mod broadcast;
+pub mod heavy_broadcast;
 pub mod multidc_pingpong;
 pub mod ring;
 pub mod timers;

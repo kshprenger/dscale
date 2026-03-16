@@ -48,7 +48,7 @@ use dscale::global::configuration;
 struct MyProcess;
 
 impl ProcessHandle for MyProcess {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         debug_process!("Starting process {} of {}", rank(), configuration::process_number());
         // Schedule initial messages or timers
         schedule_timer_after(Jiffies(100));

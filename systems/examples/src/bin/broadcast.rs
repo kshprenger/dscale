@@ -18,7 +18,7 @@ fn main() {
         .build();
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let received_count = kv::get::<usize>("broadcast_received");

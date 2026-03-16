@@ -8,25 +8,32 @@ pub enum LazyPingPongMessage {
 
 impl Message for LazyPingPongMessage {}
 
-#[derive(Default)]
 pub struct LazyPingPong {
-    heartbeat_timer: Option<TimerId>,
+    heartbeat_timer: usize,
     ping_count: usize,
 }
 
+impl Default for LazyPingPong {
+    fn default() -> Self {
+        Self {
+            heartbeat_timer: 0,
+            ping_count: 0,
+        }
+    }
+}
+
 impl ProcessHandle for LazyPingPong {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         debug_process!("Starting timer demo process");
 
         // Schedule a heartbeat timer to fire every 1000 jiffies
         let timer_id = schedule_timer_after(Jiffies(1000));
-        self.heartbeat_timer = Some(timer_id);
+        self.heartbeat_timer = timer_id;
         debug_process!(
             "Scheduled heartbeat timer {} to fire in 1000 jiffies",
             timer_id
         );
 
-        // Process 0 starts by sending a ping
         if rank() == 0 {
             send_to(1, LazyPingPongMessage::Ping);
         }
@@ -35,7 +42,7 @@ impl ProcessHandle for LazyPingPong {
     fn on_message(&mut self, from: Rank, message: MessagePtr) {
         let m = message.as_type::<LazyPingPongMessage>();
 
-        match m.as_ref() {
+        match m {
             LazyPingPongMessage::Ping => {
                 debug_process!("Received Ping from Process {}", from);
                 kv::modify::<usize>("pings_received", |count| *count += 1);
@@ -62,16 +69,15 @@ impl ProcessHandle for LazyPingPong {
         debug_process!("Timer {} fired", timer_id);
 
         // Check if this is the heartbeat timer
-        if let Some(heartbeat_id) = self.heartbeat_timer {
-            if timer_id == heartbeat_id {
-                debug_process!("Heartbeat timer fired");
-                kv::modify::<usize>("heartbeats", |count| *count += 1);
+        let heartbeat_id = self.heartbeat_timer;
+        if timer_id == heartbeat_id {
+            debug_process!("Heartbeat timer fired");
+            kv::modify::<usize>("heartbeats", |count| *count += 1);
 
-                // Reschedule the heartbeat timer for continuous operation
-                let new_timer_id = schedule_timer_after(Jiffies(1000));
-                self.heartbeat_timer = Some(new_timer_id);
-                return;
-            }
+            // Reschedule the heartbeat timer for continuous operation
+            let new_timer_id = schedule_timer_after(Jiffies(1000));
+            self.heartbeat_timer = new_timer_id;
+            return;
         }
 
         // This must be a delayed response timer

@@ -28,11 +28,12 @@ fn main() {
             ),
         ])
         .seed(5444)
+        .simple()
         .build();
 
     kv::set::<ExecutionHistory>("linearizable_history", ExecutionHistory::new());
 
-    sim.run();
+    sim.run_full_budget();
 
     println!(
         "{:<8} | {:<12} | {:<8} | {:<12} | {:<12}",

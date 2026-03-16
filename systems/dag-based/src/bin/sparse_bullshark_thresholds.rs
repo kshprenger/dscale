@@ -2,8 +2,7 @@ use std::{fs::File, sync::Mutex};
 
 use dag_based::sparse_bullshark::SparseBullshark;
 use dscale::{
-    BandwidthDescription, Distributions, LatencyDescription, SimulationBuilder, global::kv,
-    time::Jiffies,
+    BandwidthDescription, Distributions, Jiffies, LatencyDescription, SimulationBuilder, global::kv,
 };
 use rayon::prelude::*;
 use std::io::Write;
@@ -33,17 +32,23 @@ fn main() {
                 .add_pool::<SparseBullshark>("Validators", k_validators)
                 .latency_topology(&[LatencyDescription::WithinPool(
                     "Validators",
-                    Distributions::Normal(Jiffies(50), Jiffies(10)),
+                    Distributions::Normal {
+                        mean: Jiffies(50),
+                        std_dev: Jiffies(10),
+                        low: Jiffies(20),
+                        high: Jiffies(80),
+                    },
                 )])
                 .time_budget(Jiffies(36000_000)) // Simulating 10 hours of real time execution
                 .nic_bandwidth(BandwidthDescription::Bounded(5 * 1024 * 1024 / (8 * 1000)))
                 .seed(*seed)
+                .simple()
                 .build();
 
             // (avg_latency, total_vertex)
             kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
 
-            sim.run();
+            sim.run_full_budget();
 
             let ordered = kv::get::<(f64, usize)>("avg_latency").1;
             let avg_latency = kv::get::<(f64, usize)>("avg_latency").0;

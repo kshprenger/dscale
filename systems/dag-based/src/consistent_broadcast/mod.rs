@@ -2,10 +2,8 @@ mod message;
 pub(crate) use message::BCBMessage;
 pub(crate) use message::ID_SIZE;
 
-use std::{
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use dscale::{Message, MessagePtr, Rank, broadcast, rank, send_to};
 
@@ -15,7 +13,7 @@ use crate::consistent_broadcast::message::BCBMessageId;
 // Algorithm 3.17: Signed Echo Broadcast
 #[derive(Default)]
 pub struct ByzantineConsistentBroadcast {
-    messages: HashMap<BCBMessageId, (Rc<dyn Message>, usize)>, // usize -> signature count, once it reaches 2f+1 message pops out
+    messages: HashMap<BCBMessageId, (Arc<dyn Message>, usize)>, // usize -> signature count, once it reaches 2f+1 message pops out
     waiting_certificates: HashSet<BCBMessageId>,
     process_id: Rank,
     message_id: usize,
@@ -43,18 +41,18 @@ impl ByzantineConsistentBroadcast {
 impl ByzantineConsistentBroadcast {
     pub(crate) fn reliably_broadcast(&mut self, message: impl Message + 'static) {
         let next_id = self.next_unique_message_id();
-        let shared = Rc::new(message);
+        let shared = Arc::new(message);
         self.messages.insert(next_id, (shared.clone(), 0));
         broadcast(BCBMessage::Initiate((next_id, shared)));
     }
 
-    pub(crate) fn start(&mut self, proc_num: usize) {
+    pub(crate) fn on_start(&mut self, proc_num: usize) {
         self.process_id = rank();
         self.proc_num = proc_num;
     }
 
-    pub(crate) fn process(&mut self, from: Rank, message: Rc<BCBMessage>) -> Option<MessagePtr> {
-        match message.as_ref() {
+    pub(crate) fn process(&mut self, from: Rank, message: &BCBMessage) -> Option<MessagePtr> {
+        match message {
             BCBMessage::Certificate(_, id) => {
                 match self.messages.remove(&id) {
                     // Due to network latency we got certificate gathered by some other quorum (not including us)

@@ -2,7 +2,7 @@
 
 use std::{
     collections::BTreeSet,
-    rc::{Rc, Weak},
+    sync::{Arc, Weak},
 };
 
 use dscale::{global::configuration, *};
@@ -27,11 +27,11 @@ pub struct DAGRider {
 }
 
 impl ProcessHandle for DAGRider {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.self_id = rank();
         self.proc_num = configuration::process_number();
         self.dag.set_round_size(configuration::process_number());
-        self.rbcast.start(configuration::process_number());
+        self.rbcast.on_start(configuration::process_number());
 
         schedule_timer_after(CONSTRUCTING_ROUTINE_INTERVAL);
 
@@ -51,7 +51,7 @@ impl ProcessHandle for DAGRider {
 
     fn on_message(&mut self, from: Rank, message: MessagePtr) {
         if let Some(bs_message) = self.rbcast.process(from, message.as_type::<BCBMessage>()) {
-            match bs_message.as_type::<VertexMessage>().as_ref() {
+            match bs_message.as_type::<VertexMessage>() {
                 VertexMessage::Genesis(v) => {
                     debug_assert!(v.round == 0);
                     self.dag.add_vertex(v.clone());
@@ -140,7 +140,7 @@ impl DAGRider {
                 .iter()
                 .flatten()
                 .cloned()
-                .map(|strong| Rc::downgrade(&strong))
+                .map(|strong| Arc::downgrade(&strong))
                 .collect::<Vec<Weak<Vertex>>>(),
             creation_time: now(),
         })
