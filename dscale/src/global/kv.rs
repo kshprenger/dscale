@@ -4,18 +4,19 @@
 //! It's useful for sharing state, metrics, or configuration between processes or
 //! for passing data back to the host application after simulation completion.
 //!
-//! The storage is thread-local and persists throughout the simulation lifetime.
+//! The storage is global and persists throughout the simulation lifetime.
 //! All functions operate on a per-simulation basis and are reset when a new
 //! simulation starts.
 
 use std::any::Any;
-use std::cell::RefCell;
 
-use rustc_hash::FxHashMap;
+use dashmap::DashMap;
+use rustc_hash::FxBuildHasher;
 
-thread_local! {
-    pub(crate) static ANY_KV: RefCell<FxHashMap<String, Box<dyn Any>>> = RefCell::new(FxHashMap::default());
-}
+type Map<K, V> = DashMap<K, V, FxBuildHasher>;
+
+static KV: std::sync::LazyLock<Map<String, Box<dyn Any + Send + Sync>>> =
+    std::sync::LazyLock::new(|| DashMap::with_hasher(FxBuildHasher));
 
 /// Stores a value of any type in the global key-value store.
 ///
@@ -35,10 +36,8 @@ thread_local! {
 /// # Panics
 ///
 /// This function does not panic under normal circumstances.
-pub fn set<T: 'static>(key: &str, value: T) {
-    ANY_KV.with(|m| {
-        m.borrow_mut().insert(key.to_string(), Box::new(value));
-    });
+pub fn set<T: 'static + Send + Sync>(key: &str, value: T) {
+    KV.insert(key.to_string(), Box::new(value));
 }
 
 /// Retrieves a cloned copy of a value from the global key-value store.
@@ -63,15 +62,12 @@ pub fn set<T: 'static>(key: &str, value: T) {
 /// This function panics if:
 /// * The key does not exist in the store
 /// * The stored value cannot be downcast to type `T`
-pub fn get<T: 'static + Clone>(key: &str) -> T {
-    ANY_KV.with(|m| {
-        m.borrow()
-            .get(key)
-            .expect("No key")
-            .downcast_ref::<T>()
-            .cloned()
-            .expect("Wrong type cast")
-    })
+pub fn get<T: 'static + Clone + Send + Sync>(key: &str) -> T {
+    KV.get(key)
+        .expect("No key")
+        .downcast_ref::<T>()
+        .cloned()
+        .expect("Wrong type cast")
 }
 
 /// Modifies a value in the global key-value store in-place.
@@ -94,16 +90,11 @@ pub fn get<T: 'static + Clone>(key: &str) -> T {
 /// This function panics if:
 /// * The key does not exist in the store
 /// * The stored value cannot be downcast to type `T`
-pub fn modify<T: 'static>(key: &str, f: impl FnOnce(&mut T)) {
-    ANY_KV.with(|m| {
-        f(m.borrow_mut()
-            .get_mut(key)
-            .expect("No key")
-            .downcast_mut::<T>()
-            .expect("Wrong type cast"));
-    });
+pub fn modify<T: 'static + Send + Sync>(key: &str, f: impl FnOnce(&mut T)) {
+    let mut entry = KV.get_mut(key).expect("No key");
+    f(entry.downcast_mut::<T>().expect("Wrong type cast"));
 }
 
-pub(crate) fn drop_kv() {
-    ANY_KV.take();
+pub(crate) fn drop() {
+    KV.clear();
 }

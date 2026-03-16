@@ -4,7 +4,7 @@
 //! by all processes in DScale simulations, as well as the `Rank` type used
 //! for process identification throughout the system.
 
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use crate::{MessagePtr, time::timer_manager::TimerId};
 
@@ -17,7 +17,7 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 ///
 pub type Rank = usize;
 
-pub(crate) type MutableProcessHandle = Rc<RefCell<dyn ProcessHandle>>;
+pub(crate) type MutableProcessHandle = Arc<Mutex<dyn ProcessHandle + Send>>;
 
 /// Core trait that defines the behavior of a process in DScale simulations.
 ///

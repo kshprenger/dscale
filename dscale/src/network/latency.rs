@@ -1,5 +1,5 @@
 use std::collections::BinaryHeap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use log::debug;
 
@@ -8,12 +8,12 @@ use crate::random::Randomizer;
 use crate::topology::Topology;
 
 pub(crate) struct LatencyQueue {
-    topology: Rc<Topology>,
+    topology: Arc<Topology>,
     randomizer: Randomizer,
     queue: TimePriorityMessageQueue,
 }
 impl LatencyQueue {
-    pub(crate) fn new(randomizer: Randomizer, topology: Rc<Topology>) -> Self {
+    pub(crate) fn new(randomizer: Randomizer, topology: Arc<Topology>) -> Self {
         Self {
             randomizer,
             topology,

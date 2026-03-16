@@ -8,11 +8,9 @@
 //! The unique IDs are useful for creating identifiers for messages, timers,
 //! or any other simulation entities that need globally unique identification.
 
-use std::cell::Cell;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-thread_local! {
-    pub(crate) static TSO: Cell<usize> = Cell::new(0)
-}
+pub(crate) static TSO: AtomicUsize = AtomicUsize::new(0);
 
 /// Generates a globally unique identifier within the simulation.
 ///
@@ -40,9 +38,9 @@ thread_local! {
 ///
 ///
 pub fn global_unique_id() -> usize {
-    TSO.replace(TSO.get() + 1)
+    TSO.fetch_add(1, Ordering::Relaxed)
 }
 
-pub(crate) fn drop_tso() {
-    TSO.take();
+pub(crate) fn drop() {
+    TSO.store(0, Ordering::Relaxed);
 }

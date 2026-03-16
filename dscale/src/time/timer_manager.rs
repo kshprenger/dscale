@@ -4,14 +4,14 @@
 //! delayed execution of callbacks. Timers are managed centrally by the simulation
 //! engine and fire deterministically based on simulation time progression.
 
-use std::{cell::RefCell, cmp::Reverse, collections::BinaryHeap, rc::Rc};
+use std::{cmp::Reverse, collections::BinaryHeap, sync::{Arc, Mutex}};
 
 use log::debug;
 
 use crate::{
     Rank,
     actor::{EventSubmitter, SimulationActor},
-    dscale_message::DScaleMessage,
+    event::DScaleMessage,
     global, now,
     nursery::Nursery,
     time::Jiffies,
@@ -49,15 +49,15 @@ pub(crate) fn next_timer_id() -> TimerId {
     global::global_unique_id()
 }
 
-pub(crate) type TimerManagerActor = Rc<RefCell<TimerManager>>;
+pub(crate) type TimerManagerActor = Arc<Mutex<TimerManager>>;
 
 pub(crate) struct TimerManager {
     working_timers: BinaryHeap<Reverse<(Jiffies, (Rank, TimerId))>>,
-    nursery: Rc<Nursery>,
+    nursery: Arc<Nursery>,
 }
 
 impl TimerManager {
-    pub(crate) fn new(nursery: Rc<Nursery>) -> Self {
+    pub(crate) fn new(nursery: Arc<Nursery>) -> Self {
         Self {
             working_timers: BinaryHeap::new(),
             nursery,

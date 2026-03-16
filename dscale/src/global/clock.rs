@@ -1,25 +1,23 @@
 //! Global simulation clock functionality.
 //!
-//! This module provides access to the current simulation time through a thread-local
-//! storage mechanism. The clock is managed internally by the simulation engine and
-//! provides deterministic time progression for all processes.
+//! This module provides access to the current simulation time through a global
+//! atomic storage mechanism. The clock is managed internally by the simulation
+//! engine and provides deterministic time progression for all processes.
 
-use std::cell::Cell;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use log::debug;
 
 use crate::Jiffies;
 
-thread_local! {
-    pub(crate) static CLOCK: Cell<Jiffies> = Cell::new(Jiffies(0))
-}
+pub(crate) static CLOCK: AtomicUsize = AtomicUsize::new(0);
 
-pub(crate) fn drop_clock() {
-    CLOCK.take();
+pub(crate) fn drop() {
+    CLOCK.store(0, Ordering::SeqCst);
 }
 
 pub(crate) fn fast_forward_clock(future: Jiffies) {
-    let present = CLOCK.replace(future);
+    let present = Jiffies(CLOCK.swap(future.0, Ordering::SeqCst));
     debug_assert!(present <= future, "Future < Present");
     debug!("Global time now: {future}");
 }
@@ -41,5 +39,5 @@ pub(crate) fn fast_forward_clock(future: Jiffies) {
 ///
 /// The current simulation time as [`Jiffies`].
 pub fn now() -> Jiffies {
-    CLOCK.get()
+    Jiffies(CLOCK.load(Ordering::SeqCst))
 }

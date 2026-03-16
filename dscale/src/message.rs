@@ -5,7 +5,7 @@
 //! message types must implement, as well as `MessagePtr` for type-safe message
 //! handling and routing infrastructure.
 
-use std::{any::Any, cmp::Reverse, collections::BinaryHeap, rc::Rc};
+use std::{any::Any, cmp::Reverse, collections::BinaryHeap, rc::Rc, sync::Arc};
 
 use crate::{process_handle::Rank, time::Jiffies};
 
@@ -77,7 +77,7 @@ use crate::{process_handle::Rank, time::Jiffies};
 /// [`virtual_size`]: Message::virtual_size
 /// [`MessagePtr`]: MessagePtr
 /// [`ProcessHandle::on_message`]: crate::ProcessHandle::on_message
-pub trait Message: Any {
+pub trait Message: Any + Send + Sync {
     /// Returns the virtual size of this message in bytes for bandwidth simulation.
     ///
     /// This method defines how large the message appears to the network simulation
@@ -125,7 +125,8 @@ pub trait Message: Any {
 /// 1. **Receiving Messages**: In [`ProcessHandle::on_message`] implementations
 /// 2. **Internal Routing**: By the simulation engine for message delivery
 ///
-pub struct MessagePtr(pub Rc<dyn Message>);
+#[derive(Clone)]
+pub struct MessagePtr(pub Arc<dyn Message>);
 
 impl MessagePtr {
     /// Attempts to safely cast the message to a specific type.
@@ -163,11 +164,8 @@ impl MessagePtr {
     ///     }
     /// }
     /// ```
-    pub fn try_as<T: 'static>(&self) -> Option<Rc<T>> {
-        match (self.0.clone() as Rc<dyn Any>).downcast::<T>() {
-            Err(_) => None,
-            Ok(m) => Some(m),
-        }
+    pub fn try_as_type<T: 'static>(&self) -> Option<&T> {
+        (&*self.0 as &dyn Any).downcast_ref::<T>()
     }
 
     /// Checks if the message is of a specific type without extracting it.
@@ -203,7 +201,7 @@ impl MessagePtr {
     /// }
     /// ```
     pub fn is<T: 'static>(&self) -> bool {
-        (self.0.clone() as Rc<dyn Any>).is::<T>()
+        self.try_as_type::<T>().is_some()
     }
 
     /// Casts the message to a specific type, panicking if the cast fails.
@@ -246,33 +244,33 @@ impl MessagePtr {
     ///
     /// [`is`]: MessagePtr::is
     /// [`try_as`]: MessagePtr::try_as
-    pub fn as_type<T: 'static>(self) -> Rc<T> {
-        (self.0 as Rc<dyn Any>).downcast::<T>().unwrap()
+    pub fn as_type<T: 'static>(&self) -> &T {
+        self.try_as_type::<T>().expect("Failed as_type")
     }
 }
 
 #[derive(Clone)]
-pub(crate) struct ProcessStep {
+pub(crate) struct Step {
     pub(crate) source: Rank,
     pub(crate) dest: Rank,
-    pub(crate) message: Rc<dyn Message>,
+    pub(crate) message: Arc<dyn Message>,
 }
 
 #[derive(Clone)]
-pub(crate) struct RoutedMessage {
+pub(crate) struct Event {
     pub(crate) arrival_time: Jiffies,
-    pub(crate) step: ProcessStep,
+    pub(crate) step: Step,
 }
 
-impl PartialEq for RoutedMessage {
+impl PartialEq for Event {
     fn eq(&self, other: &Self) -> bool {
         self.arrival_time.eq(&other.arrival_time)
     }
 }
 
-impl Eq for RoutedMessage {}
+impl Eq for Event {}
 
-impl PartialOrd for RoutedMessage {
+impl PartialOrd for Event {
     fn ge(&self, other: &Self) -> bool {
         self.arrival_time.ge(&other.arrival_time)
     }
@@ -290,10 +288,10 @@ impl PartialOrd for RoutedMessage {
     }
 }
 
-impl Ord for RoutedMessage {
+impl Ord for Event {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.arrival_time.cmp(&other.arrival_time)
     }
 }
 
-pub(crate) type TimePriorityMessageQueue = BinaryHeap<Reverse<RoutedMessage>>;
+pub(crate) type EventQueue = BinaryHeap<Reverse<Event>>;

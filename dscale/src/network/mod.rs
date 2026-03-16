@@ -1,8 +1,7 @@
 mod bandwidth;
 mod latency;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 pub use bandwidth::BandwidthDescription;
 pub(crate) use bandwidth::BandwidthQueue;
@@ -15,10 +14,10 @@ use crate::Rank;
 use crate::actor::EventSubmitter;
 use crate::actor::SimulationActor;
 use crate::destination::Destination;
-use crate::dscale_message::DScaleMessage;
+use crate::event::DScaleMessage;
 use crate::global::configuration;
-use crate::message::ProcessStep;
-use crate::message::RoutedMessage;
+use crate::message::Event as RoutedMessage;
+use crate::message::Step as ProcessStep;
 use crate::now;
 use crate::nursery::Nursery;
 use crate::random::Randomizer;
@@ -26,19 +25,19 @@ use crate::random::Seed;
 use crate::time::Jiffies;
 use crate::topology::Topology;
 
-pub(crate) type NetworkActor = Rc<RefCell<Network>>;
+pub(crate) type NetworkActor = Arc<Mutex<Network>>;
 
 pub(crate) struct Network {
     seed: Seed,
     bandwidth_queue: BandwidthQueue,
-    topology: Rc<Topology>,
-    nursery: Rc<Nursery>,
+    topology: Arc<Topology>,
+    nursery: Arc<Nursery>,
 }
 
 impl Network {
     fn submit_single_message(
         &mut self,
-        message: Rc<dyn Message>,
+        message: Arc<dyn Message>,
         source: Rank,
         destination: Destination,
     ) {
@@ -79,8 +78,8 @@ impl Network {
     pub(crate) fn new(
         seed: Seed,
         bandwidth_type: BandwidthDescription,
-        topology: Rc<Topology>,
-        nursery: Rc<Nursery>,
+        topology: Arc<Topology>,
+        nursery: Arc<Nursery>,
     ) -> Self {
         Self {
             seed,
@@ -120,7 +119,7 @@ impl SimulationActor for Network {
 }
 
 impl EventSubmitter for Network {
-    type Event = (Rank, Destination, Rc<dyn Message>);
+    type Event = (Rank, Destination, Arc<dyn Message>);
 
     fn submit(&mut self, events: &mut Vec<Self::Event>) {
         events.drain(..).for_each(|(from, destination, message)| {

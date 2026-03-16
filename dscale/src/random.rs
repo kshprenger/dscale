@@ -76,6 +76,7 @@ pub enum Distributions {
     Normal(Jiffies, Jiffies),
 }
 
+#[derive(Debug)]
 pub struct Randomizer {
     rnd: rand::rngs::SmallRng,
 }

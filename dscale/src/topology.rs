@@ -5,7 +5,7 @@
 //! modeling different latency patterns within process pools and between
 //! different pools to create realistic network topologies.
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use rustc_hash::FxHashMap;
 
@@ -130,6 +130,7 @@ pub enum LatencyDescription {
     BetweenPools(&'static str, &'static str, Distributions),
 }
 
+#[derive(Debug)]
 pub(crate) struct Topology {
     pool_listing: PoolListing,
     latency_topology: LatencyTopology,
@@ -139,8 +140,8 @@ impl Topology {
     pub(crate) fn new_shared(
         pool_listing: PoolListing,
         latency_topology: LatencyTopology,
-    ) -> Rc<Self> {
-        Rc::new(Self {
+    ) -> Arc<Self> {
+        Arc::new(Self {
             pool_listing,
             latency_topology,
         })

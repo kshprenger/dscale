@@ -1,8 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use crate::time::Jiffies;
 
-pub(crate) type SharedActor = Rc<RefCell<dyn SimulationActor>>;
+pub(crate) type SharedActor = Arc<Mutex<dyn SimulationActor + Send>>;
 
 pub(crate) trait SimulationActor {
     fn start(&mut self);

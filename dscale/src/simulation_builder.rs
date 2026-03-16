@@ -5,7 +5,10 @@
 //! network topology, bandwidth constraints, timing parameters, and other simulation
 //! settings in a fluent, type-safe manner.
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use crate::{
     ProcessHandle, Rank, Simulation,
@@ -125,7 +128,7 @@ impl SimulationBuilder {
     ///
     /// [`Rank`]: crate::Rank
     /// [`ProcessHandle`]: crate::ProcessHandle
-    pub fn add_pool<P: ProcessHandle + Default + 'static>(
+    pub fn add_pool<P: ProcessHandle + Default + Send + 'static>(
         mut self,
         name: &str,
         size: usize,
@@ -133,7 +136,7 @@ impl SimulationBuilder {
         (0..size).for_each(|_| {
             let id = self.proc_id;
             self.proc_id += 1;
-            let handle = Rc::new(RefCell::new(P::default()));
+            let handle = Arc::new(Mutex::new(P::default()));
             self.add_to_pool::<P>(name, id, handle.clone());
             self.add_to_pool::<P>(GLOBAL_POOL, id, handle.clone());
         });
