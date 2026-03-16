@@ -1,31 +1,30 @@
 use std::{
     collections::VecDeque,
     ops::Index,
-    rc::{Rc, Weak},
+    sync::{Arc, Weak},
 };
 
 use dscale::{
-    Message, Rank,
-    global::{kv, configuration::process_number},
+    Jiffies, Message, Rank,
+    global::{configuration::process_number, kv},
     now, rank,
-    time::{self},
 };
 
 use crate::consistent_broadcast::ID_SIZE;
 
 const GC_REMAIN: usize = usize::MAX;
 
-pub type VertexPtr = Rc<Vertex>;
+pub type VertexPtr = Arc<Vertex>;
 type Round = Vec<Option<VertexPtr>>;
 
 pub fn same_vertex(v: &VertexPtr, u: &VertexPtr) -> bool {
-    Rc::ptr_eq(v, u)
+    Arc::ptr_eq(v, u)
 }
 
 pub struct Vertex {
     pub round: usize,
     pub source: Rank,
-    pub creation_time: time::Jiffies,
+    pub creation_time: Jiffies,
 
     // Each vertex is a pointer to real one. (Each vertex is allocated exactly-once during execution)
     // Each party contains strong Rc references to vertices in their dags.

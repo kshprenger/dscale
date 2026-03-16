@@ -1,7 +1,7 @@
 use indicatif::{ProgressBar, ProgressStyle};
 use log::log_enabled;
 
-use crate::time::Jiffies;
+use crate::jiffy::Jiffies;
 
 const K_PROGRESS_TIMES: usize = 100;
 

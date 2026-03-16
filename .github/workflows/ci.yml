@@ -12,8 +12,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 8
       matrix:
-        binary: [ring, timers, broadcast, multidc_pingpong, bandwidth]
+        binary:
+          [
+            ring,
+            timers,
+            broadcast,
+            multidc_pingpong,
+            bandwidth,
+            heavy_broadcast,
+          ]
 
     steps:
       - name: Checkout code

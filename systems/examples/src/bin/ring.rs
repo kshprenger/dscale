@@ -14,13 +14,14 @@ fn main() {
             Distributions::Uniform(Jiffies(1), Jiffies(10)),
         )])
         .time_budget(Jiffies(100_000_000))
+        .simple()
         .seed(5)
         .build();
 
     kv::set::<usize>("passes", 0);
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     println!(

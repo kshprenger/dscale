@@ -3,7 +3,7 @@
 
 use std::{
     collections::BTreeSet,
-    rc::{Rc, Weak},
+    sync::{Arc, Weak},
 };
 
 use dscale::{global::configuration, *};
@@ -44,11 +44,11 @@ impl Default for Bullshark {
 }
 
 impl ProcessHandle for Bullshark {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.self_id = rank();
         self.proc_num = configuration::process_number();
         self.dag.set_round_size(configuration::process_number());
-        self.rbcast.start(configuration::process_number());
+        self.rbcast.on_start(configuration::process_number());
 
         // Shared genesis vertices
         let genesis_vertex = VertexPtr::new(Vertex {
@@ -65,7 +65,7 @@ impl ProcessHandle for Bullshark {
     // DAG construction: part 1
     fn on_message(&mut self, from: Rank, message: MessagePtr) {
         if let Some(bs_message) = self.rbcast.process(from, message.as_type::<BCBMessage>()) {
-            match bs_message.as_type::<VertexMessage>().as_ref() {
+            match bs_message.as_type::<VertexMessage>() {
                 VertexMessage::Genesis(v) => {
                     debug_process!("Got genesis");
                     debug_assert!(v.round == 0);
@@ -183,7 +183,7 @@ impl Bullshark {
                 .iter()
                 .flatten() // Remove option
                 .cloned()
-                .map(|strong| Rc::downgrade(&strong))
+                .map(|strong| Arc::downgrade(&strong))
                 .collect::<Vec<Weak<Vertex>>>(),
             creation_time: now(),
         })

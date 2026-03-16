@@ -1,0 +1,10 @@
+pub(crate) mod simple;
+mod emojis;
+mod progress;
+pub(crate) mod scalable;
+pub(super) mod task;
+pub(crate) mod workers;
+
+pub trait SimulationRunner {
+    fn run_full_budget(&mut self);
+}

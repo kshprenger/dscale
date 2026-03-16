@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use dscale::{Message, Rank};
 
@@ -9,7 +9,7 @@ pub struct BCBMessageId {
 }
 
 pub enum BCBMessage {
-    Initiate((BCBMessageId, Rc<dyn Message>)),
+    Initiate((BCBMessageId, Arc<dyn Message>)),
     Signature(BCBMessageId),
     Certificate(usize, BCBMessageId),
 }

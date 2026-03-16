@@ -32,12 +32,12 @@ impl Replica {
 }
 
 impl ProcessHandle for Replica {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.proc_num = process_number()
     }
 
     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {
-        if let Some(client_op) = message.try_as::<ClientReq>() {
+        if let Some(client_op) = message.try_as_type::<ClientReq>() {
             match *client_op {
                 ClientReq::GetRequest(key) => {
                     debug_process!("Client {from} requested Get({key})");

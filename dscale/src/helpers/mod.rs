@@ -1,4 +1,4 @@
-pub mod combiner;
-pub mod debug;
+mod combiner;
+mod debug;
 
 pub use combiner::Combiner;

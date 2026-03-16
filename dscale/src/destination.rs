@@ -1,6 +1,7 @@
 use crate::Rank;
 
-pub enum Destination {
+#[derive(Clone, Copy)]
+pub(crate) enum Destination {
     BroadcastWithinPool(&'static str),
-    To(Rank),
+    Target(Rank),
 }

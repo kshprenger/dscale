@@ -1,9 +1,9 @@
 use dscale::{
-    global::{kv, configuration},
+    global::{configuration, kv},
     *,
 };
 
-use rand::{Rng, SeedableRng, rngs::StdRng, seq::IndexedRandom};
+use rand::{rngs::StdRng, seq::IndexedRandom, Rng, SeedableRng};
 
 use crate::abd_store::types::{Key, Value};
 
@@ -47,7 +47,7 @@ impl Default for Client {
 }
 
 impl ProcessHandle for Client {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.rng = Some(StdRng::seed_from_u64(configuration::seed()));
         schedule_timer_after(Jiffies(100));
     }
