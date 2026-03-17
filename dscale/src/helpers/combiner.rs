@@ -5,6 +5,7 @@
 //! for implementing quorum-based algorithms, consensus protocols, and other
 //! distributed system patterns that require waiting for multiple responses.
 
+use std::sync::Mutex;
 use std::usize;
 
 /// A runtime-configured collector for gathering multiple values.
@@ -119,6 +120,10 @@ use std::usize;
 /// - **Consensus Algorithms**: Gather proposals or votes for Raft, PBFT, etc.
 ///
 pub struct Combiner<T: Sized> {
+    inner: Mutex<CombinerInner<T>>,
+}
+
+struct CombinerInner<T> {
     values: Vec<T>,
     threshold: usize,
     idx: usize,
@@ -147,9 +152,11 @@ impl<T: Sized> Combiner<T> {
             "Combinter threshold should be greater than zero"
         );
         Self {
-            values: Vec::with_capacity(threshold),
-            threshold,
-            idx: 0,
+            inner: Mutex::new(CombinerInner {
+                values: Vec::with_capacity(threshold),
+                threshold,
+                idx: 0,
+            }),
         }
     }
 
@@ -158,7 +165,7 @@ impl<T: Sized> Combiner<T> {
     /// This method accepts one value and adds it to the internal collection.
     /// It returns:
     /// - `None` if fewer than `threshold` values have been collected
-    /// - `Some(&[T])` when exactly `threshold` values have been collected
+    /// - `Some(Vec<T>)` when exactly `threshold` values have been collected
     ///
     /// Once a complete collection is returned, the combiner is considered
     /// "consumed" and subsequent calls will always return `None`.
@@ -166,7 +173,7 @@ impl<T: Sized> Combiner<T> {
     /// # Behavior
     ///
     /// - **Before Completion**: Returns `None` and stores the value internally
-    /// - **At Completion**: Returns `Some(slice)` containing all values in order
+    /// - **At Completion**: Returns `Some(Vec<T>)` containing all values in order
     /// - **After Completion**: Always returns `None` (combiner is exhausted)
     ///
     /// # Parameters
@@ -176,54 +183,20 @@ impl<T: Sized> Combiner<T> {
     /// # Returns
     ///
     /// - `None` if the collection is not yet complete
-    /// - `Some(&[T])` when the collection is complete, containing all values in insertion order
+    /// - `Some(Vec<T>)` when the collection is complete, containing all values in insertion order
     ///
-    /// #[derive(Debug)]
-    /// enum Response {
-    ///     Success(String),
-    ///     Error(u32),
-    /// }
-    ///
-    /// fn handle_responses() {
-    ///     let mut collector: Combiner<Response> = Combiner::new(3);
-    ///
-    ///     // Process responses as they arrive
-    ///     let responses = [
-    ///         Response::Success("OK".to_string()),
-    ///         Response::Error(404),
-    ///         Response::Success("Done".to_string()),
-    ///     ];
-    ///
-    ///     for response in responses {
-    ///         if let Some(all_responses) = collector.combine(response) {
-    ///             let errors: Vec<_> = all_responses.iter()
-    ///                 .filter_map(|r| match r {
-    ///                     Response::Error(code) => Some(code),
-    ///                     _ => None,
-    ///                 })
-    ///                 .collect();
-    ///
-    ///             if !errors.is_empty() {
-    ///                 println!("Received errors: {:?}", errors);
-    ///             } else {
-    ///                 println!("All responses successful");
-    ///             }
-    ///             break;
-    ///         }
-    ///     }
-    /// }
-    /// ```
-    ///
-    pub fn combine(&mut self, value: T) -> Option<&[T]> {
-        if self.idx >= self.threshold {
+    pub fn combine(&self, value: T) -> Option<Vec<T>> {
+        let mut inner = self.inner.lock().unwrap();
+
+        if inner.idx >= inner.threshold {
             return None;
         }
 
-        self.values.push(value);
-        self.idx += 1;
+        inner.values.push(value);
+        inner.idx += 1;
 
-        if self.idx == self.threshold {
-            Some(&self.values)
+        if inner.idx == inner.threshold {
+            Some(std::mem::take(&mut inner.values))
         } else {
             None
         }
