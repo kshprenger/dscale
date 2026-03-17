@@ -1,5 +1,8 @@
 use std::cell::RefCell;
+use std::mem;
 use std::sync::Arc;
+
+use crossbeam_channel::Sender;
 
 use crate::destination::Destination;
 use crate::event::Event;
@@ -21,8 +24,11 @@ fn with_local_access<R>(f: impl FnOnce(&mut LocalAccess) -> R) -> R {
     LOCAL_ACCESS.with(|cell| f(&mut cell.borrow_mut()))
 }
 
-pub(crate) fn setup_local_access(seed: Seed) {
-    with_local_access(|access| access.random = Randomizer::new(seed));
+pub(crate) fn setup_local_access(seed: Seed, sender: Sender<EventBatch>) {
+    with_local_access(|access| {
+        access.random = Randomizer::new(seed);
+        access.scheduler = Some(sender)
+    });
 }
 
 #[derive(Default)]
@@ -30,6 +36,7 @@ pub struct LocalAccess {
     process_on_execution: Rank,
     random: Randomizer,
     scheduled_events: EventBatch,
+    scheduler: Option<Sender<EventBatch>>,
 }
 
 impl LocalAccess {
@@ -73,6 +80,14 @@ impl LocalAccess {
         self.process_on_execution = id
     }
 
+    fn schedule(&mut self) {
+        self.scheduler
+            .as_ref()
+            .expect("No scheduler")
+            .send(mem::take(&mut self.scheduled_events))
+            .unwrap();
+    }
+
     fn rank(&self) -> Rank {
         self.process_on_execution
     }
@@ -80,6 +95,10 @@ impl LocalAccess {
 
 pub(crate) fn set_process(id: Rank) {
     with_local_access(|access| access.set_process(id));
+}
+
+pub(crate) fn schedule() {
+    with_local_access(|access| access.schedule());
 }
 
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {

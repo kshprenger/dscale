@@ -12,9 +12,9 @@ pub(crate) type EventBatch = SmallVec<[Event; PREDICTION_SCHEDULED_PER_STEP]>;
 
 pub(crate) static SHARED_ACCESS: OnceLock<SharedAccess> = OnceLock::new();
 
-pub(crate) fn setup_shared_access(topology: Arc<Topology>, sender: Sender<EventBatch>) {
+pub(crate) fn setup_shared_access(topology: Arc<Topology>) {
     SHARED_ACCESS
-        .set(SharedAccess::new(topology, sender))
+        .set(SharedAccess::new(topology))
         .expect("SharedAccess already initialized");
 }
 
@@ -25,28 +25,18 @@ fn shared() -> &'static SharedAccess {
 #[derive(Debug)]
 pub struct SharedAccess {
     topology: CachePadded<Arc<Topology>>,
-    sender: CachePadded<Sender<EventBatch>>,
 }
 
 impl SharedAccess {
-    pub(crate) fn new(topology: Arc<Topology>, sender: Sender<EventBatch>) -> Self {
+    pub(crate) fn new(topology: Arc<Topology>) -> Self {
         Self {
             topology: CachePadded::new(topology),
-            sender: CachePadded::new(sender),
         }
-    }
-
-    pub(crate) fn sender(&self) -> &Sender<EventBatch> {
-        &self.sender
     }
 
     pub(crate) fn topology(&self) -> &Topology {
         &self.topology
     }
-}
-
-pub(crate) fn sender() -> &'static Sender<EventBatch> {
-    shared().sender()
 }
 
 pub(crate) fn topology() -> &'static Topology {
