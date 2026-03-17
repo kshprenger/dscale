@@ -10,7 +10,6 @@ use crate::{
     actor::{EventSubmitter, SimulationActor},
     event::Event,
     global, now,
-    nursery::Nursery,
     step::{Step, StepQueue, TimedStep},
     time::Jiffies,
 };

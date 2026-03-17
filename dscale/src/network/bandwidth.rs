@@ -10,9 +10,9 @@ use std::collections::BinaryHeap;
 use log::debug;
 
 use crate::{
-    message::{RoutedMessage, TimePriorityMessageQueue},
     network::LatencyQueue,
     now,
+    step::{Step, StepQueue, TimedStep},
     time::Jiffies,
 };
 
@@ -201,7 +201,7 @@ pub(crate) struct BandwidthQueue {
     bandwidth: usize,
     global_queue: LatencyQueue,
     total_pased: Vec<usize>,
-    merged_fifo_buffers: TimePriorityMessageQueue,
+    merged_fifo_buffers: StepQueue,
 }
 
 impl BandwidthQueue {
@@ -223,21 +223,20 @@ impl BandwidthQueue {
         }
     }
 
-    pub(crate) fn push(&mut self, message: RoutedMessage) {
-        debug!("Submitted message with base time: {}", message.arrival_time);
+    pub(crate) fn push(&mut self, message: TimedStep) {
         self.global_queue.push(message);
     }
 
-    pub(crate) fn pop(&mut self) -> Option<RoutedMessage> {
-        let closest_arriving_message = self.global_queue.peek();
-        let closest_squeezing_message = self.merged_fifo_buffers.peek();
+    pub(crate) fn pop(&mut self) -> Option<TimedStep> {
+        let latency_time = self.global_queue.peek();
+        let buffer_time = self.merged_fifo_buffers.peek().map(|e| e.0.invocation_time);
 
-        match (closest_arriving_message, closest_squeezing_message) {
+        match (latency_time, buffer_time) {
             (None, None) => None,
             (Some(_), None) => self.deliver_from_latency_queue(),
             (None, Some(_)) => self.deliver_from_buffer(),
-            (Some(l_message), Some(b_message)) => {
-                if l_message.arrival_time <= b_message.0.arrival_time {
+            (Some(lt), Some(bt)) => {
+                if lt <= bt {
                     self.deliver_from_latency_queue()
                 } else {
                     self.deliver_from_buffer()
@@ -247,20 +246,13 @@ impl BandwidthQueue {
     }
 
     pub(crate) fn peek_closest(&self) -> Option<Jiffies> {
-        let closest_arriving_message = self.global_queue.peek();
-        let closest_squeezing_message = self.merged_fifo_buffers.peek();
+        let latency_time = self.global_queue.peek();
+        let buffer_time = self.merged_fifo_buffers.peek().map(|e| e.0.invocation_time);
 
-        match (closest_arriving_message, closest_squeezing_message) {
+        match (latency_time, buffer_time) {
             (None, None) => None,
-            (Some(m), None) => Some(m.arrival_time),
-            (None, Some(m)) => Some(m.0.arrival_time),
-            (Some(l_message), Some(b_message)) => {
-                if l_message.arrival_time <= b_message.0.arrival_time {
-                    Some(l_message.arrival_time)
-                } else {
-                    Some(b_message.0.arrival_time)
-                }
-            }
+            (Some(t), None) | (None, Some(t)) => Some(t),
+            (Some(lt), Some(bt)) => Some(lt.min(bt)),
         }
     }
 }
@@ -273,27 +265,42 @@ impl BandwidthQueue {
             .pop()
             .expect("Global queue should not be empty");
 
-        // Only for bounded bandwidth - unbounded case is handled directly in deliver_from_latency_queue
-        let new_total = self.total_pased[message.step.dest] + message.step.message.virtual_size();
+        let Step::NetworkStep {
+            to,
+            message: ref msg,
+            ..
+        } = message.step
+        else {
+            unreachable!("BandwidthQueue only accepts NetworkSteps");
+        };
+        let new_total = self.total_pased[to] + msg.0.virtual_size();
 
         if new_total > now().0 * self.bandwidth {
-            message.arrival_time = Jiffies(new_total / self.bandwidth); // > now()
+            message.invocation_time = Jiffies(new_total / self.bandwidth); // > now()
         }
 
         self.merged_fifo_buffers.push(std::cmp::Reverse(message));
     }
 
-    fn deliver_from_buffer(&mut self) -> Option<RoutedMessage> {
-        let message = self
+    fn deliver_from_buffer(&mut self) -> Option<TimedStep> {
+        let timed_step = self
             .merged_fifo_buffers
             .pop()
             .expect("All buffers should not be empty")
             .0;
-        self.total_pased[message.step.dest] += message.step.message.virtual_size();
-        Some(message)
+        let Step::NetworkStep {
+            to,
+            message: ref msg,
+            ..
+        } = timed_step.step
+        else {
+            unreachable!("BandwidthQueue only accepts NetworkSteps");
+        };
+        self.total_pased[to] += msg.0.virtual_size();
+        Some(timed_step)
     }
 
-    fn deliver_from_latency_queue(&mut self) -> Option<RoutedMessage> {
+    fn deliver_from_latency_queue(&mut self) -> Option<TimedStep> {
         if self.bandwidth == usize::MAX {
             // For unbounded bandwidth, deliver directly from latency queue
             // (Fast-Path)
