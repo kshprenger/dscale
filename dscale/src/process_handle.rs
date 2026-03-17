@@ -4,8 +4,6 @@
 //! by all processes in DScale simulations, as well as the `Rank` type used
 //! for process identification throughout the system.
 
-use std::sync::{Arc, Mutex};
-
 use crate::{MessagePtr, time::timer_manager::TimerId};
 
 /// Unique identifier for a process within a simulation.
@@ -256,7 +254,7 @@ pub trait ProcessHandle: Sync + Send {
     ///     fn on_timer(&mut self, id: TimerId) {}
     /// }
     /// ```
-    fn start(&mut self);
+    fn start(&self);
 
     /// Handle an incoming message from another process.
     ///
@@ -365,7 +363,7 @@ pub trait ProcessHandle: Sync + Send {
     /// [`MessagePtr::is`]: crate::MessagePtr::is
     /// [`MessagePtr::as_type`]: crate::MessagePtr::as_type
     /// [`Message`]: crate::Message
-    fn on_message(&mut self, from: Rank, message: MessagePtr);
+    fn on_message(&self, from: Rank, message: MessagePtr);
 
     /// Handle a timer event scheduled by this process.
     ///
@@ -515,5 +513,5 @@ pub trait ProcessHandle: Sync + Send {
     ///
     /// [`schedule_timer_after`]: crate::schedule_timer_after
     /// [`TimerId`]: crate::TimerId
-    fn on_timer(&mut self, id: TimerId);
+    fn on_timer(&self, id: TimerId);
 }
