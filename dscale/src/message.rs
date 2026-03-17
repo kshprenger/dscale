@@ -5,9 +5,7 @@
 //! message types must implement, as well as `MessagePtr` for type-safe message
 //! handling and routing infrastructure.
 
-use std::{any::Any, cmp::Reverse, collections::BinaryHeap, rc::Rc, sync::Arc};
-
-use crate::{process_handle::Rank, time::Jiffies};
+use std::{any::Any, sync::Arc};
 
 /// Core trait for all message types in DScale simulations.
 ///
@@ -248,50 +246,3 @@ impl MessagePtr {
         self.try_as_type::<T>().expect("Failed as_type")
     }
 }
-
-#[derive(Clone)]
-pub(crate) struct Step {
-    pub(crate) source: Rank,
-    pub(crate) dest: Rank,
-    pub(crate) message: Arc<dyn Message>,
-}
-
-#[derive(Clone)]
-pub(crate) struct Event {
-    pub(crate) arrival_time: Jiffies,
-    pub(crate) step: Step,
-}
-
-impl PartialEq for Event {
-    fn eq(&self, other: &Self) -> bool {
-        self.arrival_time.eq(&other.arrival_time)
-    }
-}
-
-impl Eq for Event {}
-
-impl PartialOrd for Event {
-    fn ge(&self, other: &Self) -> bool {
-        self.arrival_time.ge(&other.arrival_time)
-    }
-    fn le(&self, other: &Self) -> bool {
-        self.arrival_time.le(&other.arrival_time)
-    }
-    fn gt(&self, other: &Self) -> bool {
-        self.arrival_time.gt(&other.arrival_time)
-    }
-    fn lt(&self, other: &Self) -> bool {
-        self.arrival_time.lt(&other.arrival_time)
-    }
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.arrival_time.partial_cmp(&other.arrival_time)
-    }
-}
-
-impl Ord for Event {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.arrival_time.cmp(&other.arrival_time)
-    }
-}
-
-pub(crate) type EventQueue = BinaryHeap<Reverse<Event>>;
