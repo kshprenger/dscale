@@ -127,7 +127,7 @@ use crate::{
 ///
 /// [`Message::virtual_size`]: crate::Message::virtual_size
 /// [`Jiffy`]: crate::Jiffies
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum BandwidthDescription {
     /// No bandwidth limitations - messages transmit instantly.
     ///
@@ -143,6 +143,7 @@ pub enum BandwidthDescription {
     /// - Performance-critical simulations where bandwidth modeling overhead is unwanted
     /// - Systems where message sizes are small relative to available bandwidth
     ///
+    #[default]
     Unbounded,
 
     /// Limited bandwidth with specified bytes per jiffy capacity.
