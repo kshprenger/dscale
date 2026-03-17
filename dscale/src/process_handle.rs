@@ -17,8 +17,6 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 ///
 pub type Rank = usize;
 
-pub(crate) type MutableProcessHandle = Arc<Mutex<dyn ProcessHandle + Send>>;
-
 /// Core trait that defines the behavior of a process in DScale simulations.
 ///
 /// `ProcessHandle` is the fundamental interface that all processes must implement
@@ -177,7 +175,7 @@ pub(crate) type MutableProcessHandle = Arc<Mutex<dyn ProcessHandle + Send>>;
 /// [`list_pool`]: crate::list_pool
 /// [`choose_from_pool`]: crate::choose_from_pool
 /// [`global_unique_id`]: crate::global_unique_id
-pub trait ProcessHandle {
+pub trait ProcessHandle: Sync + Send {
     /// Initialize the process and schedule initial work.
     ///
     /// This method is called exactly once for each process at the beginning

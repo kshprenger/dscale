@@ -4,16 +4,14 @@
 //! delayed execution of callbacks. Timers are managed centrally by the simulation
 //! engine and fire deterministically based on simulation time progression.
 
-use std::{cmp::Reverse, collections::BinaryHeap, sync::{Arc, Mutex}};
-
-use log::debug;
+use std::cmp::Reverse;
 
 use crate::{
-    Rank,
     actor::{EventSubmitter, SimulationActor},
-    event::DScaleMessage,
+    event::Event,
     global, now,
     nursery::Nursery,
+    step::{Step, StepQueue, TimedStep},
     time::Jiffies,
 };
 
@@ -49,46 +47,37 @@ pub(crate) fn next_timer_id() -> TimerId {
     global::global_unique_id()
 }
 
-pub(crate) type TimerManagerActor = Arc<Mutex<TimerManager>>;
-
+#[derive(Default)]
 pub(crate) struct TimerManager {
-    working_timers: BinaryHeap<Reverse<(Jiffies, (Rank, TimerId))>>,
-    nursery: Arc<Nursery>,
-}
-
-impl TimerManager {
-    pub(crate) fn new(nursery: Arc<Nursery>) -> Self {
-        Self {
-            working_timers: BinaryHeap::new(),
-            nursery,
-        }
-    }
+    working_timers: StepQueue,
 }
 
 impl SimulationActor for TimerManager {
-    fn start(&mut self) {
-        // Do nothing
+    fn peek_closest_step(&self) -> Option<Jiffies> {
+        self.working_timers
+            .peek()
+            .map(|entry| entry.0.invocation_time)
     }
 
-    fn peek_closest(&self) -> Option<Jiffies> {
-        self.working_timers.peek().map(|entry| entry.0.0)
-    }
-
-    fn step(&mut self) {
-        let (_, (process_id, timer_id)) = self.working_timers.pop().expect("Should not be empty").0;
-        debug!("Firing timer with TimerId {timer_id} for P{process_id}");
-        self.nursery
-            .deliver(process_id, process_id, DScaleMessage::Timer(timer_id));
+    fn next_step(&mut self) -> Step {
+        self.working_timers
+            .pop()
+            .expect("Should not be empty")
+            .0
+            .step
     }
 }
 
 impl EventSubmitter for TimerManager {
-    type Event = (Rank, TimerId, Jiffies);
-
-    fn submit(&mut self, events: &mut Vec<Self::Event>) {
-        events.drain(..).for_each(|(source, timer_id, after)| {
-            self.working_timers
-                .push(Reverse((now() + after, (source, timer_id))));
+    fn submit(&mut self, events: &mut Vec<Event>) {
+        events.drain(..).for_each(|event| match event {
+            Event::TimerEvent { to, id, fire_after } => {
+                self.working_timers.push(Reverse(TimedStep {
+                    invocation_time: now() + fire_after,
+                    step: Step::TimerStep { to, id },
+                }))
+            }
+            _ => unreachable!(),
         });
     }
 }
