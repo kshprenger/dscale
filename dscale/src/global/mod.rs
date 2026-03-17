@@ -19,7 +19,7 @@ pub use local_access::send_to;
 pub use shared_access::list_pool;
 
 pub(crate) use local_access::set_process;
-pub(crate) use shared_access::choose_from_pool;
+pub use local_access::choose_from_pool;
 pub(crate) use shared_access::setup_shared_access;
 
 pub(crate) use clock::fast_forward_clock;

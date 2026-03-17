@@ -4,7 +4,8 @@ use std::sync::Arc;
 use crate::destination::Destination;
 use crate::event::Event;
 use crate::global::shared_access::EventBatch;
-use crate::{MessagePtr, choose_from_pool, global_unique_id, now};
+use crate::random::Randomizer;
+use crate::{MessagePtr, global_unique_id, now};
 
 use crate::{
     Message, Rank, debug_process,
@@ -23,7 +24,8 @@ fn with_local_access<R>(f: impl FnOnce(&mut LocalAccess) -> R) -> R {
 #[derive(Default)]
 pub struct LocalAccess {
     process_on_execution: Rank,
-    pub(crate) scheduled_events: EventBatch,
+    random: Randomizer,
+    scheduled_events: EventBatch,
 }
 
 impl LocalAccess {
@@ -44,8 +46,13 @@ impl LocalAccess {
     }
 
     fn send_random_from_pool(&mut self, pool: &str, message: impl Message + 'static) {
-        let target = choose_from_pool(pool);
+        let target = self.choose_from_pool(pool);
         self.send_to(target, message);
+    }
+
+    fn choose_from_pool(&mut self, pool_name: &str) -> Rank {
+        let pool = super::shared_access::list_pool(pool_name);
+        self.random.choose_from_slice(pool)
     }
 
     fn schedule_timer_after(&mut self, after: Jiffies) -> TimerId {
@@ -103,4 +110,8 @@ pub fn send_random_from_pool(pool: &'static str, message: impl Message + 'static
 
 pub fn rank() -> Rank {
     with_local_access(|access| access.rank())
+}
+
+pub fn choose_from_pool(pool_name: &str) -> Rank {
+    with_local_access(|access| access.choose_from_pool(pool_name))
 }
