@@ -13,8 +13,9 @@ use std::{
 use crate::{
     ProcessHandle, Rank, Simulation,
     network::BandwidthDescription,
-    process_handle::MutableProcessHandle,
     random::Seed,
+    runner::SimulationRunner,
+    simulation_flavor::SimulationFlavor,
     time::Jiffies,
     topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing},
 };
@@ -57,26 +58,15 @@ fn init_logger() {
 ///
 /// // simulation.run();
 /// ```
+#[derive(Default)]
 pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
     proc_id: usize,
-    pools: HashMap<String, Vec<(Rank, MutableProcessHandle)>>,
+    pools: HashMap<String, Vec<(Rank, Arc<dyn ProcessHandle>)>>,
     latency_topology: LatencyTopology,
     bandwidth: BandwidthDescription,
-}
-
-impl Default for SimulationBuilder {
-    fn default() -> Self {
-        SimulationBuilder {
-            seed: 69,
-            time_budget: Jiffies(1_000_000),
-            proc_id: 0,
-            pools: HashMap::new(),
-            bandwidth: BandwidthDescription::Unbounded,
-            latency_topology: Vec::new(),
-        }
-    }
+    flavor: SimulationFlavor,
 }
 
 impl SimulationBuilder {
@@ -136,7 +126,7 @@ impl SimulationBuilder {
         (0..size).for_each(|_| {
             let id = self.proc_id;
             self.proc_id += 1;
-            let handle = Arc::new(Mutex::new(P::default()));
+            let handle = Arc::new(P::default());
             self.add_to_pool::<P>(name, id, handle.clone());
             self.add_to_pool::<P>(GLOBAL_POOL, id, handle.clone());
         });
@@ -148,7 +138,7 @@ impl SimulationBuilder {
         &mut self,
         name: &str,
         id: usize,
-        handle: MutableProcessHandle,
+        handle: Arc<dyn ProcessHandle>,
     ) {
         let pool = self.pools.entry(name.to_string()).or_default();
         pool.push((id, handle));
@@ -369,11 +359,11 @@ impl SimulationBuilder {
     /// A configured [`Simulation`] ready to run.
     ///
     /// [`Simulation`]: crate::Simulation
-    pub fn build(mut self) -> Simulation {
+    pub fn build(mut self) -> impl SimulationRunner {
         init_logger();
 
         let mut pool_listing = PoolListing::default();
-        let mut procs: Vec<Option<MutableProcessHandle>> = vec![None; self.proc_id];
+        let mut procs: Vec<Option<Arc<dyn ProcessHandle>>> = vec![None; self.proc_id];
 
         // Ensure latency_topology matrix is sized for all processes
         let n = self.proc_id;
@@ -391,7 +381,7 @@ impl SimulationBuilder {
             pool_listing.insert(name, ids);
         }
 
-        let procs: Vec<MutableProcessHandle> = procs
+        let procs: Vec<Arc<dyn ProcessHandle>> = procs
             .into_iter()
             .map(|opt| opt.expect("Uninitialized process slot"))
             .collect();
