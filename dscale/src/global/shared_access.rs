@@ -1,14 +1,8 @@
 use std::sync::{Arc, OnceLock};
 
-use crossbeam_channel::Sender;
 use crossbeam_utils::CachePadded;
-use smallvec::SmallVec;
 
-use crate::{Rank, event::Event, topology::Topology};
-
-const PREDICTION_SCHEDULED_PER_STEP: usize = 2;
-
-pub(crate) type EventBatch = SmallVec<[Event; PREDICTION_SCHEDULED_PER_STEP]>;
+use crate::{Rank, topology::Topology};
 
 pub(crate) static SHARED_ACCESS: OnceLock<SharedAccess> = OnceLock::new();
 

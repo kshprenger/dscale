@@ -41,8 +41,6 @@ impl Network {
             Destination::To(to) => &[to],
         };
 
-        debug!("Submitting message from {source}, targets of the message: {targets:?}",);
-
         targets.into_iter().copied().for_each(|target| {
             let timed_step = TimedStep {
                 invocation_time: now() + Jiffies(1), // Without any latency message will arrive on next timepoint;
@@ -52,6 +50,7 @@ impl Network {
                     message: message.clone(),
                 },
             };
+            debug!("Submitting steps P{source} s-> P[{targets:?}]",);
             self.bandwidth_queue.push(timed_step);
         });
     }

@@ -260,7 +260,6 @@ impl BandwidthQueue {
 
 impl BandwidthQueue {
     fn move_message_from_latency_queue_to_buffers(&mut self) {
-        debug!("Moving message from latency queue to buffers");
         let mut message = self
             .global_queue
             .pop()

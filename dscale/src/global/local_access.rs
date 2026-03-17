@@ -3,10 +3,10 @@ use std::mem;
 use std::sync::Arc;
 
 use crossbeam_channel::Sender;
+use smallvec::SmallVec;
 
 use crate::destination::Destination;
 use crate::event::Event;
-use crate::global::shared_access::EventBatch;
 use crate::random::{Randomizer, Seed};
 use crate::{MessagePtr, global_unique_id, now};
 
@@ -15,6 +15,10 @@ use crate::{
     time::{Jiffies, timer_manager::TimerId},
     topology::GLOBAL_POOL,
 };
+
+const PREDICTION_SCHEDULED_PER_STEP: usize = 2;
+
+pub(crate) type EventBatch = SmallVec<[Event; PREDICTION_SCHEDULED_PER_STEP]>;
 
 thread_local! {
     pub(crate) static LOCAL_ACCESS: RefCell<LocalAccess> = RefCell::new(LocalAccess::default());
@@ -112,22 +116,22 @@ pub fn broadcast(message: impl Message + 'static) {
 }
 
 pub fn broadcast_within_pool(pool: &'static str, message: impl Message + 'static) {
-    debug_process!("Access: broadcasting within: {pool}");
+    debug_process!("[Access] broadcasting within: {pool}");
     with_local_access(|access| access.broadcast_within_pool(pool, message));
 }
 
 pub fn send_to(to: Rank, message: impl Message + 'static) {
-    debug_process!("Access: send to: P{to}");
+    debug_process!("[Access] send to: P{to}");
     with_local_access(|access| access.send_to(to, message));
 }
 
 pub fn send_random(message: impl Message + 'static) {
-    debug_process!("Access: sending random in GLOBAL_POOL");
+    debug_process!("[Access] sending random P from GLOBAL_POOL");
     with_local_access(|access| access.send_random_from_pool(GLOBAL_POOL, message));
 }
 
 pub fn send_random_from_pool(pool: &'static str, message: impl Message + 'static) {
-    debug_process!("Access: sending random from pool: {pool}");
+    debug_process!("[Access] sending random from pool {pool}");
     with_local_access(|access| access.send_random_from_pool(pool, message));
 }
 
