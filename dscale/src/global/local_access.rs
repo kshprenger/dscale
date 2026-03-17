@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::destination::Destination;
 use crate::event::Event;
 use crate::global::shared_access::EventBatch;
-use crate::random::Randomizer;
+use crate::random::{Randomizer, Seed};
 use crate::{MessagePtr, global_unique_id, now};
 
 use crate::{
@@ -19,6 +19,10 @@ thread_local! {
 
 fn with_local_access<R>(f: impl FnOnce(&mut LocalAccess) -> R) -> R {
     LOCAL_ACCESS.with(|cell| f(&mut cell.borrow_mut()))
+}
+
+pub(crate) fn setup_local_access(seed: Seed) {
+    with_local_access(|access| access.random = Randomizer::new(seed));
 }
 
 #[derive(Default)]

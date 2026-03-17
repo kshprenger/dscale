@@ -17,7 +17,7 @@ pub(crate) fn drop() {
 }
 
 pub(crate) fn fast_forward_clock(future: Jiffies) {
-    let present = Jiffies(CLOCK.swap(future.0, Ordering::SeqCst));
+    let present = Jiffies(CLOCK.swap(future.0, Ordering::Release));
     debug_assert!(present <= future, "Future < Present");
     debug!("Global time now: {future}");
 }
@@ -39,5 +39,5 @@ pub(crate) fn fast_forward_clock(future: Jiffies) {
 ///
 /// The current simulation time as [`Jiffies`].
 pub fn now() -> Jiffies {
-    Jiffies(CLOCK.load(Ordering::SeqCst))
+    Jiffies(CLOCK.load(Ordering::Acquire))
 }
