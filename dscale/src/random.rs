@@ -69,7 +69,7 @@ pub type Seed = u64;
 ///
 /// [`Jiffies`]: crate::Jiffies
 /// [`LatencyDescription`]: crate::LatencyDescription
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Distributions {
     Uniform(Jiffies, Jiffies),
     Bernoulli(f64, Jiffies),
@@ -79,6 +79,14 @@ pub enum Distributions {
 #[derive(Debug)]
 pub struct Randomizer {
     rnd: rand::rngs::SmallRng,
+}
+
+impl Default for Randomizer {
+    fn default() -> Self {
+        Self {
+            rnd: rand::rngs::SmallRng::seed_from_u64(0),
+        }
+    }
 }
 
 impl Randomizer {
