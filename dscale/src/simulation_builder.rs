@@ -1,9 +1,3 @@
-//! Simulation configuration and builder pattern implementation.
-//!
-//! This module provides the `SimulationBuilder` struct which uses the builder pattern
-//! to configure and construct DScale simulations. It allows you to set up process pools,
-//! network topology, bandwidth constraints, timing parameters, and other simulation
-//! settings in a fluent, type-safe manner.
 
 use std::{
     collections::HashMap,
@@ -24,40 +18,6 @@ fn init_logger() {
     let _ = env_logger::Builder::from_default_env().try_init();
 }
 
-/// Builder for configuring and creating DScale simulations.
-///
-/// `SimulationBuilder` uses the builder pattern to provide a fluent interface for
-/// configuring all aspects of a distributed system simulation. It allows you to:
-///
-/// - Add process pools with different types and sizes
-/// - Configure network latency between and within pools
-/// - Set bandwidth limitations
-/// - Control random seed for deterministic execution
-/// - Set simulation time budget
-///
-/// #[derive(Default)]
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {}
-///     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
-///     fn on_timer(&mut self, id: dscale::TimerId) {}
-/// }
-///
-/// let simulation = SimulationBuilder::default()
-///     .seed(12345)
-///     .time_budget(Jiffies(1_000_000))
-///     .add_pool::<MyProcess>("clients", 3)
-///     .add_pool::<MyProcess>("servers", 2)
-///     .latency_topology(&[
-///         LatencyDescription::WithinPool("servers", Distributions::Uniform(Jiffies(1), Jiffies(3))),
-///         LatencyDescription::BetweenPools("clients", "servers", Distributions::Normal(Jiffies(10), Jiffies(2))),
-///     ])
-///     .nic_bandwidth(BandwidthDescription::Bounded(1000))
-///     .build();
-///
-/// // simulation.run();
-/// ```
 #[derive(Default)]
 pub struct SimulationBuilder {
     seed: Seed,
@@ -70,54 +30,6 @@ pub struct SimulationBuilder {
 }
 
 impl SimulationBuilder {
-    /// Adds a pool of processes of the specified type to the simulation.
-    ///
-    /// A pool is a named group of processes that all have the same type and behavior.
-    /// Pools are useful for organizing different roles in your distributed system
-    /// (e.g., "clients", "servers", "coordinators") and for configuring network
-    /// topology between different groups.
-    ///
-    /// Each process in the pool will have a unique [`Rank`] and will be
-    /// initialized using the [`Default`] trait implementation of the process type.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `P` - The process type that implements [`ProcessHandle`] + [`Default`] + `'static`
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - A string identifier for the pool (used in topology configuration)
-    /// * `size` - The number of processes to create in this pool
-    ///
-    /// #[derive(Default)]
-    /// struct Client;
-    ///
-    /// #[derive(Default)]
-    /// struct Server;
-    ///
-    /// impl ProcessHandle for Client {
-    ///     fn start(&mut self) {}
-    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
-    ///     fn on_timer(&mut self, id: TimerId) {}
-    /// }
-    ///
-    /// impl ProcessHandle for Server {
-    ///     fn start(&mut self) {}
-    ///     fn on_message(&mut self, from: Rank, message: MessagePtr) {}
-    ///     fn on_timer(&mut self, id: TimerId) {}
-    /// }
-    ///
-    /// let builder = SimulationBuilder::default()
-    ///     .add_pool::<Client>("clients", 5)      // 5 client processes
-    ///     .add_pool::<Server>("servers", 3);     // 3 server processes
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// The `SimulationBuilder` instance for method chaining.
-    ///
-    /// [`Rank`]: crate::Rank
-    /// [`ProcessHandle`]: crate::ProcessHandle
     pub fn add_pool<P: ProcessHandle + Default + Send + 'static>(
         mut self,
         name: &str,
@@ -144,97 +56,16 @@ impl SimulationBuilder {
         pool.push((id, handle));
     }
 
-    /// Sets the random seed for deterministic simulation execution.
-    ///
-    /// The seed controls all random behavior in the simulation, including network
-    /// latency generation, random process selection, and any randomness within
-    /// your process implementations. Using the same seed with the same configuration
-    /// will produce identical simulation results.
-    ///
-    /// Each process receives a unique seed derived from this base seed to prevent
-    /// correlation between processes while maintaining determinism.
-    ///
-    /// # Arguments
-    ///
-    /// * `seed` - A `u64` value to use as the base random seed
-    ///
-    /// # Returns
-    ///
-    /// The `SimulationBuilder` instance for method chaining.
     pub fn seed(mut self, seed: Seed) -> Self {
         self.seed = seed;
         self
     }
 
-    /// Sets the maximum duration for the simulation.
-    ///
-    /// The simulation will run until either the specified time budget is reached
-    /// or a deadlock is detected (no more events to process). Time is measured
-    /// in [`Jiffies`], which are the basic unit of simulation time.
-    ///
-    /// # Arguments
-    ///
-    /// * `time_budget` - The maximum simulation time as [`Jiffies`]
-    ///
-    /// # Returns
-    ///
-    /// The `SimulationBuilder` instance for method chaining.
-    ///
-    /// [`Jiffies`]: crate::Jiffies
     pub fn time_budget(mut self, time_budget: Jiffies) -> Self {
         self.time_budget = time_budget;
         self
     }
 
-    /// Configures network latency between and within process pools.
-    ///
-    /// This method sets up the network topology by defining latency characteristics
-    /// for message delivery between different pools or within the same pool.
-    /// Latency is simulated using probability distributions and adds realistic
-    /// network delays to message delivery.
-    ///
-    /// **Important**: This method should be called only after all [`add_pool`] calls
-    /// have been made, as it references pool names that must already exist.
-    ///
-    /// # Arguments
-    ///
-    /// * `descriptions` - A slice of [`LatencyDescription`] entries defining the topology
-    ///
-    /// # Latency Types
-    ///
-    /// - [`LatencyDescription::WithinPool`] - Latency for messages between processes in the same pool
-    /// - [`LatencyDescription::BetweenPools`] - Latency for messages between processes in different pools
-    ///
-    /// # Distribution Types
-    ///
-    /// - [`Distributions::Uniform`] - Uniform distribution between min and max values
-    /// - [`Distributions::Normal`] - Normal (Gaussian) distribution with mean and standard deviation
-    /// - [`Distributions::Bernoulli`] - Binary distribution with probability and fixed value
-    ///
-    /// # struct MyProcess;
-    /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
-    /// # impl dscale::ProcessHandle for MyProcess {
-    /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
-    /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
-    /// # }
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// The `SimulationBuilder` instance for method chaining.
-    ///
-    /// # Panics
-    ///
-    /// Panics if a referenced pool name does not exist.
-    ///
-    /// [`add_pool`]: Self::add_pool
-    /// [`LatencyDescription`]: crate::LatencyDescription
-    /// [`LatencyDescription::WithinPool`]: crate::LatencyDescription::WithinPool
-    /// [`LatencyDescription::BetweenPools`]: crate::LatencyDescription::BetweenPools
-    /// [`Distributions::Uniform`]: crate::Distributions::Uniform
-    /// [`Distributions::Normal`]: crate::Distributions::Normal
-    /// [`Distributions::Bernoulli`]: crate::Distributions::Bernoulli
     pub fn latency_topology(mut self, descriptions: &[LatencyDescription]) -> Self {
         descriptions.iter().for_each(|d| {
             let (from, to, distr) = match d {
@@ -297,68 +128,11 @@ impl SimulationBuilder {
         self
     }
 
-    /// Configures network bandwidth limitations for each process.
-    ///
-    /// This method sets the network interface bandwidth constraints that apply
-    /// to each process in the simulation. Bandwidth limits affect how quickly
-    /// messages can be transmitted and received, creating realistic network
-    /// bottlenecks.
-    ///
-    /// The bandwidth limit is applied per process (not globally), simulating
-    /// individual network interface constraints.
-    ///
-    /// # Arguments
-    ///
-    /// * `bandwidth` - A [`BandwidthDescription`] specifying the bandwidth constraints
-    ///
-    /// # Bandwidth Types
-    ///
-    /// - [`BandwidthDescription::Unbounded`] - No bandwidth limitations
-    /// - [`BandwidthDescription::Bounded(bytes_per_jiffy)`] - Limited to specified bytes per time unit
-    ///
-    /// # Message Sizing
-    ///
-    /// The bandwidth constraint uses the [`virtual_size()`] method of messages
-    /// to determine transmission time. This allows you to simulate large payloads
-    /// without actually storing large amounts of data in memory.
-    ///
-    /// # Returns
-    ///
-    /// The `SimulationBuilder` instance for method chaining.
-    ///
-    /// [`BandwidthDescription`]: crate::BandwidthDescription
-    /// [`BandwidthDescription::Unbounded`]: crate::BandwidthDescription::Unbounded
-    /// [`BandwidthDescription::Bounded`]: crate::BandwidthDescription::Bounded
-    /// [`virtual_size()`]: crate::Message::virtual_size
     pub fn nic_bandwidth(mut self, bandwidth: BandwidthDescription) -> Self {
         self.bandwidth = bandwidth;
         self
     }
 
-    /// Finalizes the configuration and builds the simulation.
-    ///
-    /// This method consumes the `SimulationBuilder` and creates a [`Simulation`]
-    /// instance ready to run. It performs final setup including:
-    ///
-    /// - Initializing the logging system
-    /// - Creating the process registry
-    /// - Setting up the network topology
-    /// - Configuring the simulation engine
-    ///
-    /// # struct MyProcess;
-    /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
-    /// # impl dscale::ProcessHandle for MyProcess {
-    /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
-    /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
-    /// # }
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// A configured [`Simulation`] ready to run.
-    ///
-    /// [`Simulation`]: crate::Simulation
     pub fn build(mut self) -> impl SimulationRunner {
         init_logger();
 

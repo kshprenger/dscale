@@ -1,9 +1,3 @@
-//! Simulation engine and execution control.
-//!
-//! This module contains the core simulation engine that drives the event loop
-//! and manages the execution of distributed system simulations. The `Simulation`
-//! struct orchestrates all simulation actors including network, timers, and
-//! process execution in a deterministic, single-threaded environment.
 
 use std::{
     process::exit,
@@ -24,59 +18,6 @@ use crate::{
     topology::{LatencyTopology, PoolListing, Topology},
 };
 
-/// The main simulation engine that executes distributed system simulations.
-///
-/// `Simulation` is the core engine that drives a DScale simulation. It manages
-/// the event loop, coordinates between different simulation actors (network,
-/// timers, processes), and ensures deterministic execution through careful
-/// event scheduling.
-///
-/// The simulation runs in a single thread using an event-driven architecture
-/// where all actions are scheduled as discrete events in simulation time.
-/// This approach ensures deterministic behavior and makes it possible to
-/// reproduce exact simulation runs.
-///
-/// # Architecture
-///
-/// The simulation consists of several key components:
-/// - **Network Actor**: Handles message routing and bandwidth simulation
-/// - **Timer Manager**: Manages scheduled timers for processes
-/// - **Process Nursery**: Manages process lifecycle and message delivery
-/// - **Global State**: Provides access to simulation-wide services
-///
-/// # Lifecycle
-///
-/// 1. **Initialization**: Set up actors and global state
-/// 2. **Start Phase**: Call `start()` on all processes
-/// 3. **Event Loop**: Process events in chronological order until time budget or deadlock
-/// 4. **Cleanup**: Reset global state and complete execution
-///
-/// #[derive(Default)]
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {
-///         // Process initialization
-///     }
-///
-///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
-///         // Handle incoming messages
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {
-///         // Handle timer events
-///     }
-/// }
-///
-/// let mut simulation = SimulationBuilder::default()
-///     .add_pool::<MyProcess>("nodes", 5)
-///     .time_budget(Jiffies(100_000))
-///     .build();
-///
-/// simulation.run(); // Execute the simulation
-/// ```
-///
-/// [`SimulationBuilder`]: crate::SimulationBuilder
 pub struct Simulation {
     actors: Vec<SharedActor>,
     time_budget: Jiffies,
@@ -116,51 +57,6 @@ impl Simulation {
         }
     }
 
-    /// Executes the simulation until completion.
-    ///
-    /// This method runs the main simulation loop, processing events in chronological
-    /// order until either the time budget is exhausted or a deadlock occurs (no more
-    /// events to process). The simulation follows these phases:
-    ///
-    /// 1. **Start Phase**: Calls `start()` on all processes to initialize them
-    /// 2. **Event Loop**: Processes events in time order, advancing the simulation clock
-    /// 3. **Completion**: Finishes when time budget is reached or no events remain
-    ///
-    /// # Event Processing
-    ///
-    /// During each simulation step:
-    /// - The earliest scheduled event is identified across all actors
-    /// - The simulation clock advances to that event's time
-    /// - The appropriate actor processes the event
-    /// - New events may be scheduled as a result
-    /// - Progress is reported for long-running simulations
-    ///
-    /// # Termination Conditions
-    ///
-    /// The simulation terminates when:
-    /// - **Time Budget Exhausted**: The simulation reaches its configured time limit
-    /// - **Deadlock Detected**: No more events are scheduled (may indicate a bug)
-    ///
-    /// # Error Handling
-    ///
-    /// If a deadlock is detected (no events remaining before time budget), the
-    /// simulation will log an error and exit. This typically indicates a bug in
-    /// the process logic where processes fail to schedule continuing work.
-    ///
-    /// # struct MyProcess;
-    /// # impl Default for MyProcess { fn default() -> Self { MyProcess } }
-    /// # impl dscale::ProcessHandle for MyProcess {
-    /// #     fn start(&mut self) {}
-    /// #     fn on_message(&mut self, from: dscale::Rank, message: dscale::MessagePtr) {}
-    /// #     fn on_timer(&mut self, id: dscale::TimerId) {}
-    /// # }
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// This method will cause the program to exit with an error code if a deadlock
-    /// is detected. Use `RUST_LOG=debug` for detailed information about the
-    /// deadlock condition.
     pub fn run(&mut self) {
         self.start();
 

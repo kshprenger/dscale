@@ -1,247 +1,24 @@
-//! Message types and handling for inter-process communication.
-//!
-//! This module defines the core message system used for communication between
-//! processes in DScale simulations. It provides the `Message` trait that all
-//! message types must implement, as well as `MessagePtr` for type-safe message
-//! handling and routing infrastructure.
 
 use std::{any::Any, sync::Arc};
 
-/// Core trait for all message types in DScale simulations.
-///
-/// The `Message` trait must be implemented by all types that will be sent
-/// between processes in the simulation. It extends [`Any`] to enable runtime
-/// type checking and provides a mechanism for bandwidth simulation through
-/// the [`virtual_size`] method.
-///
-/// # Purpose
-///
-/// Messages serve as the primary communication mechanism between processes in
-/// DScale simulations. They carry data, commands, responses, and notifications
-/// that drive the distributed system behavior being simulated.
-///
-/// # Bandwidth Simulation
-///
-/// The [`virtual_size`] method allows messages to specify their simulated size
-/// in bytes, which is used by the network simulation to calculate transmission
-/// delays based on bandwidth constraints. This enables realistic modeling of
-/// network bottlenecks without requiring actual large data payloads in memory.
-///
-/// # Type Safety
-///
-/// Messages are delivered as [`MessagePtr`] smart pointers that preserve type
-/// information through the [`Any`] trait. This allows safe runtime type
-/// checking and downcasting when handling messages.
-///
-/// # Message Handling
-///
-/// Messages are received in process implementations through [`ProcessHandle::on_message`]:
-///
-/// ```rust
-/// use dscale::{ProcessHandle, Rank, MessagePtr, TimerId};
-/// use std::rc::Rc;
-///
-/// struct MyProcess;
-///
-/// impl ProcessHandle for MyProcess {
-///     fn start(&mut self) {}
-///
-///     fn on_message(&mut self, from: Rank, message: MessagePtr) {
-///         if let Some(ping) = message.try_as::<PingMessage>() {
-///             println!("Received ping with sequence: {}", ping.sequence);
-///         }
-///     }
-///
-///     fn on_timer(&mut self, id: TimerId) {}
-/// }
-/// # struct PingMessage { sequence: u32, timestamp: u64 }
-/// # impl dscale::Message for PingMessage {
-/// #     fn virtual_size(&self) -> usize { 8 }
-/// # }
-/// ```
-///
-/// # Implementation Requirements
-///
-/// - Must implement [`Any`] (automatically derived)
-/// - Should implement [`virtual_size`] if bandwidth simulation is important
-/// - Consider implementing [`Clone`] if messages need to be copied
-///
-/// # Performance Considerations
-///
-/// - Keep message types lightweight since they may be cloned during routing
-/// - Use [`virtual_size`] to simulate large payloads rather than storing actual data
-/// - Consider message frequency when designing protocols to avoid overwhelming the simulation
-///
-/// [`virtual_size`]: Message::virtual_size
-/// [`MessagePtr`]: MessagePtr
-/// [`ProcessHandle::on_message`]: crate::ProcessHandle::on_message
 pub trait Message: Any + Send + Sync {
-    /// Returns the virtual size of this message in bytes for bandwidth simulation.
-    ///
-    /// This method defines how large the message appears to the network simulation
-    /// for bandwidth calculation purposes. It does not need to match the actual
-    /// memory footprint of the message struct - it represents the simulated
-    /// network payload size.
-    ///
-    /// The virtual size is used to:
-    /// - Calculate transmission delays based on bandwidth constraints
-    /// - Simulate network bottlenecks realistically
-    /// - Model the behavior of large data transfers
-    ///
-    /// # Default Implementation
-    ///
-    /// The default implementation returns `0`, meaning the message consumes
-    /// no bandwidth and is transmitted instantaneously (subject only to latency).
-    /// This is suitable for small control messages.
-    ///
-    /// # Returns
-    ///
-    /// The virtual size in bytes as a [`usize`]. Should be 0 or positive.
     fn virtual_size(&self) -> usize {
         usize::default()
     }
 }
 
-/// A smart pointer for type-safe message handling in DScale simulations.
-///
-/// `MessagePtr` is a reference-counted smart pointer that wraps message objects
-/// and provides type-safe access methods. It allows the simulation engine to
-/// pass messages between processes while preserving type information for
-/// safe downcasting at the destination.
-///
-/// # Purpose
-///
-/// `MessagePtr` serves several important functions:
-/// - **Type Erasure**: Allows storage and passing of heterogeneous message types
-/// - **Type Safety**: Provides safe runtime type checking and casting
-/// - **Memory Management**: Uses reference counting to manage message lifetime
-/// - **Zero-Copy**: Messages can be shared between multiple recipients without copying
-///
-/// # Usage Patterns
-///
-/// `MessagePtr` is typically used in two contexts:
-/// 1. **Receiving Messages**: In [`ProcessHandle::on_message`] implementations
-/// 2. **Internal Routing**: By the simulation engine for message delivery
-///
 #[derive(Clone)]
 pub struct MessagePtr(pub Arc<dyn Message>);
 
 impl MessagePtr {
-    /// Attempts to safely cast the message to a specific type.
-    ///
-    /// This method provides safe runtime type checking and casting for messages.
-    /// It returns `Some(Rc<T>)` if the message is of the requested type `T`,
-    /// or `None` if the cast fails. This is the recommended way to handle
-    /// messages as it cannot panic.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `T` - The target message type to cast to. Must be `'static`.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(Rc<T>)` - If the message is of type `T`
-    /// * `None` - If the message is not of type `T`
-    ///
-    /// # use std::rc::Rc;
-    ///
-    /// struct PingMessage { id: u32 }
-    /// struct PongMessage { id: u32 }
-    ///
-    /// impl Message for PingMessage {}
-    /// impl Message for PongMessage {}
-    ///
-    /// fn handle_message(message: MessagePtr) {
-    ///     // Safe casting with pattern matching
-    ///     if let Some(ping) = message.try_as::<PingMessage>() {
-    ///         println!("Got ping with ID: {}", ping.id);
-    ///     } else if let Some(pong) = message.try_as::<PongMessage>() {
-    ///         println!("Got pong with ID: {}", pong.id);
-    ///     } else {
-    ///         println!("Unknown message type");
-    ///     }
-    /// }
-    /// ```
     pub fn try_as_type<T: 'static>(&self) -> Option<&T> {
         (&*self.0 as &dyn Any).downcast_ref::<T>()
     }
 
-    /// Checks if the message is of a specific type without extracting it.
-    ///
-    /// This method performs a type check without actually casting the message.
-    /// It's useful when you only need to know the message type but don't
-    /// need to access the message data immediately.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `T` - The type to check against. Must be `'static`.
-    ///
-    /// # Returns
-    ///
-    /// `true` if the message is of type `T`, `false` otherwise.
-    ///
-    /// # use std::rc::Rc;
-    ///
-    /// struct ImportantMessage;
-    /// struct RegularMessage;
-    ///
-    /// impl Message for ImportantMessage {}
-    /// impl Message for RegularMessage {}
-    ///
-    /// fn prioritize_message(message: &MessagePtr) -> u8 {
-    ///     if message.is::<ImportantMessage>() {
-    ///         10 // High priority
-    ///     } else if message.is::<RegularMessage>() {
-    ///         5  // Normal priority
-    ///     } else {
-    ///         1  // Low priority for unknown types
-    ///     }
-    /// }
-    /// ```
     pub fn is<T: 'static>(&self) -> bool {
         self.try_as_type::<T>().is_some()
     }
 
-    /// Casts the message to a specific type, panicking if the cast fails.
-    ///
-    /// This method performs an unchecked cast to the target type. It should
-    /// only be used when you are certain of the message type, typically
-    /// after a successful [`is`] check. If the cast fails, this method
-    /// will panic.
-    ///
-    /// **Warning**: This method can panic! Use [`try_as`] for safe casting.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `T` - The target message type to cast to. Must be `'static`.
-    ///
-    /// # Returns
-    ///
-    /// `Rc<T>` - The message cast to the target type.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the message is not of type `T`.
-    ///
-    /// # use std::rc::Rc;
-    ///
-    /// struct StatusMessage { code: u32 }
-    /// impl Message for StatusMessage {}
-    ///
-    /// fn handle_status(message: MessagePtr) {
-    ///     // Safe: check type first
-    ///     if message.is::<StatusMessage>() {
-    ///         let status = message.as_type::<StatusMessage>();
-    ///         println!("Status code: {}", status.code);
-    ///     }
-    ///
-    ///     // Unsafe: direct cast without checking
-    ///     // let status = message.as_type::<StatusMessage>(); // Could panic!
-    /// }
-    /// ```
-    ///
-    /// [`is`]: MessagePtr::is
-    /// [`try_as`]: MessagePtr::try_as
     pub fn as_type<T: 'static>(&self) -> &T {
         self.try_as_type::<T>().expect("Failed as_type")
     }
