@@ -8,6 +8,7 @@ use smallvec::SmallVec;
 use crate::destination::Destination;
 use crate::event::Event;
 use crate::random::{Randomizer, Seed};
+use crate::runners::task::{TaskId, TaskResult};
 use crate::{MessagePtr, global_unique_id, now};
 
 use crate::{
@@ -28,19 +29,20 @@ fn with_local_access<R>(f: impl FnOnce(&mut LocalAccess) -> R) -> R {
     LOCAL_ACCESS.with(|cell| f(&mut cell.borrow_mut()))
 }
 
-pub(crate) fn setup_local_access(seed: Seed, sender: Sender<EventBatch>) {
+pub(crate) fn setup_local_access(seed: Seed, coordinator: Sender<TaskResult>) {
     with_local_access(|access| {
         access.random = Randomizer::new(seed);
-        access.scheduler = Some(sender)
+        access.coordinator = Some(coordinator)
     });
 }
 
 #[derive(Default)]
 pub struct LocalAccess {
     process_on_execution: Rank,
+    current_task: TaskId,
     random: Randomizer,
     scheduled_events: EventBatch,
-    scheduler: Option<Sender<EventBatch>>,
+    coordinator: Option<Sender<TaskResult>>,
 }
 
 impl LocalAccess {
@@ -80,15 +82,19 @@ impl LocalAccess {
         timer_id
     }
 
-    fn set_process(&mut self, id: Rank) {
-        self.process_on_execution = id
+    fn set_task(&mut self, task_id: TaskId, proc_id: Rank) {
+        self.process_on_execution = proc_id;
+        self.current_task = task_id;
     }
 
-    fn schedule(&mut self) {
-        self.scheduler
+    fn ready(&mut self) {
+        self.coordinator
             .as_ref()
-            .expect("No scheduler")
-            .send(mem::take(&mut self.scheduled_events))
+            .expect("No coordinator")
+            .send(TaskResult {
+                id: self.current_task,
+                events: mem::take(&mut self.scheduled_events),
+            })
             .unwrap();
     }
 
@@ -97,21 +103,20 @@ impl LocalAccess {
     }
 }
 
-pub(crate) fn set_process(id: Rank) {
-    with_local_access(|access| access.set_process(id));
+pub(crate) fn set_task(task_id: TaskId, proc_id: Rank) {
+    with_local_access(|access| access.set_task(task_id, proc_id));
 }
 
-pub(crate) fn schedule() {
-    with_local_access(|access| access.schedule());
+pub(crate) fn ready() {
+    with_local_access(|access| access.ready());
 }
 
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {
-    debug_process!("Access: scheduling timer after {after}");
+    debug_process!("[Access] scheduling timer after {after}");
     with_local_access(|access| access.schedule_timer_after(after))
 }
 
 pub fn broadcast(message: impl Message + 'static) {
-    debug_process!("Access: broadcasting globally");
     with_local_access(|access| access.broadcast_within_pool(GLOBAL_POOL, message));
 }
 

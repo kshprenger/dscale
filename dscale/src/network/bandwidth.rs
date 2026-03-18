@@ -7,8 +7,6 @@
 
 use std::collections::BinaryHeap;
 
-use log::debug;
-
 use crate::{
     network::LatencyQueue,
     now,

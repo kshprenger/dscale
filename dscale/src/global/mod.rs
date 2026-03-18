@@ -1,7 +1,7 @@
 pub(crate) mod clock;
 pub mod configuration;
 pub mod kv;
-mod local_access;
+pub(crate) mod local_access;
 mod shared_access;
 pub mod tso;
 
@@ -18,8 +18,8 @@ pub use local_access::send_random_from_pool;
 pub use local_access::send_to;
 pub use shared_access::list_pool;
 
-pub(crate) use local_access::set_process;
 pub use local_access::choose_from_pool;
+pub(crate) use local_access::set_task;
 pub(crate) use shared_access::setup_shared_access;
 
 pub(crate) use clock::fast_forward_clock;

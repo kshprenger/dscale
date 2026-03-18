@@ -137,7 +137,7 @@ pub(crate) struct Topology {
 }
 
 impl Topology {
-    pub(crate) fn new_shared(
+    pub(crate) fn new_arc(
         pool_listing: PoolListing,
         latency_topology: LatencyTopology,
     ) -> Arc<Self> {

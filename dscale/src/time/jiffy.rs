@@ -88,7 +88,7 @@ impl Mul<Jiffies> for usize {
 
 impl Display for Jiffies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(("Jiffies(".to_string() + &self.0.to_string() + ")").as_str())
+        f.write_str((self.0.to_string() + " jfs").as_str())
     }
 }
 
