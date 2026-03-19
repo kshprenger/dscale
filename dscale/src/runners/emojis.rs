@@ -1,10 +1,14 @@
 const GOOD: &[&str] = &[
     "ヽ('ー`)ノ",
     "ヽ(^‿^)ノ",
-    "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
     "＼(＾▽＾)／",
-    "(づ｡◕‿‿◕｡)づ",
-    "✧ヽ(°▽°)ﾉ✧",
+    "(´▽`)/",
+    "(*^▽^*)",
+    "ヽ(•‿•)ノ",
+    "(^_^)/",
+    "٩(◕‿◕)۶",
+    "ヾ(^∇^)",
+    "(^o^)/",
 ];
 
 const BAD: &[&str] = &[
@@ -12,14 +16,18 @@ const BAD: &[&str] = &[
     "ヽ(ಠ_ಠ)ﾉ",
     "(╯°□°）╯︵ ┻━┻",
     "ಠ╭╮ಠ",
-    "(҂◡_◡) ᕤ",
     "щ(ಠ益ಠщ)",
+    "ヽ(`Д´)ﾉ",
+    "凸(ಠ_ಠ)凸",
+    "ಠ_ಠ",
+    "(；一_一)",
+    "o(TヘTo)",
 ];
 
 pub fn good() -> &'static str {
-    GOOD[rand::random::<usize>() % GOOD.len()]
+    GOOD[rand::random::<u64>() as usize % GOOD.len()]
 }
 
 pub fn bad() -> &'static str {
-    BAD[rand::random::<usize>() % BAD.len()]
+    BAD[rand::random::<u64>() as usize % BAD.len()]
 }

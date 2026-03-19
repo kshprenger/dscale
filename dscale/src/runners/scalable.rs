@@ -100,7 +100,7 @@ impl ScalableRunner {
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     error!(
-                        "\n                        DEADLOCK! {}\n                        Try using deterministic runner with RUST_LOG=debug",
+                        "DEADLOCK! {}\nTry using deterministic runner with RUST_LOG=debug",
                         emojis::bad()
                     );
                     exit(1)
