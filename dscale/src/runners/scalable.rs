@@ -5,7 +5,7 @@ use log::{error, info};
 
 use crate::{
     ProcessHandle,
-    actor::{Actors, SimulationActor},
+    actor::Actors,
     global::{
         self,
         local_access::{self, setup_local_access},
@@ -29,7 +29,7 @@ pub struct ScalableRunner {
     procs: Vec<Arc<dyn ProcessHandle>>,
     workers: rayon::ThreadPool,
     window_l: Jiffies,
-    window_r: Jiffies,
+    window_delta: Jiffies,
     on_execution: TaskIndex,
     done: TaskIndex,
 }
@@ -58,7 +58,7 @@ impl ScalableRunner {
             rx,
             workers: tp,
             window_l: Jiffies(0),
-            window_r: safe_window,
+            window_delta: safe_window,
             on_execution: TaskIndex::new(),
             done: TaskIndex::new(),
         }
@@ -93,21 +93,14 @@ impl ScalableRunner {
     fn coordinate(&mut self) {
         loop {
             match self.rx.recv_timeout(DEADLOCK_TIMEOUT) {
-                Ok(task_result) => {
+                Ok(mut task_result) => {
                     if global::now() > self.time_budget {
                         return;
                     }
-
-                    self.actors.submit(&mut task_result.events);
-
-
-
-                    if task_result.id == self.on_execution.peek().unwrap().0 {
-                        self.schedule_more()
-                    }
-                    self.done.push(task_result.id){
-
-                    };
+                    self.actors.submit(&mut task_result.events); // Materialize next part of dependency graph
+                    self.done.push(Reverse(task_result.id));
+                    self.try_extract();
+                    self.try_advance()
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     error!(
@@ -123,22 +116,22 @@ impl ScalableRunner {
         }
     }
 
-    fn peek_closest(&mut self) -> Option<(Jiffies, SharedActor)> {
-        let mut min_time = Jiffies(usize::MAX);
-        let mut sha: Option<SharedActor> = None;
-        for actor in self.actors.iter() {
-            actor
-                .lock()
-                .expect("Actor lock poisoned")
-                .peek_closest()
-                .map(|time| {
-                    if time < min_time {
-                        min_time = time;
-                        sha = Some(actor.clone())
-                    }
-                });
+    fn try_extract(&mut self) {
+        while let (Some(d), Some(e)) = (self.done.peek(), self.on_execution.peek()) {
+            if d == e {
+                self.done.pop();
+                self.on_execution.pop();
+            } else {
+                break;
+            }
         }
+    }
 
-        Some((min_time, sha?))
+    fn try_advance(&mut self) {
+        self.window_l = self.actors.peek_next_step().unwrap();
+
+        while let Some(step) = self.actors.peek_next_step() {
+            // if step
+        }
     }
 }

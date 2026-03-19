@@ -81,7 +81,7 @@ impl SimulationActor for Network {
             .step
     }
 
-    fn peek_closest_step(&self) -> Option<Jiffies> {
+    fn peek_next_step(&self) -> Option<Jiffies> {
         self.bandwidth_queue.peek_closest()
     }
 

@@ -20,7 +20,7 @@ pub(crate) struct TimerManager {
 }
 
 impl SimulationActor for TimerManager {
-    fn peek_closest_step(&self) -> Option<Jiffies> {
+    fn peek_next_step(&self) -> Option<Jiffies> {
         self.working_timers
             .peek()
             .map(|entry| entry.0.invocation_time)
