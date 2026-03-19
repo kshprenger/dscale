@@ -10,13 +10,14 @@ use crate::{
         self,
         local_access::{self, setup_local_access},
     },
-    global_unique_id,
+    global_unique_id, now,
     random::Seed,
     runner::SimulationRunner,
     runners::{
         emojis,
         task::{TaskIndex, TaskResult},
     },
+    step::Step,
     time::Jiffies,
 };
 
@@ -28,7 +29,6 @@ pub struct ScalableRunner {
     time_budget: Jiffies,
     procs: Vec<Arc<dyn ProcessHandle>>,
     workers: rayon::ThreadPool,
-    window_l: Jiffies,
     window_delta: Jiffies,
     on_execution: TaskIndex,
     done: TaskIndex,
@@ -57,7 +57,6 @@ impl ScalableRunner {
             procs,
             rx,
             workers: tp,
-            window_l: Jiffies(0),
             window_delta: safe_window,
             on_execution: TaskIndex::new(),
             done: TaskIndex::new(),
@@ -71,6 +70,14 @@ impl SimulationRunner for ScalableRunner {
         self.coordinate();
         info!("Looks good! {}", emojis::good());
     }
+}
+
+fn deadlock() {
+    error!(
+        "DEADLOCK! {}\nTry using deterministic runner with RUST_LOG=debug",
+        emojis::bad()
+    );
+    exit(1)
 }
 
 impl ScalableRunner {
@@ -99,16 +106,10 @@ impl ScalableRunner {
                     }
                     self.actors.submit(&mut task_result.events); // Materialize next part of dependency graph
                     self.done.push(Reverse(task_result.id));
-                    self.try_extract();
+                    self.adjust_task_index();
                     self.try_advance()
                 }
-                Err(RecvTimeoutError::Timeout) => {
-                    error!(
-                        "DEADLOCK! {}\nTry using deterministic runner with RUST_LOG=debug",
-                        emojis::bad()
-                    );
-                    exit(1)
-                }
+                Err(RecvTimeoutError::Timeout) => deadlock(),
                 Err(RecvTimeoutError::Disconnected) => {
                     unreachable!("ooops")
                 }
@@ -116,7 +117,7 @@ impl ScalableRunner {
         }
     }
 
-    fn try_extract(&mut self) {
+    fn adjust_task_index(&mut self) {
         while let (Some(d), Some(e)) = (self.done.peek(), self.on_execution.peek()) {
             if d == e {
                 self.done.pop();
@@ -128,10 +129,59 @@ impl ScalableRunner {
     }
 
     fn try_advance(&mut self) {
-        self.window_l = self.actors.peek_next_step().unwrap();
+        // Still waiting some tasks on execution in current window
+        if let Some(top) = self.on_execution.peek() {
+            if global::now() == top.0.0 {
+                // Lowest task(s) still on execution
+                // Cannot move window forward, need to wait lowest task(s)
+                return;
+            } else {
+                // Lowest task(s) in window done -> advance window to the next closest task (which is still on_execution)
+                global::fast_forward_clock(top.0.0);
+                self.spawn_remain_within_window()
+            }
+        } else {
+            // done == on_execution
+            // In this case we should move window to the next materialized tasks
+            // If no such materialized task exists -> deadlock
+            if let Some(next_step_invocation_time) = self.actors.peek_next_step() {
+                global::fast_forward_clock(next_step_invocation_time);
+                self.spawn_remain_within_window()
+            } else {
+                deadlock();
+            }
+        }
+    }
 
-        while let Some(step) = self.actors.peek_next_step() {
-            // if step
+    fn spawn_remain_within_window(&mut self) {
+        while let Some(next_step_invocation_time) = self.actors.peek_next_step() {
+            if next_step_invocation_time - now() <= self.window_delta {
+                self.spawn_step(next_step_invocation_time);
+            }
+        }
+    }
+
+    fn spawn_step(&mut self, step_invocation_time: Jiffies) {
+        let task_id = (step_invocation_time, global_unique_id());
+        let step = self.actors.next_step();
+        self.on_execution.push(Reverse(task_id));
+        match step {
+            Step::NetworkStep { from, to, message } => {
+                let proc = self.procs[to].clone();
+                self.workers.spawn(move || {
+                    local_access::set_task(task_id, to);
+                    proc.on_message(from, message);
+                    local_access::ready();
+                });
+            }
+            Step::TimerStep { to, id } => {
+                let proc = self.procs[to].clone();
+                self.workers.spawn(move || {
+                    local_access::set_task(task_id, to);
+                    proc.on_timer(id);
+                    local_access::ready();
+                });
+            }
         }
     }
 }
