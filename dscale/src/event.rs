@@ -1,5 +1,6 @@
 use crate::{Jiffies, MessagePtr, Rank, TimerId, destination::Destination};
 
+#[derive(Clone)]
 pub(crate) enum Event {
     NetworkEvent {
         from: Rank,

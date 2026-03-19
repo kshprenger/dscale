@@ -5,7 +5,7 @@ use log::{error, info};
 
 use crate::{
     ProcessHandle,
-    actor::SimulationActor,
+    actor::{Actors, SimulationActor},
     global::{
         self,
         local_access::{self, setup_local_access},
@@ -23,7 +23,7 @@ use crate::{
 const DEADLOCK_TIMEOUT: Duration = Duration::from_millis(2000);
 
 pub struct ScalableRunner {
-    actors: Vec<Box<dyn SimulationActor>>,
+    actors: Actors,
     rx: Receiver<TaskResult>,
     time_budget: Jiffies,
     procs: Vec<Arc<dyn ProcessHandle>>,
@@ -36,7 +36,7 @@ pub struct ScalableRunner {
 
 impl ScalableRunner {
     pub(crate) fn new(
-        actors: Vec<Box<dyn SimulationActor>>,
+        actors: Actors,
         time_budget: Jiffies,
         procs: Vec<Arc<dyn ProcessHandle>>,
         cores: usize,
@@ -98,7 +98,7 @@ impl ScalableRunner {
                         return;
                     }
 
-
+                    self.actors.submit(&mut task_result.events);
 
 
 

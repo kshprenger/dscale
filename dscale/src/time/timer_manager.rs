@@ -34,8 +34,8 @@ impl SimulationActor for TimerManager {
             .step
     }
 
-    fn submit(&mut self, events: &mut Vec<Event>) {
-        events.drain(..).for_each(|event| match event {
+    fn submit(&mut self, event: Event) {
+        match event {
             Event::TimerEvent { to, id, fire_after } => {
                 self.working_timers.push(Reverse(TimedStep {
                     invocation_time: now() + fire_after,
@@ -43,6 +43,6 @@ impl SimulationActor for TimerManager {
                 }))
             }
             _ => unreachable!(),
-        });
+        }
     }
 }

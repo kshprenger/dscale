@@ -85,12 +85,12 @@ impl SimulationActor for Network {
         self.bandwidth_queue.peek_closest()
     }
 
-    fn submit(&mut self, events: &mut Vec<Event>) {
-        events.drain(..).for_each(|event| match event {
+    fn submit(&mut self, event: Event) {
+        match event {
             Event::NetworkEvent { from, to, message } => {
                 self.submit_single_message(message, from, to);
             }
             _ => unreachable!(),
-        });
+        }
     }
 }

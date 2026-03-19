@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     ProcessHandle, Rank,
-    actor::SimulationActor,
+    actor::{Actors, SimulationActor},
     global,
     network::{BandwidthDescription, Network},
     random::Seed,
@@ -188,9 +188,12 @@ impl SimulationBuilder {
             .collect();
 
         let topology = Topology::new_arc(pool_listing.clone(), self.latency_topology);
-        let network_actor = Box::new(Network::new(self.seed, self.bandwidth, topology.clone()));
-        let timers_actor = Box::new(TimerManager::default());
-        let actors: Vec<Box<dyn SimulationActor>> = vec![network_actor, timers_actor];
+        let network_actor = Network::new(self.seed, self.bandwidth, topology.clone());
+        let timers_actor = TimerManager::default();
+        let actors = Actors {
+            network: network_actor,
+            timers: timers_actor,
+        };
 
         global::configuration::setup_global_configuration(procs.len());
         global::setup_shared_access(topology);
