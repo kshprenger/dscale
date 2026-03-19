@@ -87,7 +87,7 @@ impl LocalAccess {
         self.current_task = task_id;
     }
 
-    fn ready(&mut self) {
+    fn done(&mut self) {
         self.coordinator
             .as_ref()
             .expect("No coordinator")
@@ -107,8 +107,8 @@ pub(crate) fn set_task(task_id: TaskId, proc_id: Rank) {
     with_local_access(|access| access.set_task(task_id, proc_id));
 }
 
-pub(crate) fn ready() {
-    with_local_access(|access| access.ready());
+pub(crate) fn done() {
+    with_local_access(|access| access.done());
 }
 
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {

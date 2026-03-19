@@ -92,7 +92,7 @@ impl ScalableRunner {
                 self.workers.spawn(move || {
                     local_access::set_task(task_id, proc_id);
                     proc.start();
-                    local_access::ready();
+                    local_access::done();
                 });
             });
     }
@@ -129,16 +129,21 @@ impl ScalableRunner {
     }
 
     fn try_advance(&mut self) {
-        // Still waiting some tasks on execution in current window
+        if self.try_move_window() {
+            self.spawn_remain_within_window()
+        }
+    }
+
+    fn try_move_window(&mut self) -> bool {
         if let Some(top) = self.on_execution.peek() {
+            // Still waiting some tasks on execution in current window
             if global::now() == top.0.0 {
                 // Lowest task(s) still on execution
                 // Cannot move window forward, need to wait lowest task(s)
-                return;
+                return false;
             } else {
                 // Lowest task(s) in window done -> advance window to the next closest task (which is still on_execution)
                 global::fast_forward_clock(top.0.0);
-                self.spawn_remain_within_window()
             }
         } else {
             // done == on_execution
@@ -146,11 +151,12 @@ impl ScalableRunner {
             // If no such materialized task exists -> deadlock
             if let Some(next_step_invocation_time) = self.actors.peek_next_step() {
                 global::fast_forward_clock(next_step_invocation_time);
-                self.spawn_remain_within_window()
             } else {
                 deadlock();
             }
         }
+
+        return true;
     }
 
     fn spawn_remain_within_window(&mut self) {
@@ -171,7 +177,7 @@ impl ScalableRunner {
                 self.workers.spawn(move || {
                     local_access::set_task(task_id, to);
                     proc.on_message(from, message);
-                    local_access::ready();
+                    local_access::done();
                 });
             }
             Step::TimerStep { to, id } => {
@@ -179,7 +185,7 @@ impl ScalableRunner {
                 self.workers.spawn(move || {
                     local_access::set_task(task_id, to);
                     proc.on_timer(id);
-                    local_access::ready();
+                    local_access::done();
                 });
             }
         }
