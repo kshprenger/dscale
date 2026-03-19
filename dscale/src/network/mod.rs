@@ -11,7 +11,6 @@ use log::debug;
 use crate::GLOBAL_POOL;
 use crate::MessagePtr;
 use crate::Rank;
-use crate::actor::EventSubmitter;
 use crate::actor::SimulationActor;
 use crate::destination::Destination;
 use crate::event::Event;
@@ -85,9 +84,7 @@ impl SimulationActor for Network {
     fn peek_closest_step(&self) -> Option<Jiffies> {
         self.bandwidth_queue.peek_closest()
     }
-}
 
-impl EventSubmitter for Network {
     fn submit(&mut self, events: &mut Vec<Event>) {
         events.drain(..).for_each(|event| match event {
             Event::NetworkEvent { from, to, message } => {

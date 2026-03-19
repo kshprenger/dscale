@@ -1,8 +1,7 @@
-
 use std::cmp::Reverse;
 
 use crate::{
-    actor::{EventSubmitter, SimulationActor},
+    actor::SimulationActor,
     event::Event,
     global, now,
     step::{Step, StepQueue, TimedStep},
@@ -34,9 +33,7 @@ impl SimulationActor for TimerManager {
             .0
             .step
     }
-}
 
-impl EventSubmitter for TimerManager {
     fn submit(&mut self, events: &mut Vec<Event>) {
         events.drain(..).for_each(|event| match event {
             Event::TimerEvent { to, id, fire_after } => {

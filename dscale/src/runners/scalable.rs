@@ -82,7 +82,7 @@ impl ScalableRunner {
             .cloned()
             .enumerate()
             .for_each(|(proc_id, proc)| {
-                self.workers.install(move || {
+                self.workers.spawn(move || {
                     local_access::set_task(task_id, proc_id);
                     proc.start();
                     local_access::ready();
@@ -97,6 +97,17 @@ impl ScalableRunner {
                     if global::now() > self.time_budget {
                         return;
                     }
+
+
+
+
+
+                    if task_result.id == self.on_execution.peek().unwrap().0 {
+                        self.schedule_more()
+                    }
+                    self.done.push(task_result.id){
+
+                    };
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     error!(
