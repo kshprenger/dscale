@@ -193,6 +193,7 @@ impl SimulationBuilder {
         let actors: Vec<Box<dyn SimulationActor>> = vec![network_actor, timers_actor];
 
         global::configuration::setup_global_configuration(procs.len());
+        global::setup_shared_access(topology);
 
         match self.flavor {
             SimulationFlavor::Deterministic => unreachable!(),

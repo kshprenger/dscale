@@ -13,7 +13,10 @@ use crate::{
     global_unique_id,
     random::Seed,
     runner::SimulationRunner,
-    runners::task::{TaskIndex, TaskResult},
+    runners::{
+        emojis,
+        task::{TaskIndex, TaskResult},
+    },
     time::Jiffies,
 };
 
@@ -66,7 +69,7 @@ impl SimulationRunner for ScalableRunner {
     fn run_full_budget(&mut self) {
         self.start();
         self.coordinate();
-        info!("Looks good! ヽ('ー`)ノ");
+        info!("Looks good! {}", emojis::good());
     }
 }
 
@@ -97,10 +100,8 @@ impl ScalableRunner {
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     error!(
-                        "
-                        DEADLOCK! (ﾉಥ益ಥ）ﾉ ┻━┻
-                        Try using deterministic runner with RUST_LOG=debug
-                        "
+                        "\n                        DEADLOCK! {}\n                        Try using deterministic runner with RUST_LOG=debug",
+                        emojis::bad()
                     );
                     exit(1)
                 }

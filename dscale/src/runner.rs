@@ -1,3 +1,3 @@
-pub(crate) trait SimulationRunner {
+pub trait SimulationRunner {
     fn run_full_budget(&mut self);
 }
