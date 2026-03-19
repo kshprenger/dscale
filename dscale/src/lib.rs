@@ -11,7 +11,6 @@ mod progress;
 mod random;
 mod runner;
 mod runners;
-mod simulation;
 mod simulation_builder;
 mod simulation_flavor;
 mod step;
@@ -24,7 +23,6 @@ pub use message::MessagePtr;
 pub use process_handle::ProcessHandle;
 pub use process_handle::Rank;
 
-pub use simulation::Simulation;
 pub use simulation_builder::SimulationBuilder;
 
 pub use global::broadcast;

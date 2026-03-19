@@ -1,4 +1,3 @@
-
 use crate::{Rank, global::kv, random::Seed, rank};
 
 pub(crate) fn setup_global_configuration(proc_num: usize) {

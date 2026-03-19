@@ -94,7 +94,6 @@ impl ScalableRunner {
                     if global::now() > self.time_budget {
                         return;
                     }
-                    
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     error!(

@@ -1,24 +1,22 @@
-
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    ProcessHandle, Rank, Simulation,
-    network::BandwidthDescription,
+    ProcessHandle, Rank,
+    actor::SimulationActor,
+    global,
+    network::{BandwidthDescription, Network},
     random::Seed,
     runner::SimulationRunner,
+    runners::scalable::ScalableRunner,
     simulation_flavor::SimulationFlavor,
-    time::Jiffies,
-    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing},
+    time::{Jiffies, timer_manager::TimerManager},
+    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
 };
 
 fn init_logger() {
     let _ = env_logger::Builder::from_default_env().try_init();
 }
 
-#[derive(Default)]
 pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
@@ -27,6 +25,22 @@ pub struct SimulationBuilder {
     latency_topology: LatencyTopology,
     bandwidth: BandwidthDescription,
     flavor: SimulationFlavor,
+    safe_parallel_window: Jiffies,
+}
+
+impl Default for SimulationBuilder {
+    fn default() -> Self {
+        Self {
+            seed: Seed::default(),
+            time_budget: Jiffies::default(),
+            proc_id: 0,
+            pools: HashMap::default(),
+            latency_topology: LatencyTopology::default(),
+            bandwidth: BandwidthDescription::default(),
+            flavor: SimulationFlavor::default(),
+            safe_parallel_window: Jiffies(usize::MAX),
+        }
+    }
 }
 
 impl SimulationBuilder {
@@ -124,12 +138,25 @@ impl SimulationBuilder {
             cartesian_product_backwards.for_each(|(from, to)| {
                 self.latency_topology[from][to] = Some(distr.clone());
             });
+
+            self.safe_parallel_window =
+                std::cmp::min(self.safe_parallel_window, distr.safe_window())
         });
         self
     }
 
     pub fn nic_bandwidth(mut self, bandwidth: BandwidthDescription) -> Self {
         self.bandwidth = bandwidth;
+        self
+    }
+
+    pub fn deterministic(mut self) -> Self {
+        self.flavor = SimulationFlavor::Deterministic;
+        self
+    }
+
+    pub fn parallel(mut self, cores: usize) -> Self {
+        self.flavor = SimulationFlavor::Parallel(cores);
         self
     }
 
@@ -160,13 +187,23 @@ impl SimulationBuilder {
             .map(|opt| opt.expect("Uninitialized process slot"))
             .collect();
 
-        Simulation::new(
-            self.seed,
-            self.time_budget,
-            self.bandwidth,
-            self.latency_topology,
-            pool_listing,
-            procs,
-        )
+        let topology = Topology::new_arc(pool_listing.clone(), self.latency_topology);
+        let network_actor = Box::new(Network::new(self.seed, self.bandwidth, topology.clone()));
+        let timers_actor = Box::new(TimerManager::default());
+        let actors: Vec<Box<dyn SimulationActor>> = vec![network_actor, timers_actor];
+
+        global::configuration::setup_global_configuration(procs.len());
+
+        match self.flavor {
+            SimulationFlavor::Deterministic => unreachable!(),
+            SimulationFlavor::Parallel(cores) => ScalableRunner::new(
+                actors,
+                self.time_budget,
+                procs,
+                cores,
+                self.seed,
+                self.safe_parallel_window,
+            ),
+        }
     }
 }

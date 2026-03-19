@@ -1,4 +1,3 @@
-
 use rand::{Rng, SeedableRng, distr::Uniform, seq::IndexedRandom};
 use rand_distr::{Bernoulli, Normal};
 
@@ -11,6 +10,16 @@ pub enum Distributions {
     Uniform(Jiffies, Jiffies),
     Bernoulli(f64, Jiffies),
     Normal(Jiffies, Jiffies),
+}
+
+impl Distributions {
+    pub(super) fn safe_window(&self) -> Jiffies {
+        match self.clone() {
+            Self::Uniform(l, _) => l,
+            Self::Bernoulli(_, _) => Jiffies(1),
+            Self::Normal(a, b) => a - b,
+        }
+    }
 }
 
 #[derive(Debug)]
