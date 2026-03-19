@@ -3,6 +3,9 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 use crate::{Jiffies, MessagePtr, Rank, TimerId};
 
 pub(crate) enum Step {
+    Start {
+        to: Rank,
+    },
     NetworkStep {
         from: Rank,
         to: Rank,

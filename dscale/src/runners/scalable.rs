@@ -15,7 +15,7 @@ use crate::{
     runner::SimulationRunner,
     runners::{
         emojis,
-        task::{TaskIndex, TaskResult},
+        task::{TaskId, TaskIndex, TaskResult},
     },
     step::Step,
     time::Jiffies,
@@ -82,19 +82,9 @@ fn deadlock() {
 
 impl ScalableRunner {
     fn start(&mut self) {
-        let task_id = (Jiffies(0), global_unique_id());
-        self.on_execution.push(Reverse(task_id));
-        self.procs
-            .iter()
-            .cloned()
-            .enumerate()
-            .for_each(|(proc_id, proc)| {
-                self.workers.spawn(move || {
-                    local_access::set_task(task_id, proc_id);
-                    proc.start();
-                    local_access::done();
-                });
-            });
+        for proc_id in 0..self.procs.len() {
+            self.spawn_step_with(Jiffies(0), Step::Start { to: proc_id });
+        }
     }
 
     fn coordinate(&mut self) {
@@ -162,32 +152,39 @@ impl ScalableRunner {
     fn spawn_remain_within_window(&mut self) {
         while let Some(next_step_invocation_time) = self.actors.peek_next_step() {
             if next_step_invocation_time - now() <= self.window_delta {
-                self.spawn_step(next_step_invocation_time);
+                let next_step = self.actors.next_step();
+                self.spawn_step_with(next_step_invocation_time, next_step);
             }
         }
     }
 
-    fn spawn_step(&mut self, step_invocation_time: Jiffies) {
+    fn spawn_step_with(&mut self, step_invocation_time: Jiffies, step: Step) {
         let task_id = (step_invocation_time, global_unique_id());
-        let step = self.actors.next_step();
         self.on_execution.push(Reverse(task_id));
         match step {
+            Step::Start { to } => {
+                self.spawn_on_worker(task_id, to, move |proc| proc.start());
+            }
             Step::NetworkStep { from, to, message } => {
-                let proc = self.procs[to].clone();
-                self.workers.spawn(move || {
-                    local_access::set_task(task_id, to);
-                    proc.on_message(from, message);
-                    local_access::done();
-                });
+                self.spawn_on_worker(task_id, to, move |proc| proc.on_message(from, message));
             }
             Step::TimerStep { to, id } => {
-                let proc = self.procs[to].clone();
-                self.workers.spawn(move || {
-                    local_access::set_task(task_id, to);
-                    proc.on_timer(id);
-                    local_access::done();
-                });
+                self.spawn_on_worker(task_id, to, move |proc| proc.on_timer(id));
             }
         }
+    }
+
+    fn spawn_on_worker(
+        &self,
+        task_id: TaskId,
+        proc_id: usize,
+        work: impl FnOnce(Arc<dyn ProcessHandle>) + Send + 'static,
+    ) {
+        let proc = self.procs[proc_id].clone();
+        self.workers.spawn(move || {
+            local_access::set_task(task_id, proc_id);
+            work(proc);
+            local_access::done();
+        });
     }
 }
