@@ -6,7 +6,12 @@ use crate::{
     global,
     network::{BandwidthDescription, Network},
     random::Seed,
-    runners::{SimulationRunner, deterministic::DeterministicRunner, scalable::ScalableRunner},
+    runners::{
+        SimulationRunner,
+        deterministic::DeterministicRunner,
+        scalable::ScalableRunner,
+        workers::Workers,
+    },
     simulation_flavor::SimulationFlavor,
     time::{Jiffies, timer_manager::TimerManager},
     topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
@@ -198,20 +203,19 @@ impl SimulationBuilder {
         global::setup_shared_access(topology);
 
         match self.flavor {
-            SimulationFlavor::Deterministic => Box::new(DeterministicRunner::new(
-                actors,
-                self.time_budget,
-                procs,
-                self.seed,
-            )),
-            SimulationFlavor::Parallel(cores) => Box::new(ScalableRunner::new(
-                actors,
-                self.time_budget,
-                procs,
-                cores,
-                self.seed,
-                self.safe_parallel_window,
-            )),
+            SimulationFlavor::Deterministic => {
+                let workers = Workers::new(procs, 1, self.seed);
+                Box::new(DeterministicRunner::new(actors, self.time_budget, workers))
+            }
+            SimulationFlavor::Parallel(cores) => {
+                let workers = Workers::new(procs, cores, self.seed);
+                Box::new(ScalableRunner::new(
+                    actors,
+                    self.time_budget,
+                    workers,
+                    self.safe_parallel_window,
+                ))
+            }
         }
     }
 }
