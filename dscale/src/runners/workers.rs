@@ -57,6 +57,10 @@ impl Workers {
         task_id
     }
 
+    pub(crate) fn try_recv(&self) -> Option<TaskResult> {
+        self.rx.try_recv().ok()
+    }
+
     pub(crate) fn recv_timeout(&self, timeout: Duration) -> Result<TaskResult, RecvTimeoutError> {
         self.rx.recv_timeout(timeout)
     }

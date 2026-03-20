@@ -10,7 +10,7 @@ use crate::{
         SimulationRunner,
         emojis::{deadlock, looks_good},
         progress::Bar,
-        task::TaskIndex,
+        task::{TaskIndex, TaskResult},
         workers::Workers,
     },
     step::Step,
@@ -73,13 +73,17 @@ impl ScalableRunner {
 
     fn coordinate(&mut self) {
         loop {
+            // Block until at least one result arrives
             match self.workers.recv_timeout(DEADLOCK_TIMEOUT) {
-                Ok(mut task_result) => {
+                Ok(first) => {
+                    self.ingest(first);
+                    // Drain all immediately available results
+                    while let Some(result) = self.workers.try_recv() {
+                        self.ingest(result);
+                    }
                     if global::now() > self.time_budget {
                         return;
                     }
-                    self.actors.submit(&mut task_result.events);
-                    self.done.push(Reverse(task_result.id));
                     self.adjust_task_index();
                     self.try_advance()
                 }
@@ -89,6 +93,11 @@ impl ScalableRunner {
                 }
             }
         }
+    }
+
+    fn ingest(&mut self, mut task_result: TaskResult) {
+        self.actors.submit(&mut task_result.events);
+        self.done.push(Reverse(task_result.id));
     }
 
     fn adjust_task_index(&mut self) {
