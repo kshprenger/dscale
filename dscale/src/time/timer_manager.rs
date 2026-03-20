@@ -3,16 +3,12 @@ use std::cmp::Reverse;
 use crate::{
     actor::SimulationActor,
     event::Event,
-    global, now,
+    now,
     step::{Step, StepQueue, TimedStep},
     time::Jiffies,
 };
 
 pub type TimerId = usize;
-
-pub(crate) fn next_timer_id() -> TimerId {
-    global::global_unique_id()
-}
 
 #[derive(Default)]
 pub(crate) struct TimerManager {

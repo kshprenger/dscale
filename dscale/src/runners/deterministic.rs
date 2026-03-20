@@ -1,48 +1,56 @@
-use std::{process::exit, sync::Arc, usize};
+use std::sync::Arc;
 
-use log::{error, info};
+use crossbeam_channel::Receiver;
 
 use crate::{
     ProcessHandle,
-    actor::SimulationActor,
-    global,
-    network::{BandwidthDescription, Network},
-    progress::Bar,
-    random,
-    runner::SimulationRunner,
-    time::{Jiffies, timer_manager::TimerManager},
-    topology::{LatencyTopology, PoolListing, Topology},
+    actor::Actors,
+    global::{
+        self,
+        local_access::{self, setup_local_access},
+    },
+    global_unique_id,
+    random::Seed,
+    runners::{
+        SimulationRunner,
+        progress::Bar,
+        task::{TaskId, TaskResult},
+    },
+    step::Step,
+    time::Jiffies,
 };
 
 pub struct DeterministicRunner {
-    actors: Vec<Box<dyn SimulationActor>>,
+    actors: Actors,
     time_budget: Jiffies,
     procs: Vec<Arc<dyn ProcessHandle>>,
     progress_bar: Bar,
+    workers: rayon::ThreadPool,
+    rx: Receiver<TaskResult>,
 }
 
 impl DeterministicRunner {
     pub(crate) fn new(
-        seed: random::Seed,
+        actors: Actors,
         time_budget: Jiffies,
-        bandwidth: BandwidthDescription,
-        latency_topology: LatencyTopology,
-        pool_listing: PoolListing,
         procs: Vec<Arc<dyn ProcessHandle>>,
+        seed: Seed,
     ) -> Self {
-        let topology = Topology::new_arc(pool_listing.clone(), latency_topology);
-        let network_actor = Box::new(Network::new(seed, bandwidth, topology.clone()));
-        let timers_actor = Box::new(TimerManager::default());
-
-        global::configuration::setup_global_configuration(procs.len() - 1);
-
-        let actors: Vec<Box<dyn SimulationActor>> = vec![network_actor, timers_actor];
-
+        let (tx, rx) = crossbeam_channel::unbounded::<TaskResult>();
+        let tp = rayon::ThreadPoolBuilder::new()
+            .num_threads(1)
+            .start_handler(move |_| {
+                setup_local_access(seed, tx.clone());
+            })
+            .build()
+            .expect("Could not build tp");
         Self {
             actors,
             time_budget,
             progress_bar: Bar::new(time_budget),
             procs,
+            rx,
+            workers: tp,
         }
     }
 }
@@ -52,54 +60,58 @@ impl SimulationRunner for DeterministicRunner {
         self.start();
 
         while global::now() < self.time_budget {
-            self.step();
+            self.run_next_step();
         }
 
         self.progress_bar.finish();
-
-        info!("Looks good! ヽ('ー`)ノ");
     }
 }
 
 impl DeterministicRunner {
     fn start(&mut self) {
-        self.actors.iter_mut().for_each(|actor| {
-            global::schedule();
+        for proc_id in 0..self.procs.len() {
+            self.run_step(Step::Start { to: proc_id });
+            let mut task_result = self.rx.recv().expect("Worker disconnected");
+            self.actors.submit(&mut task_result.events);
+        }
+    }
+
+    fn run_next_step(&mut self) {
+        if let Some(next_time) = self.actors.peek_next_step() {
+            global::fast_forward_clock(next_time);
+            self.progress_bar.make_progress(next_time);
+            let step = self.actors.next_step();
+            self.run_step(step);
+            let mut task_result = self.rx.recv().expect("Worker disconnected");
+            self.actors.submit(&mut task_result.events);
+        }
+    }
+
+    fn run_step(&self, step: Step) {
+        match step {
+            Step::Start { to } => {
+                self.spawn_on_worker(to, move |proc| proc.start());
+            }
+            Step::NetworkStep { from, to, message } => {
+                self.spawn_on_worker(to, move |proc| proc.on_message(from, message));
+            }
+            Step::TimerStep { to, id } => {
+                self.spawn_on_worker(to, move |proc| proc.on_timer(id));
+            }
+        }
+    }
+
+    fn spawn_on_worker(
+        &self,
+        proc_id: usize,
+        work: impl FnOnce(Arc<dyn ProcessHandle>) + Send + 'static,
+    ) {
+        let task_id: TaskId = (global::now(), global_unique_id());
+        let proc = self.procs[proc_id].clone();
+        self.workers.spawn(move || {
+            local_access::set_task(task_id, proc_id);
+            work(proc);
+            local_access::done();
         });
-    }
-
-    fn step(&mut self) {
-        match self.peek_closest() {
-            None => {
-                error!("DEADLOCK! (ﾉಥ益ಥ）ﾉ ┻━┻ Try with RUST_LOG=debug");
-                exit(1)
-            }
-            Some((future, actor)) => {
-                global::fast_forward_clock(future);
-                actor.lock().expect("Actor lock poisoned").step();
-                global::schedule();
-                self.progress_bar
-                    .make_progress(future.min(self.time_budget));
-            }
-        }
-    }
-
-    fn peek_closest(&mut self) -> Option<(Jiffies, SharedActor)> {
-        let mut min_time = Jiffies(usize::MAX);
-        let mut sha: Option<SharedActor> = None;
-        for actor in self.actors.iter() {
-            actor
-                .lock()
-                .expect("Actor lock poisoned")
-                .peek_closest()
-                .map(|time| {
-                    if time < min_time {
-                        min_time = time;
-                        sha = Some(actor.clone())
-                    }
-                });
-        }
-
-        Some((min_time, sha?))
     }
 }

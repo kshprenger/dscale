@@ -2,12 +2,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     ProcessHandle, Rank,
-    actor::{Actors, SimulationActor},
+    actor::Actors,
     global,
     network::{BandwidthDescription, Network},
     random::Seed,
-    runner::SimulationRunner,
-    runners::scalable::ScalableRunner,
+    runners::{SimulationRunner, deterministic::DeterministicRunner, scalable::ScalableRunner},
     simulation_flavor::SimulationFlavor,
     time::{Jiffies, timer_manager::TimerManager},
     topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
@@ -160,7 +159,7 @@ impl SimulationBuilder {
         self
     }
 
-    pub fn build(mut self) -> impl SimulationRunner {
+    pub fn build(mut self) -> Box<dyn SimulationRunner> {
         init_logger();
 
         let mut pool_listing = PoolListing::default();
@@ -199,15 +198,20 @@ impl SimulationBuilder {
         global::setup_shared_access(topology);
 
         match self.flavor {
-            SimulationFlavor::Deterministic => unreachable!(),
-            SimulationFlavor::Parallel(cores) => ScalableRunner::new(
+            SimulationFlavor::Deterministic => Box::new(DeterministicRunner::new(
+                actors,
+                self.time_budget,
+                procs,
+                self.seed,
+            )),
+            SimulationFlavor::Parallel(cores) => Box::new(ScalableRunner::new(
                 actors,
                 self.time_budget,
                 procs,
                 cores,
                 self.seed,
                 self.safe_parallel_window,
-            ),
+            )),
         }
     }
 }

@@ -23,7 +23,6 @@ use crate::time::Jiffies;
 use crate::topology::Topology;
 
 pub(crate) struct Network {
-    seed: Seed,
     bandwidth_queue: BandwidthQueue,
     topology: Arc<Topology>,
 }
@@ -62,7 +61,6 @@ impl Network {
         topology: Arc<Topology>,
     ) -> Self {
         Self {
-            seed,
             bandwidth_queue: BandwidthQueue::new(
                 bandwidth_type,
                 topology.list_pool(GLOBAL_POOL).len(),

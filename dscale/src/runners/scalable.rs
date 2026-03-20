@@ -1,7 +1,6 @@
-use std::{cmp::Reverse, process::exit, sync::Arc, time::Duration, usize};
+use std::{cmp::Reverse, sync::Arc, time::Duration, usize};
 
 use crossbeam_channel::{Receiver, RecvTimeoutError};
-use log::{error, info};
 
 use crate::{
     ProcessHandle,
@@ -12,9 +11,9 @@ use crate::{
     },
     global_unique_id, now,
     random::Seed,
-    runner::SimulationRunner,
     runners::{
-        emojis,
+        SimulationRunner,
+        emojis::{deadlock, looks_good},
         task::{TaskId, TaskIndex, TaskResult},
     },
     step::Step,
@@ -68,16 +67,8 @@ impl SimulationRunner for ScalableRunner {
     fn run_full_budget(&mut self) {
         self.start();
         self.coordinate();
-        info!("Looks good! {}", emojis::good());
+        looks_good();
     }
-}
-
-fn deadlock() {
-    error!(
-        "DEADLOCK! {}\nTry using deterministic runner with RUST_LOG=debug",
-        emojis::bad()
-    );
-    exit(1)
 }
 
 impl ScalableRunner {

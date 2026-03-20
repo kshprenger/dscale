@@ -1,3 +1,7 @@
+use std::process::exit;
+
+use log::{error, info};
+
 const GOOD: &[&str] = &[
     "ヽ('ー`)ノ",
     "ヽ(^‿^)ノ",
@@ -30,4 +34,16 @@ pub fn good() -> &'static str {
 
 pub fn bad() -> &'static str {
     BAD[rand::random::<u64>() as usize % BAD.len()]
+}
+
+pub(super) fn looks_good() {
+    info!("Looks good! {}", good());
+}
+
+pub(super) fn deadlock() {
+    error!(
+        "DEADLOCK! {}\nTry using deterministic runner with RUST_LOG=debug",
+        bad()
+    );
+    exit(1)
 }

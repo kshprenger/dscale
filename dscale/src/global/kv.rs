@@ -1,4 +1,3 @@
-
 use std::any::Any;
 
 use dashmap::DashMap;
@@ -24,8 +23,4 @@ pub fn get<T: 'static + Clone + Send + Sync>(key: &str) -> T {
 pub fn modify<T: 'static + Send + Sync>(key: &str, f: impl FnOnce(&mut T)) {
     let mut entry = KV.get_mut(key).expect("No key");
     f(entry.downcast_mut::<T>().expect("Wrong type cast"));
-}
-
-pub(crate) fn drop() {
-    KV.clear();
 }
