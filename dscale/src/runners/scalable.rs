@@ -9,6 +9,7 @@ use crate::{
     runners::{
         SimulationRunner,
         emojis::{deadlock, looks_good},
+        progress::Bar,
         task::TaskIndex,
         workers::Workers,
     },
@@ -22,6 +23,7 @@ pub struct ScalableRunner {
     actors: Actors,
     time_budget: Jiffies,
     workers: Workers,
+    progress_bar: Bar,
     window_delta: Jiffies,
     on_execution: TaskIndex,
     done: TaskIndex,
@@ -38,6 +40,7 @@ impl ScalableRunner {
             actors,
             time_budget,
             workers,
+            progress_bar: Bar::new(time_budget),
             window_delta: safe_window,
             on_execution: TaskIndex::new(),
             done: TaskIndex::new(),
@@ -55,6 +58,7 @@ impl SimulationRunner for ScalableRunner {
     fn run_full_budget(&mut self) {
         self.start();
         self.coordinate();
+        self.progress_bar.finish();
         looks_good();
     }
 }
@@ -110,10 +114,12 @@ impl ScalableRunner {
                 return false;
             } else {
                 global::fast_forward_clock(top.0.0);
+                self.progress_bar.make_progress(top.0.0);
             }
         } else {
             if let Some(next_step_invocation_time) = self.actors.peek_next_step() {
                 global::fast_forward_clock(next_step_invocation_time);
+                self.progress_bar.make_progress(next_step_invocation_time);
             } else {
                 deadlock();
             }
