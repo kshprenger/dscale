@@ -31,7 +31,7 @@ fn main() {
     kv::set::<usize>("pongs", 0);
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let pings = kv::get::<usize>("pings");

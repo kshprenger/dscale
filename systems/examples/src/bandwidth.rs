@@ -15,16 +15,16 @@ impl Message for DataMessage {
 pub struct Sender {}
 
 impl ProcessHandle for Sender {
-    fn start(&mut self) {
+    fn start(&self) {
         // Start sending immediately
         schedule_timer_after(Jiffies(1));
     }
 
-    fn on_message(&mut self, _from: Rank, _message: MessagePtr) {
+    fn on_message(&self, _from: Rank, _message: MessagePtr) {
         // Sender doesn't receive messages
     }
 
-    fn on_timer(&mut self, _id: TimerId) {
+    fn on_timer(&self, _id: TimerId) {
         send_to(1, DataMessage { real_payload: 42 });
         kv::modify::<usize>("messages_sent", |x| *x += 1);
         schedule_timer_after(Jiffies(1));
@@ -35,12 +35,12 @@ impl ProcessHandle for Sender {
 pub struct Receiver {}
 
 impl ProcessHandle for Receiver {
-    fn start(&mut self) {}
+    fn start(&self) {}
 
-    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
+    fn on_message(&self, _from: Rank, message: MessagePtr) {
         let _ = message.as_type::<DataMessage>();
         kv::modify::<usize>("messages_received", |x| *x += 1);
     }
 
-    fn on_timer(&mut self, _id: TimerId) {}
+    fn on_timer(&self, _id: TimerId) {}
 }

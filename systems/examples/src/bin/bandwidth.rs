@@ -39,7 +39,7 @@ fn run_unbounded() -> usize {
         .build();
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let sent = kv::get::<usize>("messages_sent");
@@ -71,7 +71,7 @@ fn run_bounded() -> usize {
         .build();
 
     let start = Instant::now();
-    sim.run();
+    sim.run_full_budget();
     let elapsed = start.elapsed();
 
     let sent = kv::get::<usize>("messages_sent");

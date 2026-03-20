@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use dscale::{global::kv, *};
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
@@ -8,19 +10,30 @@ pub enum LazyPingPongMessage {
 
 impl Message for LazyPingPongMessage {}
 
-#[derive(Default)]
+/// A sentinel value indicating no timer is set.
+const NO_TIMER: usize = usize::MAX;
+
 pub struct LazyPingPong {
-    heartbeat_timer: Option<TimerId>,
-    ping_count: usize,
+    heartbeat_timer: AtomicUsize,
+    ping_count: AtomicUsize,
+}
+
+impl Default for LazyPingPong {
+    fn default() -> Self {
+        Self {
+            heartbeat_timer: AtomicUsize::new(NO_TIMER),
+            ping_count: AtomicUsize::new(0),
+        }
+    }
 }
 
 impl ProcessHandle for LazyPingPong {
-    fn start(&mut self) {
+    fn start(&self) {
         debug_process!("Starting timer demo process");
 
         // Schedule a heartbeat timer to fire every 1000 jiffies
         let timer_id = schedule_timer_after(Jiffies(1000));
-        self.heartbeat_timer = Some(timer_id);
+        self.heartbeat_timer.store(timer_id, Ordering::Relaxed);
         debug_process!(
             "Scheduled heartbeat timer {} to fire in 1000 jiffies",
             timer_id
@@ -32,10 +45,10 @@ impl ProcessHandle for LazyPingPong {
         }
     }
 
-    fn on_message(&mut self, from: Rank, message: MessagePtr) {
+    fn on_message(&self, from: Rank, message: MessagePtr) {
         let m = message.as_type::<LazyPingPongMessage>();
 
-        match m.as_ref() {
+        match m {
             LazyPingPongMessage::Ping => {
                 debug_process!("Received Ping from Process {}", from);
                 kv::modify::<usize>("pings_received", |count| *count += 1);
@@ -50,28 +63,27 @@ impl ProcessHandle for LazyPingPong {
                 kv::modify::<usize>("pongs_received", |count| *count += 1);
 
                 // Send another ping if we haven't reached the limit
-                self.ping_count += 1;
-                if self.ping_count < 5 {
+                let count = self.ping_count.fetch_add(1, Ordering::Relaxed);
+                if count < 5 {
                     send_to(from, LazyPingPongMessage::Ping);
                 }
             }
         }
     }
 
-    fn on_timer(&mut self, timer_id: TimerId) {
+    fn on_timer(&self, timer_id: TimerId) {
         debug_process!("Timer {} fired", timer_id);
 
         // Check if this is the heartbeat timer
-        if let Some(heartbeat_id) = self.heartbeat_timer {
-            if timer_id == heartbeat_id {
-                debug_process!("Heartbeat timer fired");
-                kv::modify::<usize>("heartbeats", |count| *count += 1);
+        let heartbeat_id = self.heartbeat_timer.load(Ordering::Relaxed);
+        if heartbeat_id != NO_TIMER && timer_id == heartbeat_id {
+            debug_process!("Heartbeat timer fired");
+            kv::modify::<usize>("heartbeats", |count| *count += 1);
 
-                // Reschedule the heartbeat timer for continuous operation
-                let new_timer_id = schedule_timer_after(Jiffies(1000));
-                self.heartbeat_timer = Some(new_timer_id);
-                return;
-            }
+            // Reschedule the heartbeat timer for continuous operation
+            let new_timer_id = schedule_timer_after(Jiffies(1000));
+            self.heartbeat_timer.store(new_timer_id, Ordering::Relaxed);
+            return;
         }
 
         // This must be a delayed response timer

@@ -7,9 +7,7 @@ use crate::{
     network::{BandwidthDescription, Network},
     random::Seed,
     runners::{
-        SimulationRunner,
-        deterministic::DeterministicRunner,
-        scalable::ScalableRunner,
+        SimulationRunner, deterministic::DeterministicRunner, scalable::ScalableRunner,
         workers::Workers,
     },
     simulation_flavor::SimulationFlavor,
