@@ -15,3 +15,7 @@ pub(crate) fn fast_forward_clock(future: Jiffies) {
 pub fn now() -> Jiffies {
     Jiffies(CLOCK.load(Ordering::Acquire))
 }
+
+pub(crate) fn reset() {
+    CLOCK.store(0, Ordering::Release);
+}

@@ -7,6 +7,14 @@ pub mod tso;
 
 pub(crate) use clock::fast_forward_clock;
 pub use clock::now;
+
+pub fn reset() {
+    clock::reset();
+    tso::reset();
+    shared_access::reset();
+    local_access::reset();
+    kv::reset();
+}
 pub use local_access::broadcast;
 pub use local_access::broadcast_within_pool;
 pub use local_access::choose_from_pool;

@@ -75,7 +75,7 @@ impl LocalAccess {
     fn schedule_timer_after(&mut self, after: Jiffies) -> TimerId {
         let timer_id = global_unique_id();
         self.scheduled_events.push(Event::TimerEvent {
-            to: rank(),
+            to: self.process_on_execution,
             id: timer_id,
             fire_after: after,
         });
@@ -88,14 +88,14 @@ impl LocalAccess {
     }
 
     fn done(&mut self) {
-        self.coordinator
+        let _ = self
+            .coordinator
             .as_ref()
             .expect("No coordinator")
             .send(TaskResult {
                 id: self.current_task,
                 events: mem::take(&mut self.scheduled_events),
-            })
-            .unwrap();
+            });
     }
 
     fn take_events(&mut self) -> EventBatch {
@@ -154,4 +154,8 @@ pub fn rank() -> Rank {
 
 pub fn choose_from_pool(pool_name: &str) -> Rank {
     with_local_access(|access| access.choose_from_pool(pool_name))
+}
+
+pub(crate) fn reset() {
+    LOCAL_ACCESS.with(|cell| *cell.borrow_mut() = LocalAccess::default());
 }

@@ -10,7 +10,12 @@ use crate::{
     },
     global_unique_id,
     random::Seed,
-    runners::{SimulationRunner, emojis::deadlock, progress::Bar, task::TaskResult},
+    runners::{
+        SimulationRunner,
+        emojis::{deadlock, looks_good},
+        progress::Bar,
+        task::TaskResult,
+    },
     step::Step,
     time::Jiffies,
 };
@@ -45,6 +50,12 @@ impl DeterministicRunner {
     }
 }
 
+impl Drop for DeterministicRunner {
+    fn drop(&mut self) {
+        global::reset();
+    }
+}
+
 impl SimulationRunner for DeterministicRunner {
     fn run_full_budget(&mut self) {
         self.start();
@@ -54,6 +65,7 @@ impl SimulationRunner for DeterministicRunner {
         }
 
         self.progress_bar.finish();
+        looks_good();
     }
 }
 

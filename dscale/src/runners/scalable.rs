@@ -45,6 +45,12 @@ impl ScalableRunner {
     }
 }
 
+impl Drop for ScalableRunner {
+    fn drop(&mut self) {
+        global::reset();
+    }
+}
+
 impl SimulationRunner for ScalableRunner {
     fn run_full_budget(&mut self) {
         self.start();
@@ -122,6 +128,8 @@ impl ScalableRunner {
                 let next_step = self.actors.next_step();
                 let task_id = self.workers.spawn_step(next_step);
                 self.on_execution.push(Reverse(task_id));
+            } else {
+                break;
             }
         }
     }

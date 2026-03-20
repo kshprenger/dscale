@@ -1,19 +1,30 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::{
+    Arc,
+    atomic::{AtomicPtr, Ordering},
+};
 
 use crossbeam_utils::CachePadded;
 
 use crate::{Rank, topology::Topology};
 
-pub(crate) static SHARED_ACCESS: OnceLock<SharedAccess> = OnceLock::new();
+static SHARED_ACCESS: AtomicPtr<SharedAccess> = AtomicPtr::new(std::ptr::null_mut());
 
 pub(crate) fn setup_shared_access(topology: Arc<Topology>) {
-    SHARED_ACCESS
-        .set(SharedAccess::new(topology))
-        .expect("SharedAccess already initialized");
+    let sa = Box::new(SharedAccess::new(topology));
+    let ptr = Box::into_raw(sa);
+    let old = SHARED_ACCESS.swap(ptr, Ordering::Release);
+    if !old.is_null() {
+        // Drop previous allocation
+        unsafe {
+            drop(Box::from_raw(old));
+        }
+    }
 }
 
 fn shared() -> &'static SharedAccess {
-    SHARED_ACCESS.get().expect("SharedAccess not initialized")
+    let ptr = SHARED_ACCESS.load(Ordering::Acquire);
+    assert!(!ptr.is_null(), "SharedAccess not initialized");
+    unsafe { &*ptr }
 }
 
 #[derive(Debug)]
@@ -27,16 +38,17 @@ impl SharedAccess {
             topology: CachePadded::new(topology),
         }
     }
-
-    pub(crate) fn topology(&self) -> &Topology {
-        &self.topology
-    }
-}
-
-pub(crate) fn topology() -> &'static Topology {
-    shared().topology()
 }
 
 pub fn list_pool(pool_name: &str) -> &'static [Rank] {
     shared().topology.list_pool(pool_name)
+}
+
+pub(crate) fn reset() {
+    let old = SHARED_ACCESS.swap(std::ptr::null_mut(), Ordering::Release);
+    if !old.is_null() {
+        unsafe {
+            drop(Box::from_raw(old));
+        }
+    }
 }
