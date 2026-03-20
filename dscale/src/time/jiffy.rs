@@ -1,4 +1,3 @@
-
 use std::{
     fmt::{Debug, Display},
     ops::{Add, AddAssign, Mul, Sub},
@@ -36,10 +35,10 @@ impl AddAssign<usize> for Jiffies {
 }
 
 impl Mul<Jiffies> for usize {
-    type Output = Self;
+    type Output = Jiffies;
 
     fn mul(self, rhs: Jiffies) -> Self::Output {
-        self * rhs.0
+        Jiffies(self * rhs.0)
     }
 }
 

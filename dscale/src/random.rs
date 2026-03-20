@@ -15,7 +15,7 @@ pub enum Distributions {
 impl Distributions {
     pub(super) fn safe_window(&self) -> Jiffies {
         match self.clone() {
-            Self::Uniform(l, _) => l,
+            Self::Uniform(mu, sigma) => mu - (3 * sigma),
             Self::Bernoulli(_, _) => Jiffies(1),
             Self::Normal(a, b) => a - b,
         }
