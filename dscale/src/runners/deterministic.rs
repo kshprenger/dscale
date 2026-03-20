@@ -1,7 +1,16 @@
+use std::sync::Arc;
+
 use crate::{
+    ProcessHandle,
     actor::Actors,
-    global,
-    runners::{SimulationRunner, emojis::deadlock, progress::Bar, workers::Workers},
+    global::{
+        self,
+        configuration::setup_local_configuration,
+        local_access::{self, setup_local_access},
+    },
+    global_unique_id,
+    random::Seed,
+    runners::{SimulationRunner, emojis::deadlock, progress::Bar, task::TaskResult},
     step::Step,
     time::Jiffies,
 };
@@ -9,17 +18,29 @@ use crate::{
 pub struct DeterministicRunner {
     actors: Actors,
     time_budget: Jiffies,
+    procs: Vec<Arc<dyn ProcessHandle>>,
     progress_bar: Bar,
-    workers: Workers,
 }
 
 impl DeterministicRunner {
-    pub(crate) fn new(actors: Actors, time_budget: Jiffies, workers: Workers) -> Self {
+    pub(crate) fn new(
+        actors: Actors,
+        time_budget: Jiffies,
+        procs: Vec<Arc<dyn ProcessHandle>>,
+        seed: Seed,
+    ) -> Self {
+        for id in 0..procs.len() {
+            setup_local_configuration(id, seed);
+        }
+        // Set up thread-local access on the main thread directly — no channel needed.
+        // We pass a dummy sender that is never used since we call take_events() instead of done().
+        let (tx, _rx) = crossbeam_channel::unbounded::<TaskResult>();
+        setup_local_access(seed, tx);
         Self {
             actors,
             time_budget,
             progress_bar: Bar::new(time_budget),
-            workers,
+            procs,
         }
     }
 }
@@ -38,10 +59,8 @@ impl SimulationRunner for DeterministicRunner {
 
 impl DeterministicRunner {
     fn start(&mut self) {
-        for proc_id in 0..self.workers.num_procs() {
-            self.workers.spawn_step(Step::Start { to: proc_id });
-            let mut task_result = self.workers.recv();
-            self.actors.submit(&mut task_result.events);
+        for proc_id in 0..self.procs.len() {
+            self.run_step(Step::Start { to: proc_id });
         }
     }
 
@@ -50,11 +69,29 @@ impl DeterministicRunner {
             global::fast_forward_clock(next_time);
             self.progress_bar.make_progress(next_time);
             let step = self.actors.next_step();
-            self.workers.spawn_step(step);
-            let mut task_result = self.workers.recv();
-            self.actors.submit(&mut task_result.events);
+            self.run_step(step);
         } else {
             deadlock();
         }
+    }
+
+    fn run_step(&mut self, step: Step) {
+        let task_id = (global::now(), global_unique_id());
+        match step {
+            Step::Start { to } => {
+                local_access::set_task(task_id, to);
+                self.procs[to].start();
+            }
+            Step::NetworkStep { from, to, message } => {
+                local_access::set_task(task_id, to);
+                self.procs[to].on_message(from, message);
+            }
+            Step::TimerStep { to, id } => {
+                local_access::set_task(task_id, to);
+                self.procs[to].on_timer(id);
+            }
+        }
+        let mut events = local_access::take_events();
+        self.actors.submit(&mut events);
     }
 }

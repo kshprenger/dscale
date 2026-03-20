@@ -98,6 +98,10 @@ impl LocalAccess {
             .unwrap();
     }
 
+    fn take_events(&mut self) -> EventBatch {
+        mem::take(&mut self.scheduled_events)
+    }
+
     fn rank(&self) -> Rank {
         self.process_on_execution
     }
@@ -109,6 +113,10 @@ pub(crate) fn set_task(task_id: TaskId, proc_id: Rank) {
 
 pub(crate) fn done() {
     with_local_access(|access| access.done());
+}
+
+pub(crate) fn take_events() -> EventBatch {
+    with_local_access(|access| access.take_events())
 }
 
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {

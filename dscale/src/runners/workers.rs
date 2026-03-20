@@ -22,11 +22,7 @@ pub(crate) struct Workers {
 }
 
 impl Workers {
-    pub(crate) fn new(
-        procs: Vec<Arc<dyn ProcessHandle>>,
-        cores: usize,
-        seed: Seed,
-    ) -> Self {
+    pub(crate) fn new(procs: Vec<Arc<dyn ProcessHandle>>, cores: usize, seed: Seed) -> Self {
         for id in 0..procs.len() {
             setup_local_configuration(id, seed);
         }
@@ -59,10 +55,6 @@ impl Workers {
             }
         }
         task_id
-    }
-
-    pub(crate) fn recv(&self) -> TaskResult {
-        self.rx.recv().expect("Worker disconnected")
     }
 
     pub(crate) fn recv_timeout(&self, timeout: Duration) -> Result<TaskResult, RecvTimeoutError> {

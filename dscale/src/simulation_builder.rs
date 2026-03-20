@@ -202,8 +202,7 @@ impl SimulationBuilder {
 
         match self.flavor {
             SimulationFlavor::Deterministic => {
-                let workers = Workers::new(procs, 1, self.seed);
-                Box::new(DeterministicRunner::new(actors, self.time_budget, workers))
+                Box::new(DeterministicRunner::new(actors, self.time_budget, procs, self.seed))
             }
             SimulationFlavor::Parallel(cores) => {
                 let workers = Workers::new(procs, cores, self.seed);
