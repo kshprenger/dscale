@@ -13,7 +13,7 @@ fn main() {
             "RingPool",
             Distributions::Uniform(Jiffies(1), Jiffies(10)),
         )])
-        .time_budget(Jiffies(100_00000))
+        .time_budget(Jiffies(100_000_000))
         .deterministic()
         .seed(5)
         .build();

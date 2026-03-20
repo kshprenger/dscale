@@ -1,5 +1,6 @@
 use crate::{
     event::Event,
+    global::local_access::EventBatch,
     network::Network,
     step::Step,
     time::{Jiffies, timer_manager::TimerManager},
@@ -38,8 +39,8 @@ impl Actors {
         }
     }
 
-    pub(super) fn submit(&mut self, events: &mut [Event]) {
-        for event in events.iter().cloned() {
+    pub(super) fn submit(&mut self, events: &mut EventBatch) {
+        for event in events.drain(..) {
             match event {
                 e @ Event::TimerEvent { .. } => self.timers.submit(e),
                 e @ Event::NetworkEvent { .. } => self.network.submit(e),
