@@ -9,7 +9,7 @@ fn main() {
         .add_pool::<DAGRider>("Validators", 53)
         .latency_topology(&[LatencyDescription::WithinPool(
             "Validators",
-            Distributions::Normal(Jiffies(50), Jiffies(10)),
+            Distributions::Normal { mean: Jiffies(50), std_dev: Jiffies(10), low: Jiffies(20), high: Jiffies(80) },
         )])
         .time_budget(Jiffies(3600_000))
         .nic_bandwidth(BandwidthDescription::Unbounded)

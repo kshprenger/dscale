@@ -81,7 +81,7 @@ impl ScalableRunner {
                     while let Some(result) = self.workers.try_recv() {
                         self.ingest(result);
                     }
-                    if global::now() > self.time_budget {
+                    if global::now() >= self.time_budget {
                         return;
                     }
                     self.adjust_task_index();

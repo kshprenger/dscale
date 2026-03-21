@@ -9,15 +9,22 @@ pub type Seed = u64;
 pub enum Distributions {
     Uniform(Jiffies, Jiffies),
     Bernoulli(f64, Jiffies),
-    Normal(Jiffies, Jiffies),
+
+    // https://en.wikipedia.org/wiki/Truncated_normal_distribution
+    Normal {
+        mean: Jiffies,
+        std_dev: Jiffies,
+        low: Jiffies,
+        high: Jiffies,
+    },
 }
 
 impl Distributions {
     pub(super) fn safe_window(&self) -> Jiffies {
         match self.clone() {
-            Self::Uniform(mu, sigma) => mu - (3 * sigma),
+            Self::Uniform(a, _) => a,
             Self::Bernoulli(_, _) => Jiffies(1),
-            Self::Normal(a, b) => a - b,
+            Self::Normal { low, .. } => low,
         }
     }
 }
@@ -52,9 +59,20 @@ impl Randomizer {
                 let distr = Bernoulli::new(p).expect("Invalid probability");
                 if self.rnd.sample(distr) { val } else { 0 }
             }
-            Distributions::Normal(Jiffies(mean), Jiffies(std_dev)) => {
+            Distributions::Normal {
+                mean: Jiffies(mean),
+                std_dev: Jiffies(std_dev),
+                low: Jiffies(low),
+                high: Jiffies(high),
+            } => {
                 let distr = Normal::new(mean as f64, std_dev as f64).expect("Invalid parameters");
-                self.rnd.sample(distr).max(0.0).round() as usize
+                loop {
+                    let sample: f64 = self.rnd.sample(distr);
+                    let rounded = sample.round() as isize;
+                    if rounded >= low as isize && rounded <= high as isize {
+                        return rounded as usize;
+                    }
+                }
             }
         }
     }

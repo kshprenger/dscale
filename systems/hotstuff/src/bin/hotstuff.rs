@@ -19,7 +19,7 @@ fn main() {
         .add_pool::<ChainedHotstuff>(HOTSTUFF_POOL, 53)
         .latency_topology(&[LatencyDescription::WithinPool(
             HOTSTUFF_POOL,
-            Distributions::Normal(Jiffies(50), Jiffies(10)),
+            Distributions::Normal { mean: Jiffies(50), std_dev: Jiffies(10), low: Jiffies(20), high: Jiffies(80) },
         )])
         .seed(123)
         .time_budget(Jiffies(3600_000))
