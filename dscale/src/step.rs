@@ -4,19 +4,18 @@ use crate::{Jiffies, MessagePtr, Rank, TimerId};
 
 pub(crate) enum Step {
     Start {
-        to: Rank,
+        rank: Rank,
     },
     NetworkStep {
-        from: Rank,
-        to: Rank,
+        source: Rank,
+        target: Rank,
         message: MessagePtr,
     },
     TimerStep {
-        to: Rank,
+        rank: Rank,
         id: TimerId,
     },
 }
-
 
 pub(crate) struct TimedStep {
     pub(crate) invocation_time: Jiffies,

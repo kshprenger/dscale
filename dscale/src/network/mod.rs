@@ -36,17 +36,17 @@ impl Network {
     ) {
         let targets = match destination {
             Destination::BroadcastWithinPool(pool_name) => self.topology.list_pool(pool_name),
-            Destination::To(to) => &[to],
+            Destination::Target(rank) => &[rank],
         };
 
-        debug!("Submitting steps P{source} s-> P[{targets:?}]");
+        debug!("Submitting steps P{source} -> P[{targets:?}]");
         let base_time = now() + Jiffies(1);
         for &target in targets {
             let timed_step = TimedStep {
                 invocation_time: base_time,
                 step: Step::NetworkStep {
-                    from: source,
-                    to: target,
+                    source: source,
+                    target: target,
                     message: message.clone(),
                 },
             };
@@ -86,8 +86,12 @@ impl SimulationActor for Network {
 
     fn submit(&mut self, event: Event) {
         match event {
-            Event::NetworkEvent { from, to, message } => {
-                self.submit_single_message(message, from, to);
+            Event::NetworkEvent {
+                source,
+                destination,
+                message,
+            } => {
+                self.submit_single_message(message, source, destination);
             }
             _ => unreachable!(),
         }

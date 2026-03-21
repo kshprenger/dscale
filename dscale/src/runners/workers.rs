@@ -44,14 +44,20 @@ impl Workers {
     pub(crate) fn spawn_step(&self, step: Step) -> TaskId {
         let task_id = (global::now(), global_unique_id());
         match step {
-            Step::Start { to } => {
-                self.spawn_on_worker(task_id, to, move |proc| proc.start());
+            Step::Start { rank } => {
+                self.spawn_on_worker(task_id, rank, move |proc| proc.start());
             }
-            Step::NetworkStep { from, to, message } => {
-                self.spawn_on_worker(task_id, to, move |proc| proc.on_message(from, message));
+            Step::NetworkStep {
+                source,
+                target,
+                message,
+            } => {
+                self.spawn_on_worker(task_id, target, move |proc| {
+                    proc.on_message(source, message)
+                });
             }
-            Step::TimerStep { to, id } => {
-                self.spawn_on_worker(task_id, to, move |proc| proc.on_timer(id));
+            Step::TimerStep { rank, id } => {
+                self.spawn_on_worker(task_id, rank, move |proc| proc.on_timer(id));
             }
         }
         task_id

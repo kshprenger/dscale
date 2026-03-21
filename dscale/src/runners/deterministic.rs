@@ -71,8 +71,8 @@ impl SimulationRunner for DeterministicRunner {
 
 impl DeterministicRunner {
     fn start(&mut self) {
-        for proc_id in 0..self.procs.len() {
-            self.run_step(Step::Start { to: proc_id });
+        for rank in 0..self.procs.len() {
+            self.run_step(Step::Start { rank });
         }
     }
 
@@ -90,17 +90,21 @@ impl DeterministicRunner {
     fn run_step(&mut self, step: Step) {
         let task_id = (global::now(), global_unique_id());
         match step {
-            Step::Start { to } => {
-                local_access::set_task(task_id, to);
-                self.procs[to].start();
+            Step::Start { rank } => {
+                local_access::set_task(task_id, rank);
+                self.procs[rank].start();
             }
-            Step::NetworkStep { from, to, message } => {
-                local_access::set_task(task_id, to);
-                self.procs[to].on_message(from, message);
+            Step::NetworkStep {
+                source,
+                target,
+                message,
+            } => {
+                local_access::set_task(task_id, target);
+                self.procs[target].on_message(source, message);
             }
-            Step::TimerStep { to, id } => {
-                local_access::set_task(task_id, to);
-                self.procs[to].on_timer(id);
+            Step::TimerStep { rank, id } => {
+                local_access::set_task(task_id, rank);
+                self.procs[rank].on_timer(id);
             }
         }
         let mut events = local_access::take_events();

@@ -48,16 +48,16 @@ pub struct LocalAccess {
 impl LocalAccess {
     fn broadcast_within_pool(&mut self, pool_name: &'static str, message: impl Message + 'static) {
         self.scheduled_events.push(Event::NetworkEvent {
-            from: self.process_on_execution,
-            to: Destination::BroadcastWithinPool(pool_name),
+            source: self.process_on_execution,
+            destination: Destination::BroadcastWithinPool(pool_name),
             message: MessagePtr(Arc::new(message)),
         });
     }
 
-    fn send_to(&mut self, to: Rank, message: impl Message + 'static) {
+    fn send_to(&mut self, rank: Rank, message: impl Message + 'static) {
         self.scheduled_events.push(Event::NetworkEvent {
-            from: self.process_on_execution,
-            to: Destination::To(to),
+            source: self.process_on_execution,
+            destination: Destination::Target(rank),
             message: MessagePtr(Arc::new(message)),
         });
     }
@@ -75,7 +75,7 @@ impl LocalAccess {
     fn schedule_timer_after(&mut self, after: Jiffies) -> TimerId {
         let timer_id = global_unique_id();
         self.scheduled_events.push(Event::TimerEvent {
-            to: self.process_on_execution,
+            rank: self.process_on_execution,
             id: timer_id,
             fire_after: after,
         });
@@ -133,9 +133,9 @@ pub fn broadcast_within_pool(pool: &'static str, message: impl Message + 'static
     with_local_access(|access| access.broadcast_within_pool(pool, message));
 }
 
-pub fn send_to(to: Rank, message: impl Message + 'static) {
-    debug_process!("[Access] send to: P{to}");
-    with_local_access(|access| access.send_to(to, message));
+pub fn send_to(rank: Rank, message: impl Message + 'static) {
+    debug_process!("[Access] send to: P{rank}");
+    with_local_access(|access| access.send_to(rank, message));
 }
 
 pub fn send_random(message: impl Message + 'static) {

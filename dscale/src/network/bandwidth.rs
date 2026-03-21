@@ -1,4 +1,3 @@
-
 use std::collections::BinaryHeap;
 
 use crate::{
@@ -84,14 +83,14 @@ impl BandwidthQueue {
             .expect("Global queue should not be empty");
 
         let Step::NetworkStep {
-            to,
+            target,
             message: ref msg,
             ..
         } = message.step
         else {
             unreachable!("BandwidthQueue only accepts NetworkSteps");
         };
-        let new_total = self.total_pased[to] + msg.0.virtual_size();
+        let new_total = self.total_pased[target] + msg.0.virtual_size();
 
         if new_total > now().0 * self.bandwidth {
             message.invocation_time = Jiffies(new_total / self.bandwidth); // > now()
@@ -107,14 +106,14 @@ impl BandwidthQueue {
             .expect("All buffers should not be empty")
             .0;
         let Step::NetworkStep {
-            to,
+            target,
             message: ref msg,
             ..
         } = timed_step.step
         else {
             unreachable!("BandwidthQueue only accepts NetworkSteps");
         };
-        self.total_pased[to] += msg.0.virtual_size();
+        self.total_pased[target] += msg.0.virtual_size();
         Some(timed_step)
     }
 

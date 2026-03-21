@@ -25,10 +25,10 @@ impl LatencyQueue {
 
     pub(crate) fn push(&mut self, mut message: TimedStep) {
         debug!("Before latency: {}", message.invocation_time);
-        let Step::NetworkStep { from, to, .. } = &message.step else {
+        let Step::NetworkStep { source, target, .. } = &message.step else {
             unreachable!("LatencyQueue only accepts NetworkSteps");
         };
-        let distribution = self.topology.get_distribution(*from, *to);
+        let distribution = self.topology.get_distribution(*source, *target);
         message.invocation_time += self.randomizer.random_usize(distribution);
         debug!("After latency: {}", message.invocation_time);
         self.queue.push(std::cmp::Reverse(message));

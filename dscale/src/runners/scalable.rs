@@ -65,8 +65,8 @@ impl SimulationRunner for ScalableRunner {
 
 impl ScalableRunner {
     fn start(&mut self) {
-        for proc_id in 0..self.workers.num_procs() {
-            let task_id = self.workers.spawn_step(Step::Start { to: proc_id });
+        for rank in 0..self.workers.num_procs() {
+            let task_id = self.workers.spawn_step(Step::Start { rank });
             self.on_execution.push(Reverse(task_id));
         }
     }
