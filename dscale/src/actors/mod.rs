@@ -1,12 +1,7 @@
 pub(crate) mod network_actor;
 pub(crate) mod timer_actor;
 
-use crate::{
-    event::Event,
-    global::local_access::EventBatch,
-    jiffy::Jiffies,
-    step::Step,
-};
+use crate::{event::Event, global::local_access::EventBatch, jiffy::Jiffies, step::Step};
 
 use network_actor::NetworkActor;
 use timer_actor::TimerActor;
