@@ -1,10 +1,10 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use dscale::{Distributions, Jiffies, LatencyDescription, SimulationBuilder, global::kv};
 use hotstuff::{B0, ChainedHotstuff, HOTSTUFF_POOL, Node};
 
 fn main() {
-    let genesis = Rc::new(Node {
+    let genesis = Arc::new(Node {
         id: 0,
         parent: None,
         height: 0,
@@ -12,20 +12,26 @@ fn main() {
         creation_time: Jiffies(0),
     });
 
-    kv::set::<Rc<Node>>(B0, genesis);
+    kv::set::<Arc<Node>>(B0, genesis);
     kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<ChainedHotstuff>(HOTSTUFF_POOL, 53)
         .latency_topology(&[LatencyDescription::WithinPool(
             HOTSTUFF_POOL,
-            Distributions::Normal { mean: Jiffies(50), std_dev: Jiffies(10), low: Jiffies(20), high: Jiffies(80) },
+            Distributions::Normal {
+                mean: Jiffies(50),
+                std_dev: Jiffies(10),
+                low: Jiffies(20),
+                high: Jiffies(80),
+            },
         )])
         .seed(123)
         .time_budget(Jiffies(3600_000))
+        .deterministic()
         .build();
 
-    sim.run();
+    sim.run_full_budget();
 
     let ordered = kv::get::<(f64, usize)>("avg_latency").1;
     let avg_latency = kv::get::<(f64, usize)>("avg_latency").0;

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["dscale", "systems/examples"]
+members = ["dscale", "systems/examples", "systems/hotstuff"]
 
 [profile.release]
 lto = "fat"           # Link Time Optimization: enables cross-crate optimizations
