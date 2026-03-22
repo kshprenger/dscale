@@ -66,6 +66,7 @@ impl SimulationRunner for ScalableRunner {
     fn run_full_budget(&mut self) {
         self.start();
         self.coordinate();
+        self.join_workers();
         self.progress_bar.finish();
         looks_good();
     }
@@ -160,6 +161,21 @@ impl ScalableRunner {
                 self.schedule(next_step);
             } else {
                 break;
+            }
+        }
+    }
+
+    fn join_workers(&mut self) {
+        for queue in &mut self.waiting {
+            queue.clear();
+        }
+        while self.busy.iter().any(|&b| b) {
+            match self.workers.recv_timeout(DEADLOCK_TIMEOUT) {
+                Ok(result) => {
+                    self.busy[result.rank] = false;
+                }
+                Err(RecvTimeoutError::Timeout) => deadlock(),
+                Err(RecvTimeoutError::Disconnected) => unreachable!("ooops"),
             }
         }
     }
