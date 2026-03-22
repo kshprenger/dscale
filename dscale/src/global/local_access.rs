@@ -38,7 +38,7 @@ pub(crate) fn setup_local_access(seed: Seed, coordinator: Sender<TaskResult>) {
 }
 
 #[derive(Default)]
-pub struct LocalAccess {
+pub(crate) struct LocalAccess {
     process_on_execution: Rank,
     current_task: TaskId,
     random: Randomizer,

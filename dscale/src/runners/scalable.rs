@@ -20,7 +20,7 @@ use crate::{
 
 const DEADLOCK_TIMEOUT: Duration = Duration::from_millis(2000);
 
-pub struct ScalableRunner {
+pub(crate) struct ScalableRunner {
     actors: Actors,
     time_budget: Jiffies,
     workers: Workers,

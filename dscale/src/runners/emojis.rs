@@ -28,11 +28,11 @@ const BAD: &[&str] = &[
     "o(TヘTo)",
 ];
 
-pub fn good() -> &'static str {
+fn good() -> &'static str {
     GOOD[rand::random::<u64>() as usize % GOOD.len()]
 }
 
-pub fn bad() -> &'static str {
+fn bad() -> &'static str {
     BAD[rand::random::<u64>() as usize % BAD.len()]
 }
 

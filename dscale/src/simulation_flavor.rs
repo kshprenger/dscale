@@ -1,5 +1,5 @@
 #[derive(Default)]
-pub enum SimulationFlavor {
+pub(crate) enum SimulationFlavor {
     #[default]
     Deterministic,
     Parallel(usize),

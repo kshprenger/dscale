@@ -3,12 +3,12 @@ pub mod configuration;
 pub mod kv;
 pub(crate) mod local_access;
 mod shared_access;
-pub mod tso;
+mod tso;
 
 pub(crate) use clock::fast_forward_clock;
 pub use clock::now;
 
-pub fn reset() {
+pub(crate) fn reset() {
     clock::reset();
     tso::reset();
     shared_access::reset();

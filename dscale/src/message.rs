@@ -8,7 +8,7 @@ pub trait Message: Any + Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct MessagePtr(pub Arc<dyn Message>);
+pub struct MessagePtr(pub(crate) Arc<dyn Message>);
 
 impl MessagePtr {
     pub fn try_as_type<T: 'static>(&self) -> Option<&T> {

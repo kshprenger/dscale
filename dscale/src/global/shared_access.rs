@@ -28,12 +28,12 @@ fn shared() -> &'static SharedAccess {
 }
 
 #[derive(Debug)]
-pub struct SharedAccess {
+struct SharedAccess {
     topology: CachePadded<Arc<Topology>>,
 }
 
 impl SharedAccess {
-    pub(crate) fn new(topology: Arc<Topology>) -> Self {
+    fn new(topology: Arc<Topology>) -> Self {
         Self {
             topology: CachePadded::new(topology),
         }

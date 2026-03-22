@@ -3,7 +3,7 @@ use rand_distr::{Bernoulli, Normal};
 
 use crate::Jiffies;
 
-pub type Seed = u64;
+pub(crate) type Seed = u64;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Distributions {
@@ -30,7 +30,7 @@ impl Distributions {
 }
 
 #[derive(Debug)]
-pub struct Randomizer {
+pub(crate) struct Randomizer {
     rnd: rand::rngs::SmallRng,
 }
 
@@ -43,13 +43,13 @@ impl Default for Randomizer {
 }
 
 impl Randomizer {
-    pub fn new(seed: Seed) -> Self {
+    pub(crate) fn new(seed: Seed) -> Self {
         Self {
             rnd: rand::rngs::SmallRng::seed_from_u64(seed),
         }
     }
 
-    pub fn random_usize(&mut self, d: Distributions) -> usize {
+    pub(crate) fn random_usize(&mut self, d: Distributions) -> usize {
         match d {
             Distributions::Uniform(Jiffies(from), Jiffies(to)) => {
                 let distr = Uniform::new_inclusive(from, to).expect("Invalid bounds");
@@ -77,7 +77,7 @@ impl Randomizer {
         }
     }
 
-    pub fn choose_from_slice<'a, T: Copy>(&mut self, from: &[T]) -> T {
+    pub(crate) fn choose_from_slice<'a, T: Copy>(&mut self, from: &[T]) -> T {
         from.choose(&mut self.rnd)
             .copied()
             .expect("Chose from empty slice")

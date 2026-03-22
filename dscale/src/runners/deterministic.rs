@@ -18,7 +18,7 @@ use crate::{
     jiffy::Jiffies,
 };
 
-pub struct DeterministicRunner {
+pub(crate) struct DeterministicRunner {
     actors: Actors,
     time_budget: Jiffies,
     procs: Vec<Box<dyn ProcessHandle>>,
