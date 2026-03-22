@@ -33,7 +33,7 @@ fn main() {
     println!("Pings received: {}", pings);
     println!("Pongs received: {}", pongs);
 
-    assert_eq!(pings, 5);
-    assert_eq!(pongs, 5);
+    assert_eq!(pings, 6);
+    assert_eq!(pongs, 6);
     assert_eq!(heartbeats, 19);
 }
