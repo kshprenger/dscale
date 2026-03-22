@@ -1,17 +1,18 @@
-use std::{cmp::Reverse, time::Duration};
+use std::{cmp::Reverse, collections::VecDeque, time::Duration};
 
 use crossbeam_channel::RecvTimeoutError;
 
 use crate::{
     actors::Actors,
     global::{self},
+    global_unique_id,
     jiffy::Jiffies,
     now,
     runners::{
         SimulationRunner,
         emojis::{deadlock, looks_good},
         progress::Bar,
-        task::{TaskIndex, TaskResult},
+        task::{TaskId, TaskIndex, TaskResult},
         workers::Workers,
     },
     step::Step,
@@ -27,6 +28,10 @@ pub struct ScalableRunner {
     window_delta: Jiffies,
     on_execution: TaskIndex,
     done: TaskIndex,
+    /// Whether a process currently has a task executing in the thread pool.
+    busy: Vec<bool>,
+    /// Per-process queue of tasks within the window but deferred because the process is busy.
+    waiting: Vec<VecDeque<(TaskId, Step)>>,
 }
 
 impl ScalableRunner {
@@ -36,6 +41,7 @@ impl ScalableRunner {
         workers: Workers,
         safe_window: Jiffies,
     ) -> Self {
+        let num_procs = workers.num_procs();
         Self {
             actors,
             time_budget,
@@ -44,6 +50,8 @@ impl ScalableRunner {
             window_delta: safe_window,
             on_execution: TaskIndex::new(),
             done: TaskIndex::new(),
+            busy: vec![false; num_procs],
+            waiting: (0..num_procs).map(|_| VecDeque::new()).collect(),
         }
     }
 }
@@ -66,8 +74,8 @@ impl SimulationRunner for ScalableRunner {
 impl ScalableRunner {
     fn start(&mut self) {
         for rank in 0..self.workers.num_procs() {
-            let task_id = self.workers.spawn_step(Step::Start { rank });
-            self.on_execution.push(Reverse(task_id));
+            let step = Step::Start { rank };
+            self.schedule(step);
         }
     }
 
@@ -96,8 +104,16 @@ impl ScalableRunner {
     }
 
     fn ingest(&mut self, mut task_result: TaskResult) {
+        let rank = task_result.rank;
         self.actors.submit(&mut task_result.events);
         self.done.push(Reverse(task_result.id));
+
+        // The process is no longer busy — check if there's a deferred task waiting.
+        if let Some((waiting_id, waiting_step)) = self.waiting[rank].pop_front() {
+            self.workers.spawn_step(waiting_id, waiting_step);
+        } else {
+            self.busy[rank] = false;
+        }
     }
 
     fn adjust_task_index(&mut self) {
@@ -141,11 +157,24 @@ impl ScalableRunner {
         while let Some(next_step_invocation_time) = self.actors.peek_next_step() {
             if next_step_invocation_time - now() <= self.window_delta {
                 let next_step = self.actors.next_step();
-                let task_id = self.workers.spawn_step(next_step);
-                self.on_execution.push(Reverse(task_id));
+                self.schedule(next_step);
             } else {
                 break;
             }
+        }
+    }
+
+    /// Create a TaskId and either spawn immediately or defer if the target process is busy.
+    fn schedule(&mut self, step: Step) {
+        let task_id: TaskId = (global::now(), global_unique_id());
+        let rank = step.target_rank();
+        self.on_execution.push(Reverse(task_id));
+
+        if self.busy[rank] {
+            self.waiting[rank].push_back((task_id, step));
+        } else {
+            self.busy[rank] = true;
+            self.workers.spawn_step(task_id, step);
         }
     }
 }

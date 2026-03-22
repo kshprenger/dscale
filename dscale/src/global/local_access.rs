@@ -95,6 +95,7 @@ impl LocalAccess {
             .expect("No coordinator")
             .send(TaskResult {
                 id: self.current_task,
+                rank: self.process_on_execution,
                 events: mem::take(&mut self.scheduled_events),
             });
     }

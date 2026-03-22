@@ -7,12 +7,8 @@ use crossbeam_channel::{Receiver, RecvTimeoutError};
 
 use crate::{
     ProcessHandle,
-    global::{
-        self,
-        configuration::setup_local_configuration,
-        local_access::{self, setup_local_access},
-    },
-    global_unique_id,
+    global::configuration::setup_local_configuration,
+    global::local_access::{self, setup_local_access},
     random::Seed,
     runners::task::{TaskId, TaskResult},
     step::Step,
@@ -48,8 +44,7 @@ impl Workers {
         self.procs.len()
     }
 
-    pub(crate) fn spawn_step(&self, step: Step) -> TaskId {
-        let task_id = (global::now(), global_unique_id());
+    pub(crate) fn spawn_step(&self, task_id: TaskId, step: Step) {
         match step {
             Step::Start { rank } => {
                 self.spawn_on_worker(task_id, rank, move |proc| proc.on_start());
@@ -67,7 +62,6 @@ impl Workers {
                 self.spawn_on_worker(task_id, rank, move |proc| proc.on_timer(id));
             }
         }
-        task_id
     }
 
     pub(crate) fn try_recv(&self) -> Option<TaskResult> {

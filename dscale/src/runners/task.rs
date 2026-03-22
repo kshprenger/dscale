@@ -9,5 +9,6 @@ pub(super) type TaskIndex = BinaryHeap<Reverse<TaskId>>;
 
 pub(crate) struct TaskResult {
     pub id: TaskId,
+    pub rank: usize,
     pub events: EventBatch,
 }

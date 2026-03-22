@@ -17,6 +17,16 @@ pub(crate) enum Step {
     },
 }
 
+impl Step {
+    pub(crate) fn target_rank(&self) -> Rank {
+        match self {
+            Step::Start { rank } => *rank,
+            Step::NetworkStep { target, .. } => *target,
+            Step::TimerStep { rank, .. } => *rank,
+        }
+    }
+}
+
 pub(crate) struct TimedStep {
     pub(crate) invocation_time: Jiffies,
     pub(crate) step: Step,
