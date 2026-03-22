@@ -10,7 +10,7 @@ use dscale::{global::configuration, *};
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
-    dag_utils::{RoundBasedDAG, Vertex, VertexMessage, VertexPtr, same_vertex},
+    dag_utils::{same_vertex, RoundBasedDAG, Vertex, VertexMessage, VertexPtr},
 };
 
 pub struct Bullshark {
@@ -44,7 +44,7 @@ impl Default for Bullshark {
 }
 
 impl ProcessHandle for Bullshark {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.self_id = rank();
         self.proc_num = configuration::process_number();
         self.dag.set_round_size(configuration::process_number());
@@ -202,7 +202,7 @@ impl Bullshark {
         self.dag[round][leader].clone()
     }
 
-    fn start_timer(&mut self) {
+    fn on_start_timer(&mut self) {
         self.current_timer = schedule_timer_after(Jiffies(10000));
         debug_process!("New timer scheduled: {}", self.current_timer);
         self.wait = true;

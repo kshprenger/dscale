@@ -9,7 +9,7 @@ use dscale::{global::configuration, *};
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
-    dag_utils::{RoundBasedDAG, Vertex, VertexMessage, VertexPtr, same_vertex},
+    dag_utils::{same_vertex, RoundBasedDAG, Vertex, VertexMessage, VertexPtr},
 };
 
 const CONSTRUCTING_ROUTINE_INTERVAL: Jiffies = Jiffies(500);
@@ -27,7 +27,7 @@ pub struct DAGRider {
 }
 
 impl ProcessHandle for DAGRider {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.self_id = rank();
         self.proc_num = configuration::process_number();
         self.dag.set_round_size(configuration::process_number());

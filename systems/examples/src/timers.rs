@@ -28,7 +28,7 @@ impl Default for LazyPingPong {
 }
 
 impl ProcessHandle for LazyPingPong {
-    fn start(&self) {
+    fn on_start(&self) {
         debug_process!("Starting timer demo process");
 
         // Schedule a heartbeat timer to fire every 1000 jiffies

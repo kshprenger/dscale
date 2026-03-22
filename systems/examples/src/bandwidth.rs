@@ -15,7 +15,7 @@ impl Message for DataMessage {
 pub struct Sender {}
 
 impl ProcessHandle for Sender {
-    fn start(&self) {
+    fn on_start(&self) {
         // Start sending immediately
         schedule_timer_after(Jiffies(1));
     }
@@ -35,7 +35,7 @@ impl ProcessHandle for Sender {
 pub struct Receiver {}
 
 impl ProcessHandle for Receiver {
-    fn start(&self) {}
+    fn on_start(&self) {}
 
     fn on_message(&self, _from: Rank, message: MessagePtr) {
         let _ = message.as_type::<DataMessage>();

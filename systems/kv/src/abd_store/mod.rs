@@ -32,7 +32,7 @@ impl Replica {
 }
 
 impl ProcessHandle for Replica {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.proc_num = process_number()
     }
 

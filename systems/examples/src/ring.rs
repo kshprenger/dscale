@@ -17,7 +17,7 @@ fn pass_next() {
 }
 
 impl ProcessHandle for Ring {
-    fn start(&self) {
+    fn on_start(&self) {
         if rank() == 0 {
             pass_next();
         }

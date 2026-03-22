@@ -45,7 +45,7 @@ impl Workers {
         let task_id = (global::now(), global_unique_id());
         match step {
             Step::Start { rank } => {
-                self.spawn_on_worker(task_id, rank, move |proc| proc.start());
+                self.spawn_on_worker(task_id, rank, move |proc| proc.on_start());
             }
             Step::NetworkStep {
                 source,

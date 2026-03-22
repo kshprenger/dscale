@@ -7,7 +7,7 @@ use std::{
     rc::Rc,
 };
 
-use dscale::{Message, MessagePtr, Rank, broadcast, rank, send_to};
+use dscale::{broadcast, rank, send_to, Message, MessagePtr, Rank};
 
 use crate::consistent_broadcast::message::BCBMessageId;
 
@@ -48,7 +48,7 @@ impl ByzantineConsistentBroadcast {
         broadcast(BCBMessage::Initiate((next_id, shared)));
     }
 
-    pub(crate) fn start(&mut self, proc_num: usize) {
+    pub(crate) fn on_start(&mut self, proc_num: usize) {
         self.process_id = rank();
         self.proc_num = proc_num;
     }

@@ -15,7 +15,7 @@ impl Message for Pong {}
 pub struct PingProcess {}
 
 impl ProcessHandle for PingProcess {
-    fn start(&self) {
+    fn on_start(&self) {
         send_random_from_pool("Pongers", Ping);
         kv::modify::<usize>("pings", |p| *p += 1);
     }
@@ -33,7 +33,7 @@ impl ProcessHandle for PingProcess {
 pub struct PongProcess {}
 
 impl ProcessHandle for PongProcess {
-    fn start(&self) {}
+    fn on_start(&self) {}
 
     fn on_message(&self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Ping>();

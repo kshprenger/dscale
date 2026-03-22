@@ -92,7 +92,7 @@ impl DeterministicRunner {
         match step {
             Step::Start { rank } => {
                 local_access::set_task(task_id, rank);
-                self.procs[rank].start();
+                self.procs[rank].on_start();
             }
             Step::NetworkStep {
                 source,

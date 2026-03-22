@@ -37,7 +37,7 @@ pub struct ChainedHotstuff {
 }
 
 impl ProcessHandle for ChainedHotstuff {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         if rank() == 0 {
             broadcast(HSMessage::Propose(self.create_leaf()));
         }

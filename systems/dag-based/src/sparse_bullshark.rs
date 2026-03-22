@@ -8,14 +8,14 @@ use std::{
 };
 
 use dscale::{
-    global::{kv, configuration},
+    global::{configuration, kv},
     *,
 };
-use rand::{SeedableRng, rngs::StdRng};
+use rand::{rngs::StdRng, SeedableRng};
 
 use crate::{
     consistent_broadcast::{BCBMessage, ByzantineConsistentBroadcast},
-    dag_utils::{RoundBasedDAG, Vertex, VertexMessage, VertexPtr, same_vertex},
+    dag_utils::{same_vertex, RoundBasedDAG, Vertex, VertexMessage, VertexPtr},
 };
 
 pub struct SparseBullshark {
@@ -50,7 +50,7 @@ impl Default for SparseBullshark {
     }
 }
 impl ProcessHandle for SparseBullshark {
-    fn start(&mut self) {
+    fn on_start(&mut self) {
         self.proc_num = configuration::process_number();
         self.sampler = Some(StdRng::seed_from_u64(configuration::seed()));
         self.dag.set_round_size(configuration::process_number());
@@ -245,7 +245,7 @@ impl SparseBullshark {
         self.dag[round][leader].clone()
     }
 
-    fn start_timer(&mut self) {
+    fn on_start_timer(&mut self) {
         self.current_timer = schedule_timer_after(Jiffies(10000));
         self.wait = true;
     }

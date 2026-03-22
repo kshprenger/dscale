@@ -24,7 +24,7 @@ fn busy_work(nonce: u64) -> u64 {
 }
 
 impl ProcessHandle for HeavyProcess {
-    fn start(&self) {
+    fn on_start(&self) {
         schedule_timer_after(Jiffies(100));
     }
 
