@@ -15,31 +15,31 @@ impl Message for Pong {}
 pub struct PingProcess {}
 
 impl ProcessHandle for PingProcess {
-    fn on_start(&self) {
+    fn on_start(&mut self) {
         send_random_from_pool("Pongers", Ping);
         kv::modify::<usize>("pings", |p| *p += 1);
     }
 
-    fn on_message(&self, _from: Rank, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Pong>();
         send_random_from_pool("Pongers", Ping);
         kv::modify::<usize>("pings", |p| *p += 1);
     }
 
-    fn on_timer(&self, _id: TimerId) {}
+    fn on_timer(&mut self, _id: TimerId) {}
 }
 
 #[derive(Default)]
 pub struct PongProcess {}
 
 impl ProcessHandle for PongProcess {
-    fn on_start(&self) {}
+    fn on_start(&mut self) {}
 
-    fn on_message(&self, _from: Rank, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let _ = message.is::<Ping>();
         send_random_from_pool("Pingers", Pong);
         kv::modify::<usize>("pongs", |p| *p += 1);
     }
 
-    fn on_timer(&self, _id: TimerId) {}
+    fn on_timer(&mut self, _id: TimerId) {}
 }

@@ -49,8 +49,8 @@ fn main() {
         par_steps as f64 / par_elapsed.as_secs_f64()
     );
 
-    // println!(
-    //     "\nSpeedup: {:.2}x",
-    //     det_elapsed.as_secs_f64() / par_elapsed.as_secs_f64()
-    // );
+    println!(
+        "\nSpeedup: {:.2}x",
+        det_elapsed.as_secs_f64() / par_elapsed.as_secs_f64()
+    );
 }

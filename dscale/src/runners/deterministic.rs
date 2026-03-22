@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     ProcessHandle,
     actor::Actors,
@@ -23,7 +21,7 @@ use crate::{
 pub struct DeterministicRunner {
     actors: Actors,
     time_budget: Jiffies,
-    procs: Vec<Arc<dyn ProcessHandle>>,
+    procs: Vec<Box<dyn ProcessHandle>>,
     progress_bar: Bar,
 }
 
@@ -31,7 +29,7 @@ impl DeterministicRunner {
     pub(crate) fn new(
         actors: Actors,
         time_budget: Jiffies,
-        procs: Vec<Arc<dyn ProcessHandle>>,
+        procs: Vec<Box<dyn ProcessHandle>>,
         seed: Seed,
     ) -> Self {
         for id in 0..procs.len() {

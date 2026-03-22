@@ -28,7 +28,7 @@ impl Default for LazyPingPong {
 }
 
 impl ProcessHandle for LazyPingPong {
-    fn on_start(&self) {
+    fn on_start(&mut self) {
         debug_process!("Starting timer demo process");
 
         // Schedule a heartbeat timer to fire every 1000 jiffies
@@ -45,7 +45,7 @@ impl ProcessHandle for LazyPingPong {
         }
     }
 
-    fn on_message(&self, from: Rank, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         let m = message.as_type::<LazyPingPongMessage>();
 
         match m {
@@ -71,7 +71,7 @@ impl ProcessHandle for LazyPingPong {
         }
     }
 
-    fn on_timer(&self, timer_id: TimerId) {
+    fn on_timer(&mut self, timer_id: TimerId) {
         debug_process!("Timer {} fired", timer_id);
 
         // Check if this is the heartbeat timer

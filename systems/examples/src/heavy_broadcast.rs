@@ -24,17 +24,17 @@ fn busy_work(nonce: u64) -> u64 {
 }
 
 impl ProcessHandle for HeavyProcess {
-    fn on_start(&self) {
+    fn on_start(&mut self) {
         schedule_timer_after(Jiffies(100));
     }
 
-    fn on_message(&self, _from: Rank, message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, message: MessagePtr) {
         let msg = message.as_type::<HeavyMessage>();
         let _ = busy_work(msg.nonce);
         STEPS.fetch_add(1, Ordering::Relaxed);
     }
 
-    fn on_timer(&self, _id: TimerId) {
+    fn on_timer(&mut self, _id: TimerId) {
         let nonce = busy_work(rank() as u64);
         broadcast(HeavyMessage { nonce });
         schedule_timer_after(Jiffies(100));

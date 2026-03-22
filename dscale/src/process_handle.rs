@@ -2,10 +2,24 @@ use crate::{MessagePtr, time::timer_manager::TimerId};
 
 pub type Rank = usize;
 
-pub trait ProcessHandle: Sync + Send {
-    fn on_start(&self);
+pub trait ProcessHandle {
+    fn on_start(&mut self);
 
-    fn on_message(&self, from: Rank, message: MessagePtr);
+    fn on_message(&mut self, from: Rank, message: MessagePtr);
 
-    fn on_timer(&self, id: TimerId);
+    fn on_timer(&mut self, id: TimerId);
+}
+
+impl<T: ProcessHandle + ?Sized> ProcessHandle for Box<T> {
+    fn on_start(&mut self) {
+        (**self).on_start()
+    }
+
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
+        (**self).on_message(from, message)
+    }
+
+    fn on_timer(&mut self, id: TimerId) {
+        (**self).on_timer(id)
+    }
 }

@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use crossbeam_channel::{Receiver, RecvTimeoutError};
 
@@ -16,13 +19,17 @@ use crate::{
 };
 
 pub(crate) struct Workers {
-    procs: Vec<Arc<dyn ProcessHandle>>,
+    procs: Vec<Arc<Mutex<dyn ProcessHandle + Send>>>,
     pool: rayon::ThreadPool,
     rx: Receiver<TaskResult>,
 }
 
 impl Workers {
-    pub(crate) fn new(procs: Vec<Arc<dyn ProcessHandle>>, cores: usize, seed: Seed) -> Self {
+    pub(crate) fn new(
+        procs: Vec<Arc<Mutex<dyn ProcessHandle + Send>>>,
+        cores: usize,
+        seed: Seed,
+    ) -> Self {
         for id in 0..procs.len() {
             setup_local_configuration(id, seed);
         }
@@ -75,12 +82,14 @@ impl Workers {
         &self,
         task_id: TaskId,
         proc_id: usize,
-        work: impl FnOnce(Arc<dyn ProcessHandle>) + Send + 'static,
+        work: impl FnOnce(&mut dyn ProcessHandle) + Send + 'static,
     ) {
         let proc = self.procs[proc_id].clone();
         self.pool.spawn(move || {
             local_access::set_task(task_id, proc_id);
-            work(proc);
+            let mut guard = proc.lock().unwrap();
+            work(&mut *guard);
+            drop(guard);
             local_access::done();
         });
     }

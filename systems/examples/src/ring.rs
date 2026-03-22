@@ -17,15 +17,15 @@ fn pass_next() {
 }
 
 impl ProcessHandle for Ring {
-    fn on_start(&self) {
+    fn on_start(&mut self) {
         if rank() == 0 {
             pass_next();
         }
     }
 
-    fn on_message(&self, _from: Rank, _message: MessagePtr) {
+    fn on_message(&mut self, _from: Rank, _message: MessagePtr) {
         pass_next();
     }
 
-    fn on_timer(&self, _id: TimerId) {}
+    fn on_timer(&mut self, _id: TimerId) {}
 }

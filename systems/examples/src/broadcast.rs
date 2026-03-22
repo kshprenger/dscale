@@ -11,14 +11,14 @@ impl Message for BroadcastMessage {}
 pub struct BroadcastProcess {}
 
 impl ProcessHandle for BroadcastProcess {
-    fn on_start(&self) {
+    fn on_start(&mut self) {
         // Process with rank 0 starts the broadcast
         if rank() == 0 {
             schedule_timer_after(Jiffies(100));
         }
     }
 
-    fn on_message(&self, from: Rank, message: MessagePtr) {
+    fn on_message(&mut self, from: Rank, message: MessagePtr) {
         let msg = message.as_type::<BroadcastMessage>();
         debug_process!("Received broadcast from {}: data={}", from, msg.data);
 
@@ -27,7 +27,7 @@ impl ProcessHandle for BroadcastProcess {
         kv::modify::<usize>("broadcast_received", |x| *x += 1);
     }
 
-    fn on_timer(&self, _id: TimerId) {
+    fn on_timer(&mut self, _id: TimerId) {
         debug_process!("Broadcasting value 42");
         broadcast(BroadcastMessage { data: 42 });
         schedule_timer_after(Jiffies(100));
