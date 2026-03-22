@@ -1,10 +1,10 @@
 use std::collections::BinaryHeap;
 
 use crate::{
-    network::LatencyQueue,
+    actors::network_actor::LatencyQueue,
+    jiffy::Jiffies,
     now,
     step::{Step, StepQueue, TimedStep},
-    time::Jiffies,
 };
 
 #[derive(Clone, Copy, Default)]

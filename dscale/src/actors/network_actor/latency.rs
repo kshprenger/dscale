@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use log::debug;
 
-use crate::Jiffies;
+use crate::jiffy::Jiffies;
 use crate::random::Randomizer;
 use crate::step::{Step, StepQueue, TimedStep};
 use crate::topology::Topology;

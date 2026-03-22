@@ -1,21 +1,21 @@
 use std::cmp::Reverse;
 
 use crate::{
-    actor::SimulationActor,
+    actors::SimulationActor,
     event::Event,
+    jiffy::Jiffies,
     now,
     step::{Step, StepQueue, TimedStep},
-    time::Jiffies,
 };
 
 pub type TimerId = usize;
 
 #[derive(Default)]
-pub(crate) struct TimerManager {
+pub(crate) struct TimerActor {
     working_timers: StepQueue,
 }
 
-impl SimulationActor for TimerManager {
+impl SimulationActor for TimerActor {
     fn peek_next_step(&self) -> Option<Jiffies> {
         self.working_timers
             .peek()

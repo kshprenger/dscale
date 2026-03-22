@@ -13,7 +13,8 @@ use crate::{MessagePtr, global_unique_id, now};
 
 use crate::{
     Message, Rank, debug_process,
-    time::{Jiffies, timer_manager::TimerId},
+    actors::timer_actor::TimerId,
+    jiffy::Jiffies,
     topology::GLOBAL_POOL,
 };
 

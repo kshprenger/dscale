@@ -1,18 +1,17 @@
-mod actor;
+mod actors;
 mod alloc;
 mod destination;
 mod event;
 pub mod global;
 pub mod helpers;
+pub mod jiffy;
 pub mod message;
-mod network;
 mod process_handle;
 mod random;
 mod runners;
 mod simulation_builder;
 mod simulation_flavor;
 mod step;
-pub mod time;
 mod topology;
 
 pub use message::Message;
@@ -34,12 +33,12 @@ pub use global::schedule_timer_after;
 pub use global::send_random_from_pool;
 pub use global::send_to;
 
-pub use network::BandwidthDescription;
+pub use actors::network_actor::BandwidthDescription;
 
 pub use topology::GLOBAL_POOL;
 pub use topology::LatencyDescription;
 
 pub use random::Distributions;
 
-pub use time::Jiffies;
-pub use time::TimerId;
+pub use jiffy::Jiffies;
+pub use actors::timer_actor::TimerId;

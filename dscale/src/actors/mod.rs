@@ -1,10 +1,15 @@
+pub(crate) mod network_actor;
+pub(crate) mod timer_actor;
+
 use crate::{
     event::Event,
     global::local_access::EventBatch,
-    network::Network,
+    jiffy::Jiffies,
     step::Step,
-    time::{Jiffies, timer_manager::TimerManager},
 };
+
+use network_actor::NetworkActor;
+use timer_actor::TimerActor;
 
 pub(crate) trait SimulationActor {
     fn next_step(&mut self) -> Step;
@@ -13,8 +18,8 @@ pub(crate) trait SimulationActor {
 }
 
 pub(crate) struct Actors {
-    pub(crate) network: Network,
-    pub(crate) timers: TimerManager,
+    pub(crate) network: NetworkActor,
+    pub(crate) timers: TimerActor,
 }
 
 impl Actors {

@@ -1,6 +1,6 @@
 use crate::{
     ProcessHandle,
-    actor::Actors,
+    actors::Actors,
     global::{
         self,
         configuration::setup_local_configuration,
@@ -15,7 +15,7 @@ use crate::{
         task::TaskResult,
     },
     step::Step,
-    time::Jiffies,
+    jiffy::Jiffies,
 };
 
 pub struct DeterministicRunner {

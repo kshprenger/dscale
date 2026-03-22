@@ -3,8 +3,9 @@ use std::{cmp::Reverse, time::Duration};
 use crossbeam_channel::RecvTimeoutError;
 
 use crate::{
-    actor::Actors,
+    actors::Actors,
     global::{self},
+    jiffy::Jiffies,
     now,
     runners::{
         SimulationRunner,
@@ -14,7 +15,6 @@ use crate::{
         workers::Workers,
     },
     step::Step,
-    time::Jiffies,
 };
 
 const DEADLOCK_TIMEOUT: Duration = Duration::from_millis(2000);

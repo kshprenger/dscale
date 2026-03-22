@@ -5,16 +5,15 @@ use std::{
 
 use crate::{
     ProcessHandle, Rank,
-    actor::Actors,
+    actors::{Actors, network_actor::{BandwidthDescription, NetworkActor}, timer_actor::TimerActor},
     global,
-    network::{BandwidthDescription, Network},
+    jiffy::Jiffies,
     random::Seed,
     runners::{
         SimulationRunner, deterministic::DeterministicRunner, scalable::ScalableRunner,
         workers::Workers,
     },
     simulation_flavor::SimulationFlavor,
-    time::{Jiffies, timer_manager::TimerManager},
     topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
 };
 
@@ -165,8 +164,8 @@ impl SimulationBuilder {
         }
 
         let topology = Topology::new_arc(pool_listing.clone(), self.latency_topology);
-        let network_actor = Network::new(self.seed, self.bandwidth, topology.clone());
-        let timers_actor = TimerManager::default();
+        let network_actor = NetworkActor::new(self.seed, self.bandwidth, topology.clone());
+        let timers_actor = TimerActor::default();
         let actors = Actors {
             network: network_actor,
             timers: timers_actor,

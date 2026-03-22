@@ -11,23 +11,23 @@ use log::debug;
 use crate::GLOBAL_POOL;
 use crate::MessagePtr;
 use crate::Rank;
-use crate::actor::SimulationActor;
+use crate::actors::SimulationActor;
 use crate::destination::Destination;
 use crate::event::Event;
+use crate::jiffy::Jiffies;
 use crate::now;
 use crate::random::Randomizer;
 use crate::random::Seed;
 use crate::step::Step;
 use crate::step::TimedStep;
-use crate::time::Jiffies;
 use crate::topology::Topology;
 
-pub(crate) struct Network {
+pub(crate) struct NetworkActor {
     bandwidth_queue: BandwidthQueue,
     topology: Arc<Topology>,
 }
 
-impl Network {
+impl NetworkActor {
     fn submit_single_message(
         &mut self,
         message: MessagePtr,
@@ -55,7 +55,7 @@ impl Network {
     }
 }
 
-impl Network {
+impl NetworkActor {
     pub(crate) fn new(
         seed: Seed,
         bandwidth_type: BandwidthDescription,
@@ -72,7 +72,7 @@ impl Network {
     }
 }
 
-impl SimulationActor for Network {
+impl SimulationActor for NetworkActor {
     fn next_step(&mut self) -> Step {
         self.bandwidth_queue
             .pop()

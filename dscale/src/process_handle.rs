@@ -1,4 +1,4 @@
-use crate::{MessagePtr, time::timer_manager::TimerId};
+use crate::{MessagePtr, actors::timer_actor::TimerId};
 
 pub type Rank = usize;
 
