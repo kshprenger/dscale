@@ -67,6 +67,7 @@ fn run_bounded() -> usize {
             Distributions::Uniform(Jiffies(10), Jiffies(10)),
         )])
         .time_budget(Jiffies(10_000))
+        .deterministic()
         .seed(42)
         .build();
 

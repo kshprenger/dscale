@@ -46,18 +46,28 @@ impl BandwidthQueue {
     }
 
     pub(crate) fn pop(&mut self) -> Option<TimedStep> {
-        let latency_time = self.global_queue.peek();
-        let buffer_time = self.merged_fifo_buffers.peek().map(|e| e.0.invocation_time);
+        loop {
+            let latency_time = self.global_queue.peek();
+            let buffer_time = self.merged_fifo_buffers.peek().map(|e| e.0.invocation_time);
 
-        match (latency_time, buffer_time) {
-            (None, None) => None,
-            (Some(_), None) => self.deliver_from_latency_queue(),
-            (None, Some(_)) => self.deliver_from_buffer(),
-            (Some(lt), Some(bt)) => {
-                if lt <= bt {
-                    self.deliver_from_latency_queue()
-                } else {
-                    self.deliver_from_buffer()
+            match (latency_time, buffer_time) {
+                (None, None) => return None,
+                (Some(_), None) => {
+                    if let Some(step) = self.deliver_from_latency_queue() {
+                        return Some(step);
+                    }
+                    // Bounded: message moved to buffer, re-check.
+                }
+                (None, Some(_)) => return self.deliver_from_buffer(),
+                (Some(lt), Some(bt)) => {
+                    if lt <= bt {
+                        if let Some(step) = self.deliver_from_latency_queue() {
+                            return Some(step);
+                        }
+                        // Bounded: message moved to buffer, re-check.
+                    } else {
+                        return self.deliver_from_buffer();
+                    }
                 }
             }
         }
