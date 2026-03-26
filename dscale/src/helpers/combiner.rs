@@ -1,3 +1,5 @@
+/// Collects values until a threshold is reached, then yields them all at once.
+/// Useful for implementing quorum-based logic.
 pub struct Combiner<T: Sized> {
     values: Vec<T>,
     threshold: usize,
@@ -5,6 +7,7 @@ pub struct Combiner<T: Sized> {
 }
 
 impl<T: Sized> Combiner<T> {
+    /// Creates a new combiner that fires after `threshold` values.
     pub fn new(threshold: usize) -> Self {
         debug_assert!(
             threshold > 0,
@@ -17,6 +20,8 @@ impl<T: Sized> Combiner<T> {
         }
     }
 
+    /// Adds a value. Returns `Some(all_values)` when the threshold is reached,
+    /// `None` otherwise. After firing, subsequent calls return `None`.
     pub fn combine(&mut self, value: T) -> Option<Vec<T>> {
         if self.idx >= self.threshold {
             return None;

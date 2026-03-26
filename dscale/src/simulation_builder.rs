@@ -22,6 +22,11 @@ fn init_logger() {
     let _ = env_logger::Builder::from_default_env().try_init();
 }
 
+/// Builder for configuring and constructing a simulation.
+///
+/// Use the builder methods to add process pools, set network topology,
+/// configure bandwidth, choose an execution mode (single-threaded or parallel),
+/// and finally call [`SimulationBuilder::build`] to obtain a runnable simulation.
 pub struct SimulationBuilder {
     seed: Seed,
     time_budget: Jiffies,
@@ -51,6 +56,8 @@ impl Default for SimulationBuilder {
 }
 
 impl SimulationBuilder {
+    /// Creates a named pool of `size` processes of type `P`.
+    /// Every process is also added to [`GLOBAL_POOL`].
     pub fn add_pool<P: ProcessHandle + Default + Send + 'static>(
         mut self,
         name: &str,
@@ -70,16 +77,20 @@ impl SimulationBuilder {
         self
     }
 
+    /// Sets the random seed for deterministic execution.
     pub fn seed(mut self, seed: Seed) -> Self {
         self.seed = seed;
         self
     }
 
+    /// Sets the maximum simulation duration. The simulation stops when this time is reached.
     pub fn time_budget(mut self, time_budget: Jiffies) -> Self {
         self.time_budget = time_budget;
         self
     }
 
+    /// Configures network latency between and within pools.
+    /// Latency is symmetric: specifying A→B also sets B→A.
     pub fn latency_topology(mut self, descriptions: &[LatencyDescription]) -> Self {
         descriptions.iter().for_each(|d| {
             let (from, to, distr) = match d {
@@ -133,21 +144,25 @@ impl SimulationBuilder {
         self
     }
 
+    /// Configures per-process NIC bandwidth limits.
     pub fn nic_bandwidth(mut self, bandwidth: BandwidthDescription) -> Self {
         self.bandwidth = bandwidth;
         self
     }
 
+    /// Selects single-threaded execution mode (default).
     pub fn simple(mut self) -> Self {
         self.flavor = SimulationFlavor::Simple;
         self
     }
 
+    /// Selects parallel execution mode using the given number of worker threads.
     pub fn parallel(mut self, cores: usize) -> Self {
         self.flavor = SimulationFlavor::Parallel(cores);
         self
     }
 
+    /// Finalizes configuration and builds the simulation runner.
     pub fn build(mut self) -> Box<dyn SimulationRunner> {
         init_logger();
 

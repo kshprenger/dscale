@@ -36,6 +36,7 @@ impl SharedAccess {
     }
 }
 
+/// Returns a slice of all process ranks in the named pool.
 pub fn list_pool(pool_name: &str) -> &'static [Rank] {
     shared().topology.list_pool(pool_name)
 }

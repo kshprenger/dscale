@@ -7,12 +7,15 @@ use crate::{
     step::{Step, StepQueue, TimedStep},
 };
 
+/// Per-process NIC bandwidth configuration.
 #[derive(Clone, Copy, Default)]
 pub enum BandwidthDescription {
+    /// No bandwidth limit (messages are delivered after latency only).
     #[default]
     Unbounded,
 
-    Bounded(usize), // Bytes per Jiffy
+    /// Limits throughput to the given number of bytes per jiffy.
+    Bounded(usize),
 }
 
 pub(crate) struct BandwidthQueue {
