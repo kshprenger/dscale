@@ -5,12 +5,16 @@ use crate::Jiffies;
 
 pub(crate) type Seed = u64;
 
+/// Probability distributions used to sample network latencies.
 #[derive(Copy, Clone, Debug)]
 pub enum Distributions {
+    /// Uniform distribution over `[low, high]`.
     Uniform(Jiffies, Jiffies),
+    /// Bernoulli trial: with probability `p` the latency is the given value, otherwise 0.
     Bernoulli(f64, Jiffies),
 
-    // https://en.wikipedia.org/wiki/Truncated_normal_distribution
+    /// Truncated normal distribution clamped to `[low, high]`.
+    /// See <https://en.wikipedia.org/wiki/Truncated_normal_distribution>.
     Normal {
         mean: Jiffies,
         std_dev: Jiffies,

@@ -9,10 +9,12 @@ pub(crate) fn setup_local_configuration(id: Rank, base_seed: Seed) {
     kv::set::<u64>(&format!("seeds/{}", id), base_seed + id as u64)
 }
 
+/// Returns the deterministic seed for the currently executing process.
 pub fn seed() -> Seed {
     kv::get::<u64>(&format!("seeds/{}", rank()))
 }
 
+/// Returns the total number of processes in the simulation.
 pub fn process_number() -> usize {
     kv::get::<usize>("proc_num")
 }

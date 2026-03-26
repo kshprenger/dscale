@@ -119,39 +119,48 @@ pub(crate) fn take_events() -> EventBatch {
     with_local_access(|access| access.take_events())
 }
 
+/// Schedules a timer for the current process, firing after the given delay.
+/// Returns a [`TimerId`] that will be passed to [`crate::ProcessHandle::on_timer`].
 pub fn schedule_timer_after(after: Jiffies) -> TimerId {
     debug_process!("[Access] scheduling timer after {after}");
     with_local_access(|access| access.schedule_timer_after(after))
 }
 
+/// Sends a message to all processes in [`GLOBAL_POOL`] (i.e. every process).
 pub fn broadcast(message: impl Message + 'static) {
     with_local_access(|access| access.broadcast_within_pool(GLOBAL_POOL, message));
 }
 
+/// Sends a message to all processes within the named pool.
 pub fn broadcast_within_pool(pool: &'static str, message: impl Message + 'static) {
     debug_process!("[Access] broadcasting within: {pool}");
     with_local_access(|access| access.broadcast_within_pool(pool, message));
 }
 
+/// Sends a message to the process with the given rank.
 pub fn send_to(rank: Rank, message: impl Message + 'static) {
     debug_process!("[Access] send to: P{rank}");
     with_local_access(|access| access.send_to(rank, message));
 }
 
+/// Sends a message to a randomly chosen process from [`GLOBAL_POOL`].
 pub fn send_random(message: impl Message + 'static) {
     debug_process!("[Access] sending random P from GLOBAL_POOL");
     with_local_access(|access| access.send_random_from_pool(GLOBAL_POOL, message));
 }
 
+/// Sends a message to a randomly chosen process from the named pool.
 pub fn send_random_from_pool(pool: &'static str, message: impl Message + 'static) {
     debug_process!("[Access] sending random from pool {pool}");
     with_local_access(|access| access.send_random_from_pool(pool, message));
 }
 
+/// Returns the rank of the currently executing process.
 pub fn rank() -> Rank {
     with_local_access(|access| access.rank())
 }
 
+/// Picks a random process rank from the named pool.
 pub fn choose_from_pool(pool_name: &str) -> Rank {
     with_local_access(|access| access.choose_from_pool(pool_name))
 }

@@ -3,6 +3,7 @@ use std::{
     ops::{Add, AddAssign, Mul, Sub},
 };
 
+/// The simulation time unit. One jiffy is the smallest discrete time step.
 #[derive(PartialEq, PartialOrd, Ord, Eq, Copy, Clone, Default)]
 pub struct Jiffies(pub usize);
 

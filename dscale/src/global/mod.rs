@@ -1,5 +1,7 @@
 pub(crate) mod clock;
+/// Per-process configuration (seed, total process count).
 pub mod configuration;
+/// Thread-safe key-value store shared across all processes.
 pub mod kv;
 pub(crate) mod local_access;
 mod shared_access;

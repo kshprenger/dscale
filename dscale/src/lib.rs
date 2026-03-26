@@ -1,8 +1,23 @@
+//! Deterministic & fast simulation framework for distributed systems.
+//!
+//! DScale provides a single-threaded or parallel, event-driven simulation engine
+//! that models network latency, bandwidth constraints, and process execution.
+//! Simulations are fully deterministic when seeded, making them reproducible
+//! for testing and benchmarking.
+//!
+//! The main workflow:
+//! 1. Implement [`ProcessHandle`] for your process logic.
+//! 2. Define messages implementing [`Message`].
+//! 3. Configure the simulation with [`SimulationBuilder`].
+//! 4. Call `run_full_budget()` on the result of [`SimulationBuilder::build`].
+
 mod actors;
 mod alloc;
 mod destination;
 mod event;
+/// Global simulation state: clock, configuration, key-value store, and process interaction functions.
 pub mod global;
+/// Helper utilities for simulation processes.
 pub mod helpers;
 mod jiffy;
 mod message;
@@ -40,5 +55,5 @@ pub use topology::LatencyDescription;
 
 pub use random::Distributions;
 
-pub use jiffy::Jiffies;
 pub use actors::timer_actor::TimerId;
+pub use jiffy::Jiffies;

@@ -12,6 +12,7 @@ pub(crate) fn fast_forward_clock(future: Jiffies) {
     debug!("Global time now: {future}");
 }
 
+/// Returns the current simulation time.
 pub fn now() -> Jiffies {
     Jiffies(CLOCK.load(Ordering::Acquire))
 }
