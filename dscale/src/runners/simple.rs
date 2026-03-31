@@ -9,12 +9,7 @@ use crate::{
     global_unique_id,
     jiffy::Jiffies,
     random::Seed,
-    runners::{
-        SimulationRunner,
-        emojis::{deadlock, looks_good},
-        progress::Bar,
-        task::TaskResult,
-    },
+    runners::{RunStatus, SimulationRunner, progress::Bar, task::TaskResult},
     step::Step,
 };
 
@@ -23,6 +18,7 @@ pub(crate) struct SimpleRunner {
     time_budget: Jiffies,
     procs: Vec<Box<dyn ProcessHandle>>,
     progress_bar: Bar,
+    started: bool,
 }
 
 impl SimpleRunner {
@@ -44,6 +40,16 @@ impl SimpleRunner {
             time_budget,
             progress_bar: Bar::new(time_budget),
             procs,
+            started: false,
+        }
+    }
+
+    fn ensure_started(&mut self) {
+        if !self.started {
+            self.started = true;
+            for rank in 0..self.procs.len() {
+                self.run_step(Step::Start { rank });
+            }
         }
     }
 }
@@ -55,38 +61,65 @@ impl Drop for SimpleRunner {
 }
 
 impl SimulationRunner for SimpleRunner {
-    fn run_full_budget(&mut self) {
-        self.start();
+    fn run_full_budget(&mut self) -> RunStatus {
+        self.ensure_started();
 
-        if self.actors.peek_next_step().is_none() {
-            deadlock("No process scheduled any events after start");
-        }
-
+        let mut steps = 0;
         while global::now() < self.time_budget {
+            if self.actors.peek_next_step().is_none() {
+                return RunStatus::NoMoreEvents { steps };
+            }
             self.run_next_step();
+            steps += 1;
         }
 
         self.progress_bar.finish();
-        looks_good();
+        RunStatus::BudgetExhausted { steps }
+    }
+
+    fn run_steps(&mut self, k: usize) -> RunStatus {
+        self.ensure_started();
+
+        let mut steps = 0;
+        while steps < k {
+            if global::now() >= self.time_budget {
+                return RunStatus::BudgetExhausted { steps };
+            }
+            if self.actors.peek_next_step().is_none() {
+                return RunStatus::NoMoreEvents { steps };
+            }
+            self.run_next_step();
+            steps += 1;
+        }
+        RunStatus::Completed { steps }
+    }
+
+    fn run_sub_budget(&mut self, sub_budget: Jiffies) -> RunStatus {
+        self.ensure_started();
+
+        let deadline = global::now() + sub_budget;
+        let mut steps = 0;
+        while global::now() < deadline {
+            if global::now() >= self.time_budget {
+                return RunStatus::BudgetExhausted { steps };
+            }
+            if self.actors.peek_next_step().is_none() {
+                return RunStatus::NoMoreEvents { steps };
+            }
+            self.run_next_step();
+            steps += 1;
+        }
+        RunStatus::Completed { steps }
     }
 }
 
 impl SimpleRunner {
-    fn start(&mut self) {
-        for rank in 0..self.procs.len() {
-            self.run_step(Step::Start { rank });
-        }
-    }
-
     fn run_next_step(&mut self) {
-        if let Some(next_time) = self.actors.peek_next_step() {
-            global::fast_forward_clock(next_time);
-            self.progress_bar.make_progress(next_time);
-            let step = self.actors.next_step();
-            self.run_step(step);
-        } else {
-            deadlock("No new steps found");
-        }
+        let next_time = self.actors.peek_next_step().expect("checked by caller");
+        global::fast_forward_clock(next_time);
+        self.progress_bar.make_progress(next_time);
+        let step = self.actors.next_step();
+        self.run_step(step);
     }
 
     fn run_step(&mut self, step: Step) {

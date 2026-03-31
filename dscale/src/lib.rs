@@ -57,3 +57,5 @@ pub use random::Distributions;
 
 pub use actors::timer_actor::TimerId;
 pub use jiffy::Jiffies;
+pub use runners::RunStatus;
+pub use runners::SimulationRunner;
