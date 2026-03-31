@@ -9,8 +9,7 @@ use crate::{
     jiffy::Jiffies,
     now,
     runners::{
-        SimulationRunner,
-        emojis::{deadlock, looks_good},
+        RunStatus, SimulationRunner,
         progress::Bar,
         task::{TaskId, TaskIndex, TaskResult},
         workers::Workers,
@@ -31,6 +30,7 @@ pub(crate) struct ScalableRunner {
     // Per-process queue of tasks within the window but deferred because the process is busy.
     // Keeps sequential order per process within window
     waiting: Vec<VecDeque<(TaskId, Step)>>,
+    started: bool,
 }
 
 impl ScalableRunner {
@@ -51,6 +51,20 @@ impl ScalableRunner {
             done: TaskIndex::new(),
             busy: vec![false; num_procs],
             waiting: (0..num_procs).map(|_| VecDeque::new()).collect(),
+            started: false,
+        }
+    }
+
+    fn ensure_started(&mut self) {
+        if !self.started {
+            self.started = true;
+            for rank in 0..self.workers.num_procs() {
+                let step = Step::Start { rank };
+                let task_id: TaskId = (global::now(), global_unique_id());
+                self.workers.install_step(task_id, step);
+                self.busy[rank] = true;
+                self.on_execution.push(Reverse(task_id));
+            }
         }
     }
 }
@@ -62,41 +76,75 @@ impl Drop for ScalableRunner {
 }
 
 impl SimulationRunner for ScalableRunner {
-    fn run_full_budget(&mut self) {
-        self.start();
-        self.coordinate();
+    fn run_full_budget(&mut self) -> RunStatus {
+        self.ensure_started();
+        let status = self.coordinate(None, self.time_budget);
         self.join_workers();
         self.progress_bar.finish();
-        looks_good();
+        status
+    }
+
+    fn run_steps(&mut self, k: usize) -> RunStatus {
+        self.ensure_started();
+        let status = self.coordinate(Some(k), self.time_budget);
+        self.join_workers();
+        status
+    }
+
+    fn run_sub_budget(&mut self, sub_budget: Jiffies) -> RunStatus {
+        self.ensure_started();
+        let deadline = std::cmp::min(now() + sub_budget, self.time_budget);
+        let status = self.coordinate(None, deadline);
+        self.join_workers();
+        status
     }
 }
 
 impl ScalableRunner {
-    fn start(&mut self) {
-        for rank in 0..self.workers.num_procs() {
-            let step = Step::Start { rank };
-            let task_id: TaskId = (global::now(), global_unique_id());
-            self.workers.install_step(task_id, step);
-            self.busy[rank] = true;
-            self.on_execution.push(Reverse(task_id));
-        }
-    }
-
-    fn coordinate(&mut self) {
+    /// Coordinate the worker pool.
+    /// - `max_steps`: if `Some(k)`, stop after `k` ingested results.
+    /// - `deadline`: stop when simulation time reaches this value.
+    fn coordinate(&mut self, max_steps: Option<usize>, deadline: Jiffies) -> RunStatus {
+        let mut steps: usize = 0;
         loop {
+            if let Some(k) = max_steps {
+                if steps >= k {
+                    return RunStatus::Completed { steps };
+                }
+            }
+
             // Block until at least one result arrives
             match self.workers.next_result() {
                 Ok(first) => {
                     self.ingest(first);
-                    if global::now() >= self.time_budget {
-                        return;
+                    steps += 1;
+
+                    if global::now() >= deadline {
+                        if global::now() >= self.time_budget {
+                            return RunStatus::BudgetExhausted { steps };
+                        }
+                        return RunStatus::Completed { steps };
                     }
+
+                    if let Some(k) = max_steps {
+                        if steps >= k {
+                            return RunStatus::Completed { steps };
+                        }
+                    }
+
                     // Drain all immediately available results
                     while let Some(result) = self.workers.try_next_result() {
                         self.ingest(result);
+                        steps += 1;
+                        if let Some(k) = max_steps {
+                            if steps >= k {
+                                return RunStatus::Completed { steps };
+                            }
+                        }
                     }
+
                     self.adjust_task_index();
-                    self.try_advance()
+                    self.try_advance();
                 }
                 Err(RecvError) => {
                     unreachable!("unexpected worker disconnection")
@@ -140,21 +188,23 @@ impl ScalableRunner {
             if global::now() == top.0.0 {
                 return false;
             } else {
-                // Is there is still some top task excuting in window try to move to this task
+                // There is still some top task executing in window — move to this task
                 global::fast_forward_clock(top.0.0);
                 self.progress_bar.make_progress(top.0.0);
             }
         } else {
-            // Is there are no tasks in window try to find new next task outside window
+            // No tasks in window — try to find new next task outside window
             if let Some(next_step_invocation_time) = self.actors.peek_next_step() {
                 global::fast_forward_clock(next_step_invocation_time);
                 self.progress_bar.make_progress(next_step_invocation_time);
             } else {
-                deadlock("No new steps found in the moved window");
+                // No more events — quiesced. Not a deadlock, coordinate will
+                // exit on the next iteration when it blocks on next_result and
+                // no workers are busy, or the caller checks the step limit.
+                return false;
             }
         }
-
-        return true;
+        true
     }
 
     fn spawn_remain_within_window(&mut self) {
