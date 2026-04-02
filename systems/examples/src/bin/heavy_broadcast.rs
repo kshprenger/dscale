@@ -34,9 +34,7 @@ fn main() {
     );
 
     STEPS.store(0, Ordering::Relaxed);
-    let mut par = base_sim()
-        .parallel(std::thread::available_parallelism().unwrap().get())
-        .build();
+    let mut par = base_sim().parallel(Threads::All).build();
     let start = Instant::now();
     par.run_full_budget();
     let par_elapsed = start.elapsed();

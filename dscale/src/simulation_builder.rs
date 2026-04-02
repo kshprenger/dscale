@@ -13,7 +13,10 @@ use crate::{
     global,
     jiffy::Jiffies,
     random::Seed,
-    runners::{SimulationRunner, scalable::ScalableRunner, simple::SimpleRunner, workers::Workers},
+    runners::{
+        SimulationRunner, threads::Threads, scalable::ScalableRunner, simple::SimpleRunner,
+        workers::Workers,
+    },
     simulation_flavor::SimulationFlavor,
     topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
 };
@@ -157,8 +160,8 @@ impl SimulationBuilder {
     }
 
     /// Selects parallel execution mode using the given number of worker threads.
-    pub fn parallel(mut self, cores: usize) -> Self {
-        self.flavor = SimulationFlavor::Parallel(cores);
+    pub fn parallel(mut self, threads: Threads) -> Self {
+        self.flavor = SimulationFlavor::Parallel(threads);
         self
     }
 

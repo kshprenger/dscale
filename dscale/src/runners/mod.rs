@@ -2,6 +2,7 @@ mod progress;
 pub(crate) mod scalable;
 pub(crate) mod simple;
 pub(super) mod task;
+pub(crate) mod threads;
 pub(crate) mod workers;
 
 use crate::jiffy::Jiffies;
@@ -28,7 +29,7 @@ impl RunStatus {
     }
 }
 
-/// Execution engine returned by [`SimulationBuilder::build`].
+/// Execution engine returned by [`crate::SimulationBuilder::build`].
 pub trait SimulationRunner {
     /// Runs the simulation until the total time budget is exhausted
     /// or no more events remain.

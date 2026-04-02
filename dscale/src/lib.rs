@@ -9,7 +9,7 @@
 //! 1. Implement [`ProcessHandle`] for your process logic.
 //! 2. Define messages implementing [`Message`].
 //! 3. Configure the simulation with [`SimulationBuilder`].
-//! 4. Call `run_full_budget()` on the result of [`SimulationBuilder::build`].
+//! 4. Call `run_X()` on the result of [`SimulationBuilder::build`].
 
 mod actors;
 mod alloc;
@@ -59,3 +59,4 @@ pub use actors::timer_actor::TimerId;
 pub use jiffy::Jiffies;
 pub use runners::RunStatus;
 pub use runners::SimulationRunner;
+pub use runners::threads::Threads;

@@ -4,10 +4,15 @@ use crossbeam_channel::{Receiver, RecvError};
 
 use crate::{
     ProcessHandle,
-    global::configuration::setup_local_configuration,
-    global::local_access::{self, setup_local_access},
+    global::{
+        configuration::setup_local_configuration,
+        local_access::{self, setup_local_access},
+    },
     random::Seed,
-    runners::task::{TaskId, TaskResult},
+    runners::{
+        threads::Threads,
+        task::{TaskId, TaskResult},
+    },
     step::Step,
 };
 
@@ -20,15 +25,17 @@ pub(crate) struct Workers {
 impl Workers {
     pub(crate) fn new(
         procs: Vec<Arc<Mutex<dyn ProcessHandle + Send>>>,
-        cores: usize,
+        threads: Threads,
         seed: Seed,
     ) -> Self {
         for id in 0..procs.len() {
             setup_local_configuration(id, seed);
         }
+        let threads_number: usize = threads.into();
         let (tx, rx) = crossbeam_channel::unbounded::<TaskResult>();
+        log::warn!("Using {threads_number} threads for simulation");
         let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(cores)
+            .num_threads(threads_number)
             .start_handler(move |_| {
                 setup_local_access(seed, tx.clone());
             })

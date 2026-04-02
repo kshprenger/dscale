@@ -1,6 +1,7 @@
 use dag_based::rider::DAGRider;
 use dscale::{
-    BandwidthDescription, Distributions, Jiffies, LatencyDescription, SimulationBuilder, global::kv,
+    BandwidthDescription, Distributions, Jiffies, LatencyDescription, SimulationBuilder, Threads,
+    global::kv,
 };
 
 fn main() {
@@ -18,7 +19,7 @@ fn main() {
         .time_budget(Jiffies(3600))
         .nic_bandwidth(BandwidthDescription::Unbounded)
         .seed(123)
-        .parallel(8)
+        .parallel(Threads::All)
         .build();
 
     kv::set::<(f64, usize)>("avg_latency", (0.0, 0));
