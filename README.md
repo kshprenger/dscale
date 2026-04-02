@@ -1,5 +1,10 @@
 # DScale
 
+[![Crates.io](https://img.shields.io/crates/v/dscale)](https://crates.io/crates/dscale)
+[![License](https://img.shields.io/badge/license-MIT-blue?)](LICENSE)
+[![Build Status](https://github.com/kshprenger/dscale/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kshprenger/dscale/actions?query=workflow%3ACI+branch%3Amain)
+[![Documentation](https://img.shields.io/docsrs/dscale)](https://docs.rs/dscale)
+
 A fast, deterministic simulation framework for testing and benchmarking distributed systems. It simulates network latency, bandwidth constraints, and process execution in an event-driven environment with support for both single-threaded and parallel execution modes.
 
 ## Usage
