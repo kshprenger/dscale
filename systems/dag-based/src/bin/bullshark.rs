@@ -1,7 +1,7 @@
 use std::{fs::File, sync::Mutex};
 
 use dag_based::bullshark::Bullshark;
-use dscale::{BandwidthConfig, Distributions, Jiffies, LatencyRule, SimulationBuilder, global::kv};
+use dscale::{BandwidthConfig, Distributions, Jiffies, SimulationBuilder, global::kv};
 use rayon::prelude::*;
 use std::io::Write;
 
@@ -19,7 +19,7 @@ fn main() {
 
             let mut sim = SimulationBuilder::default()
                 .add_pool::<Bullshark>("Validators", k_validators)
-                .latency_topology(&[LatencyRule::WithinPool(
+                .within_pool_latency(
                     "Validators",
                     Distributions::Normal {
                         mean: Jiffies(50),
@@ -27,7 +27,7 @@ fn main() {
                         low: Jiffies(20),
                         high: Jiffies(80),
                     },
-                )])
+                )
                 .time_budget(Jiffies(60_000)) // Simulating 1 min of real time execution
                 .vnic_bandwidth(BandwidthConfig::Bounded(
                     bandwidth * 1024 * 1024 / (8 * 1000), // bandwidth Mb/sec NICs

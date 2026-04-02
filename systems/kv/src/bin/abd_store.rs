@@ -12,21 +12,19 @@ fn main() {
         .add_pool::<Replica>(REPLICA_POOL_NAME, 10)
         .add_pool::<Client>(CLIENT_POOL_NAME, 4)
         .time_budget(Jiffies(5000))
-        .latency_topology(&[
-            LatencyRule::WithinPool(
-                REPLICA_POOL_NAME,
-                Distributions::Uniform(Jiffies(0), Jiffies(10)),
-            ),
-            LatencyRule::WithinPool(
-                CLIENT_POOL_NAME,
-                Distributions::Uniform(Jiffies(0), Jiffies(545)),
-            ),
-            LatencyRule::BetweenPools(
-                CLIENT_POOL_NAME,
-                REPLICA_POOL_NAME,
-                Distributions::Uniform(Jiffies(0), Jiffies(1212)),
-            ),
-        ])
+        .within_pool_latency(
+            REPLICA_POOL_NAME,
+            Distributions::Uniform(Jiffies(0), Jiffies(10)),
+        )
+        .within_pool_latency(
+            CLIENT_POOL_NAME,
+            Distributions::Uniform(Jiffies(0), Jiffies(545)),
+        )
+        .between_pool_latency(
+            CLIENT_POOL_NAME,
+            REPLICA_POOL_NAME,
+            Distributions::Uniform(Jiffies(0), Jiffies(1212)),
+        )
         .seed(5444)
         .simple()
         .build();

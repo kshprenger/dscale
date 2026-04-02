@@ -10,15 +10,6 @@ pub(crate) type PoolListing = FxHashMap<String, Vec<Rank>>;
 /// Name of the implicit pool that contains every process.
 pub const GLOBAL_POOL: &str = "global_pool";
 
-/// Describes latency rules for the network topology.
-pub enum LatencyRule {
-    /// Latency between processes within the same named pool.
-    WithinPool(&'static str, Distributions),
-
-    /// Latency between processes in two different pools (symmetric).
-    BetweenPools(&'static str, &'static str, Distributions),
-}
-
 #[derive(Debug)]
 pub(crate) struct Topology {
     pool_listing: PoolListing,

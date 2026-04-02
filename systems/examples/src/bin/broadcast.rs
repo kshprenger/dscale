@@ -9,10 +9,7 @@ fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<BroadcastProcess>("BroadcastPool", 5)
         .vnic_bandwidth(BandwidthConfig::Unbounded)
-        .latency_topology(&[LatencyRule::WithinPool(
-            "BroadcastPool",
-            Distributions::Uniform(Jiffies(0), Jiffies(10)),
-        )])
+        .within_pool_latency("BroadcastPool", Distributions::Uniform(Jiffies(0), Jiffies(10)))
         .time_budget(Jiffies(100_0000))
         .seed(123)
         .build();
