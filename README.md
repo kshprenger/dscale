@@ -133,8 +133,8 @@ When is parallel mode efficient?
   - `vnic_bandwidth`: Configures per-process network bandwidth limits for "virtual" NIC.
     - `Bounded(usize)`: Limits bandwidth (bytes per jiffy).
     - `Unbounded`: No bandwidth limits (default).
-  - `simple`: Selects single-threaded execution (default).
-  - `parallel(threads)`: Selects parallel execution with the given number of worker threads.
+  - `simple`: Selects single-threaded execution (default). Mutually exclusive with `parallel` — calling both panics.
+  - `parallel(threads)`: Selects parallel execution with the given number of worker threads. Mutually exclusive with `simple` — calling both panics.
   - `build`: Finalizes configuration and returns a simulation runner.
 - **`run_full_budget`**: Runs the simulation until the time budget is exhausted.
 - **`run_steps`**: Runs the simulation until it performs the requested number of steps or the global budget is exhausted.
@@ -178,9 +178,12 @@ Thread-safe store for passing shared state, metrics, or configuration between pr
 - **`get(key) -> T`**: Retrieves a clone of the value (panics if missing or wrong type).
 - **`modify(key, f)`**: Mutates the value in place.
 
+### Macros
+
+- **`debug_process!`**: Logs a debug message prefixed with the current simulation time and process rank. Available at the crate root (`use dscale::debug_process`).
+
 ### Helpers (`dscale::helpers`)
 
-- **`debug_process!`**: A macro that logs with current simulation time and process rank prepended.
 - **`Combiner`**: Collects values until a threshold is reached, then yields them all at once. Useful for quorum-based logic.
 
 ### Message Downcasting (`MessagePtr`)
