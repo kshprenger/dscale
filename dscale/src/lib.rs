@@ -45,6 +45,7 @@ pub use global::list_pool;
 pub use global::now;
 pub use global::rank;
 pub use global::schedule_timer_after;
+pub use global::send_random;
 pub use global::send_random_from_pool;
 pub use global::send_to;
 
