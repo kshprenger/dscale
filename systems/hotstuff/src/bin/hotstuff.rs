@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use dscale::{Distributions, Jiffies, LatencyRule, SimulationBuilder, global::kv};
+use dscale::{Distributions, Jiffies, SimulationBuilder, global::kv};
 use hotstuff::{B0, ChainedHotstuff, HOTSTUFF_POOL, Node};
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<ChainedHotstuff>(HOTSTUFF_POOL, 53)
-        .latency_topology(&[LatencyRule::WithinPool(
+        .within_pool_latency(
             HOTSTUFF_POOL,
             Distributions::Normal {
                 mean: Jiffies(50),
@@ -25,7 +25,7 @@ fn main() {
                 low: Jiffies(20),
                 high: Jiffies(80),
             },
-        )])
+        )
         .seed(123)
         .time_budget(Jiffies(3600_000))
         .simple()

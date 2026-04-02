@@ -51,7 +51,6 @@ pub use global::send_to;
 pub use actors::network_actor::BandwidthConfig;
 
 pub use topology::GLOBAL_POOL;
-pub use topology::LatencyRule;
 
 pub use random::Distributions;
 

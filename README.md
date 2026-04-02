@@ -70,21 +70,20 @@ impl ProcessHandle for MyProcess {
 Use `SimulationBuilder` to configure the topology, network constraints, and start the simulation.
 
 ```rust
-use dscale::{SimulationBuilder, Jiffies, BandwidthConfig, LatencyRule, Distributions};
+use dscale::{SimulationBuilder, Jiffies, BandwidthConfig, Distributions};
 
 fn main() {
     let mut runner = SimulationBuilder::default()
         .add_pool::<MyClient>("Client", 1)
         .add_pool::<MyServer>("Server", 3)
-        .latency_topology(&[
-            LatencyRule::WithinPool("Server", Distributions::Uniform(Jiffies(1), Jiffies(5))),
-            LatencyRule::BetweenPools("Client", "Server", Distributions::Normal {
-                mean: Jiffies(10),
-                std_dev: Jiffies(2),
-                low: Jiffies(5),
-                high: Jiffies(20),
-            }),
-        ])
+        .within_pool_latency("Client", Distributions::Uniform(Jiffies(1), Jiffies(5)))
+        .within_pool_latency("Server", Distributions::Uniform(Jiffies(1), Jiffies(5)))
+        .between_pool_latency("Client", "Server", Distributions::Normal {
+            mean: Jiffies(10),
+            std_dev: Jiffies(2),
+            low: Jiffies(5),
+            high: Jiffies(20),
+        })
         .vnic_bandwidth(BandwidthConfig::Bounded(1000)) // 1000 bytes per Jiffy
         .time_budget(Jiffies(1_000_000))
         .simple()
@@ -101,9 +100,7 @@ For large simulations, enable parallel execution to distribute process steps acr
 ```rust
 let mut runner = SimulationBuilder::default()
     .add_pool::<MyProcess>("Nodes", 1000)
-    .latency_topology(&[
-        LatencyRule::WithinPool("Nodes", Distributions::Uniform(Jiffies(1), Jiffies(10))),
-    ])
+    .within_pool_latency("Nodes", Distributions::Uniform(Jiffies(1), Jiffies(10)))
     .time_budget(Jiffies(1_000_000))
     .parallel(Threads::Specific(8)) // use 8 worker threads
     .build();
@@ -111,7 +108,7 @@ let mut runner = SimulationBuilder::default()
 runner.run_full_budget();
 ```
 
-When usage of such mode may be effient?
+When is parallel mode efficient?
 
 1. A lot of simulated processes (at least 200-300)
 2. on_message execution takes most of simulation time
@@ -126,7 +123,8 @@ When usage of such mode may be effient?
   - `seed`: Sets the random seed for deterministic execution.
   - `time_budget`: Sets the maximum simulation duration.
   - `add_pool`: Creates a named pool of processes. (All processes also join `GLOBAL_POOL`)
-  - `latency_topology`: Configures network latency between and within pools.
+  - `within_pool_latency(pool, distribution)`: Configures latency between processes within a pool.
+  - `between_pool_latency(pool_a, pool_b, distribution)`: Configures latency between two pools (symmetric). Every pool pair must have latency configured before calling `build`.
   - `vnic_bandwidth`: Configures per-process network bandwidth limits for "virtual" NIC.
     - `Bounded(usize)`: Limits bandwidth (bytes per jiffy).
     - `Unbounded`: No bandwidth limits (default).
@@ -134,16 +132,13 @@ When usage of such mode may be effient?
   - `parallel(threads)`: Selects parallel execution with the given number of worker threads.
   - `build`: Finalizes configuration and returns a simulation runner.
 - **`run_full_budget`**: Runs the simulation until the time budget is exhausted.
-- **`run_steps`**: Runs the simulation until it performes requested number of steps or global budget is exhausted.
+- **`run_steps`**: Runs the simulation until it performs the requested number of steps or the global budget is exhausted.
 - **`run_sub_budget`**: Runs the simulation until the sub-budget starting from current timepoint or global budget are exhausted.
 
 ### Network Topology
 
 - **`GLOBAL_POOL`**:
   - Implicit pool containing all processes. `broadcast` uses this pool.
-- **`LatencyRule`**:
-  - `WithinPool(name, distribution)`: Latency for messages between processes in the same pool.
-  - `BetweenPools(pool_a, pool_b, distribution)`: Latency for messages between processes in different pools (symmetric).
 - **`Distributions`**:
   - `Uniform(low, high)`: Uniform distribution over `[low, high]`.
   - `Bernoulli(p, value)`: With probability `p` the latency is `value`, otherwise 0.

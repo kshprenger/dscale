@@ -8,15 +8,13 @@ fn main() {
         .add_pool::<PingProcess>("Pingers", 3)
         .add_pool::<PongProcess>("Pongers", 2)
         .vnic_bandwidth(BandwidthConfig::Unbounded)
-        .latency_topology(&[
-            LatencyRule::WithinPool("Pingers", Distributions::Uniform(Jiffies(0), Jiffies(10))),
-            LatencyRule::WithinPool("Pongers", Distributions::Uniform(Jiffies(0), Jiffies(10))),
-            LatencyRule::BetweenPools(
-                "Pingers",
-                "Pongers",
-                Distributions::Uniform(Jiffies(10), Jiffies(20)),
-            ),
-        ])
+        .within_pool_latency("Pingers", Distributions::Uniform(Jiffies(0), Jiffies(10)))
+        .within_pool_latency("Pongers", Distributions::Uniform(Jiffies(0), Jiffies(10)))
+        .between_pool_latency(
+            "Pingers",
+            "Pongers",
+            Distributions::Uniform(Jiffies(10), Jiffies(20)),
+        )
         .time_budget(Jiffies(100_000))
         .seed(5)
         .build();

@@ -29,11 +29,13 @@ fn run_unbounded() -> usize {
         .add_pool::<Sender>("Senders", 1)
         .add_pool::<Receiver>("Receivers", 1)
         .vnic_bandwidth(BandwidthConfig::Unbounded)
-        .latency_topology(&[LatencyRule::BetweenPools(
+        .within_pool_latency("Senders", Distributions::Uniform(Jiffies(10), Jiffies(10)))
+        .within_pool_latency("Receivers", Distributions::Uniform(Jiffies(10), Jiffies(10)))
+        .between_pool_latency(
             "Senders",
             "Receivers",
             Distributions::Uniform(Jiffies(10), Jiffies(10)),
-        )])
+        )
         .time_budget(Jiffies(10_000))
         .seed(42)
         .build();
@@ -61,11 +63,13 @@ fn run_bounded() -> usize {
         .add_pool::<Receiver>("Receivers", 1)
         // Very low bandwidth: 1 byte per jiffy (messages will queue up)
         .vnic_bandwidth(BandwidthConfig::Bounded(1))
-        .latency_topology(&[LatencyRule::BetweenPools(
+        .within_pool_latency("Senders", Distributions::Uniform(Jiffies(10), Jiffies(10)))
+        .within_pool_latency("Receivers", Distributions::Uniform(Jiffies(10), Jiffies(10)))
+        .between_pool_latency(
             "Senders",
             "Receivers",
             Distributions::Uniform(Jiffies(10), Jiffies(10)),
-        )])
+        )
         .time_budget(Jiffies(10_000))
         .simple()
         .seed(42)

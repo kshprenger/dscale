@@ -11,10 +11,7 @@ fn main() {
         SimulationBuilder::default()
             .add_pool::<HeavyProcess>("heavy", num_procs)
             .vnic_bandwidth(BandwidthConfig::Unbounded)
-            .latency_topology(&[LatencyRule::WithinPool(
-                "heavy",
-                Distributions::Uniform(Jiffies(100), Jiffies(150)),
-            )])
+            .within_pool_latency("heavy", Distributions::Uniform(Jiffies(100), Jiffies(150)))
             .time_budget(Jiffies(10_000))
             .seed(42)
     };

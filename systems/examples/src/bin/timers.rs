@@ -7,10 +7,7 @@ fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<LazyPingPong>("TimerDemoPool", 2)
         .vnic_bandwidth(BandwidthConfig::Unbounded)
-        .latency_topology(&[LatencyRule::WithinPool(
-            "TimerDemoPool",
-            Distributions::Uniform(Jiffies(10), Jiffies(50)),
-        )])
+        .within_pool_latency("TimerDemoPool", Distributions::Uniform(Jiffies(10), Jiffies(50)))
         .time_budget(Jiffies(10_000))
         .seed(42)
         .build();
