@@ -9,7 +9,7 @@ use crate::{
 
 /// Per-process NIC bandwidth configuration.
 #[derive(Clone, Copy, Default)]
-pub enum BandwidthDescription {
+pub enum BandwidthConfig {
     /// No bandwidth limit (messages are delivered after latency only).
     #[default]
     Unbounded,
@@ -27,13 +27,13 @@ pub(crate) struct BandwidthQueue {
 
 impl BandwidthQueue {
     pub(crate) fn new(
-        bandwidth_type: BandwidthDescription,
+        bandwidth_type: BandwidthConfig,
         proc_num: usize,
         global_queue: LatencyQueue,
     ) -> Self {
         let bandwidth = match bandwidth_type {
-            BandwidthDescription::Unbounded => usize::MAX,
-            BandwidthDescription::Bounded(bound) => bound,
+            BandwidthConfig::Unbounded => usize::MAX,
+            BandwidthConfig::Bounded(bound) => bound,
         };
 
         Self {

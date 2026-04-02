@@ -28,8 +28,8 @@ fn run_unbounded() -> usize {
     let mut sim = SimulationBuilder::default()
         .add_pool::<Sender>("Senders", 1)
         .add_pool::<Receiver>("Receivers", 1)
-        .nic_bandwidth(BandwidthDescription::Unbounded)
-        .latency_topology(&[LatencyDescription::BetweenPools(
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
+        .latency_topology(&[LatencyRule::BetweenPools(
             "Senders",
             "Receivers",
             Distributions::Uniform(Jiffies(10), Jiffies(10)),
@@ -60,8 +60,8 @@ fn run_bounded() -> usize {
         .add_pool::<Sender>("Senders", 1)
         .add_pool::<Receiver>("Receivers", 1)
         // Very low bandwidth: 1 byte per jiffy (messages will queue up)
-        .nic_bandwidth(BandwidthDescription::Bounded(1))
-        .latency_topology(&[LatencyDescription::BetweenPools(
+        .vnic_bandwidth(BandwidthConfig::Bounded(1))
+        .latency_topology(&[LatencyRule::BetweenPools(
             "Senders",
             "Receivers",
             Distributions::Uniform(Jiffies(10), Jiffies(10)),

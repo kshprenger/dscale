@@ -13,15 +13,15 @@ fn main() {
         .add_pool::<Client>(CLIENT_POOL_NAME, 4)
         .time_budget(Jiffies(5000))
         .latency_topology(&[
-            LatencyDescription::WithinPool(
+            LatencyRule::WithinPool(
                 REPLICA_POOL_NAME,
                 Distributions::Uniform(Jiffies(0), Jiffies(10)),
             ),
-            LatencyDescription::WithinPool(
+            LatencyRule::WithinPool(
                 CLIENT_POOL_NAME,
                 Distributions::Uniform(Jiffies(0), Jiffies(545)),
             ),
-            LatencyDescription::BetweenPools(
+            LatencyRule::BetweenPools(
                 CLIENT_POOL_NAME,
                 REPLICA_POOL_NAME,
                 Distributions::Uniform(Jiffies(0), Jiffies(1212)),

@@ -6,8 +6,8 @@ use examples::timers::LazyPingPong;
 fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<LazyPingPong>("TimerDemoPool", 2)
-        .nic_bandwidth(BandwidthDescription::Unbounded)
-        .latency_topology(&[LatencyDescription::WithinPool(
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
+        .latency_topology(&[LatencyRule::WithinPool(
             "TimerDemoPool",
             Distributions::Uniform(Jiffies(10), Jiffies(50)),
         )])

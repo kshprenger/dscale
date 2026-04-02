@@ -48,10 +48,10 @@ pub use global::schedule_timer_after;
 pub use global::send_random_from_pool;
 pub use global::send_to;
 
-pub use actors::network_actor::BandwidthDescription;
+pub use actors::network_actor::BandwidthConfig;
 
 pub use topology::GLOBAL_POOL;
-pub use topology::LatencyDescription;
+pub use topology::LatencyRule;
 
 pub use random::Distributions;
 

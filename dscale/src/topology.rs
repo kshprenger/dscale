@@ -1,4 +1,3 @@
-
 use std::sync::Arc;
 
 use rustc_hash::FxHashMap;
@@ -12,7 +11,7 @@ pub(crate) type PoolListing = FxHashMap<String, Vec<Rank>>;
 pub const GLOBAL_POOL: &str = "global_pool";
 
 /// Describes latency rules for the network topology.
-pub enum LatencyDescription {
+pub enum LatencyRule {
     /// Latency between processes within the same named pool.
     WithinPool(&'static str, Distributions),
 

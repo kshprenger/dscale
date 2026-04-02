@@ -7,18 +7,18 @@ use crate::{
     ProcessHandle, Rank,
     actors::{
         Actors,
-        network_actor::{BandwidthDescription, NetworkActor},
+        network_actor::{BandwidthConfig, NetworkActor},
         timer_actor::TimerActor,
     },
     global,
     jiffy::Jiffies,
     random::Seed,
     runners::{
-        SimulationRunner, threads::Threads, scalable::ScalableRunner, simple::SimpleRunner,
+        SimulationRunner, scalable::ScalableRunner, simple::SimpleRunner, threads::Threads,
         workers::Workers,
     },
     simulation_flavor::SimulationFlavor,
-    topology::{GLOBAL_POOL, LatencyDescription, LatencyTopology, PoolListing, Topology},
+    topology::{GLOBAL_POOL, LatencyRule, LatencyTopology, PoolListing, Topology},
 };
 
 fn init_logger() {
@@ -37,7 +37,7 @@ pub struct SimulationBuilder {
     handles: Vec<Option<Box<dyn ProcessHandle + Send>>>,
     pools: HashMap<String, Vec<Rank>>,
     latency_topology: LatencyTopology,
-    bandwidth: BandwidthDescription,
+    bandwidth: BandwidthConfig,
     flavor: SimulationFlavor,
     safe_parallel_window: Jiffies,
 }
@@ -51,7 +51,7 @@ impl Default for SimulationBuilder {
             handles: Vec::new(),
             pools: HashMap::default(),
             latency_topology: LatencyTopology::default(),
-            bandwidth: BandwidthDescription::default(),
+            bandwidth: BandwidthConfig::default(),
             flavor: SimulationFlavor::default(),
             safe_parallel_window: Jiffies(usize::MAX),
         }
@@ -94,11 +94,11 @@ impl SimulationBuilder {
 
     /// Configures network latency between and within pools.
     /// Latency is symmetric: specifying A→B also sets B→A.
-    pub fn latency_topology(mut self, descriptions: &[LatencyDescription]) -> Self {
+    pub fn latency_topology(mut self, descriptions: &[LatencyRule]) -> Self {
         descriptions.iter().for_each(|d| {
             let (from, to, distr) = match d {
-                LatencyDescription::WithinPool(name, distr) => (*name, *name, distr),
-                LatencyDescription::BetweenPools(pool_from, pool_to, distr) => {
+                LatencyRule::WithinPool(name, distr) => (*name, *name, distr),
+                LatencyRule::BetweenPools(pool_from, pool_to, distr) => {
                     (*pool_from, *pool_to, distr)
                 }
             };
@@ -148,7 +148,7 @@ impl SimulationBuilder {
     }
 
     /// Configures per-process NIC bandwidth limits.
-    pub fn nic_bandwidth(mut self, bandwidth: BandwidthDescription) -> Self {
+    pub fn vnic_bandwidth(mut self, bandwidth: BandwidthConfig) -> Self {
         self.bandwidth = bandwidth;
         self
     }

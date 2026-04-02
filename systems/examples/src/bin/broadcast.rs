@@ -8,8 +8,8 @@ fn main() {
 
     let mut sim = SimulationBuilder::default()
         .add_pool::<BroadcastProcess>("BroadcastPool", 5)
-        .nic_bandwidth(BandwidthDescription::Unbounded)
-        .latency_topology(&[LatencyDescription::WithinPool(
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
+        .latency_topology(&[LatencyRule::WithinPool(
             "BroadcastPool",
             Distributions::Uniform(Jiffies(0), Jiffies(10)),
         )])

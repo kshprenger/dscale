@@ -1,9 +1,7 @@
 use std::{fs::File, sync::Mutex};
 
 use dag_based::sparse_bullshark::SparseBullshark;
-use dscale::{
-    BandwidthDescription, Distributions, Jiffies, LatencyDescription, SimulationBuilder, global::kv,
-};
+use dscale::{BandwidthConfig, Distributions, Jiffies, LatencyRule, SimulationBuilder, global::kv};
 use rayon::prelude::*;
 use std::io::Write;
 
@@ -30,7 +28,7 @@ fn main() {
 
             let mut sim = SimulationBuilder::default()
                 .add_pool::<SparseBullshark>("Validators", k_validators)
-                .latency_topology(&[LatencyDescription::WithinPool(
+                .latency_topology(&[LatencyRule::WithinPool(
                     "Validators",
                     Distributions::Normal {
                         mean: Jiffies(50),
@@ -40,7 +38,7 @@ fn main() {
                     },
                 )])
                 .time_budget(Jiffies(36000_000)) // Simulating 10 hours of real time execution
-                .nic_bandwidth(BandwidthDescription::Bounded(5 * 1024 * 1024 / (8 * 1000)))
+                .vnic_bandwidth(BandwidthConfig::Bounded(5 * 1024 * 1024 / (8 * 1000)))
                 .seed(*seed)
                 .simple()
                 .build();
