@@ -10,8 +10,8 @@ fn main() {
     let base_sim = || {
         SimulationBuilder::default()
             .add_pool::<HeavyProcess>("heavy", num_procs)
-            .nic_bandwidth(BandwidthDescription::Unbounded)
-            .latency_topology(&[LatencyDescription::WithinPool(
+            .vnic_bandwidth(BandwidthConfig::Unbounded)
+            .latency_topology(&[LatencyRule::WithinPool(
                 "heavy",
                 Distributions::Uniform(Jiffies(100), Jiffies(150)),
             )])

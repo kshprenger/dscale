@@ -3,7 +3,7 @@ mod latency;
 
 use std::sync::Arc;
 
-pub use bandwidth::BandwidthDescription;
+pub use bandwidth::BandwidthConfig;
 pub(crate) use bandwidth::BandwidthQueue;
 pub(crate) use latency::LatencyQueue;
 use log::debug;
@@ -58,7 +58,7 @@ impl NetworkActor {
 impl NetworkActor {
     pub(crate) fn new(
         seed: Seed,
-        bandwidth_type: BandwidthDescription,
+        bandwidth_type: BandwidthConfig,
         topology: Arc<Topology>,
     ) -> Self {
         Self {

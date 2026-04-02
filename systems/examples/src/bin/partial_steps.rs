@@ -4,8 +4,8 @@ use examples::ring::Ring;
 fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<Ring>("RingPool", 100)
-        .nic_bandwidth(BandwidthDescription::Unbounded)
-        .latency_topology(&[LatencyDescription::WithinPool(
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
+        .latency_topology(&[LatencyRule::WithinPool(
             "RingPool",
             Distributions::Uniform(Jiffies(1), Jiffies(10)),
         )])

@@ -7,17 +7,11 @@ fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<PingProcess>("Pingers", 3)
         .add_pool::<PongProcess>("Pongers", 2)
-        .nic_bandwidth(BandwidthDescription::Unbounded)
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
         .latency_topology(&[
-            LatencyDescription::WithinPool(
-                "Pingers",
-                Distributions::Uniform(Jiffies(0), Jiffies(10)),
-            ),
-            LatencyDescription::WithinPool(
-                "Pongers",
-                Distributions::Uniform(Jiffies(0), Jiffies(10)),
-            ),
-            LatencyDescription::BetweenPools(
+            LatencyRule::WithinPool("Pingers", Distributions::Uniform(Jiffies(0), Jiffies(10))),
+            LatencyRule::WithinPool("Pongers", Distributions::Uniform(Jiffies(0), Jiffies(10))),
+            LatencyRule::BetweenPools(
                 "Pingers",
                 "Pongers",
                 Distributions::Uniform(Jiffies(10), Jiffies(20)),

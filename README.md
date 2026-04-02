@@ -70,27 +70,27 @@ impl ProcessHandle for MyProcess {
 Use `SimulationBuilder` to configure the topology, network constraints, and start the simulation.
 
 ```rust
-use dscale::{SimulationBuilder, Jiffies, BandwidthDescription, LatencyDescription, Distributions};
+use dscale::{SimulationBuilder, Jiffies, BandwidthConfig, LatencyRule, Distributions};
 
 fn main() {
-    let mut simulation = SimulationBuilder::default()
+    let mut runner = SimulationBuilder::default()
         .add_pool::<MyClient>("Client", 1)
         .add_pool::<MyServer>("Server", 3)
         .latency_topology(&[
-            LatencyDescription::WithinPool("Server", Distributions::Uniform(Jiffies(1), Jiffies(5))),
-            LatencyDescription::BetweenPools("Client", "Server", Distributions::Normal {
+            LatencyRule::WithinPool("Server", Distributions::Uniform(Jiffies(1), Jiffies(5))),
+            LatencyRule::BetweenPools("Client", "Server", Distributions::Normal {
                 mean: Jiffies(10),
                 std_dev: Jiffies(2),
                 low: Jiffies(5),
                 high: Jiffies(20),
             }),
         ])
-        .nic_bandwidth(BandwidthDescription::Bounded(1000)) // 1000 bytes per Jiffy
+        .vnic_bandwidth(BandwidthConfig::Bounded(1000)) // 1000 bytes per Jiffy
         .time_budget(Jiffies(1_000_000))
-        .deterministic()
+        .simple()
         .build();
 
-    simulation.run_full_budget();
+    runner.run_full_budget();
 }
 ```
 
@@ -99,16 +99,16 @@ fn main() {
 For large simulations, enable parallel execution to distribute process steps across multiple threads:
 
 ```rust
-let mut simulation = SimulationBuilder::default()
+let mut runner = SimulationBuilder::default()
     .add_pool::<MyProcess>("Nodes", 1000)
     .latency_topology(&[
-        LatencyDescription::WithinPool("Nodes", Distributions::Uniform(Jiffies(1), Jiffies(10))),
+        LatencyRule::WithinPool("Nodes", Distributions::Uniform(Jiffies(1), Jiffies(10))),
     ])
     .time_budget(Jiffies(1_000_000))
-    .parallel(8) // use 8 worker threads
+    .parallel(Threads::Specific(8)) // use 8 worker threads
     .build();
 
-simulation.run_full_budget();
+runner.run_full_budget();
 ```
 
 When usage of such mode may be effient?
@@ -127,19 +127,21 @@ When usage of such mode may be effient?
   - `time_budget`: Sets the maximum simulation duration.
   - `add_pool`: Creates a named pool of processes. (All processes also join `GLOBAL_POOL`)
   - `latency_topology`: Configures network latency between and within pools.
-  - `nic_bandwidth`: Configures per-process network bandwidth limits.
+  - `vnic_bandwidth`: Configures per-process network bandwidth limits for "virtual" NIC.
     - `Bounded(usize)`: Limits bandwidth (bytes per jiffy).
     - `Unbounded`: No bandwidth limits (default).
   - `simple`: Selects single-threaded execution (default).
-  - `parallel(cores)`: Selects parallel execution with the given number of worker threads.
+  - `parallel(threads)`: Selects parallel execution with the given number of worker threads.
   - `build`: Finalizes configuration and returns a simulation runner.
 - **`run_full_budget`**: Runs the simulation until the time budget is exhausted.
+- **`run_steps`**: Runs the simulation until it performes requested number of steps or global budget is exhausted.
+- **`run_sub_budget`**: Runs the simulation until the sub-budget starting from current timepoint or global budget are exhausted.
 
 ### Network Topology
 
 - **`GLOBAL_POOL`**:
   - Implicit pool containing all processes. `broadcast` uses this pool.
-- **`LatencyDescription`**:
+- **`LatencyRule`**:
   - `WithinPool(name, distribution)`: Latency for messages between processes in the same pool.
   - `BetweenPools(pool_a, pool_b, distribution)`: Latency for messages between processes in different pools (symmetric).
 - **`Distributions`**:

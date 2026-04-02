@@ -1,13 +1,12 @@
 use dag_based::rider::DAGRider;
 use dscale::{
-    BandwidthDescription, Distributions, Jiffies, LatencyDescription, SimulationBuilder, Threads,
-    global::kv,
+    BandwidthConfig, Distributions, Jiffies, LatencyRule, SimulationBuilder, Threads, global::kv,
 };
 
 fn main() {
     let mut sim = SimulationBuilder::default()
         .add_pool::<DAGRider>("Validators", 1000)
-        .latency_topology(&[LatencyDescription::WithinPool(
+        .latency_topology(&[LatencyRule::WithinPool(
             "Validators",
             Distributions::Normal {
                 mean: Jiffies(50),
@@ -17,7 +16,7 @@ fn main() {
             },
         )])
         .time_budget(Jiffies(3600))
-        .nic_bandwidth(BandwidthDescription::Unbounded)
+        .vnic_bandwidth(BandwidthConfig::Unbounded)
         .seed(123)
         .parallel(Threads::All)
         .build();
