@@ -39,7 +39,7 @@ impl NetworkActor {
             Destination::Target(rank) => &[rank],
         };
 
-        debug!("Submitting steps P{source} -> P[{targets:?}]");
+        debug!("Submitting steps P{source} -> P{targets:?}");
         let base_time = now() + Jiffies(1);
         for &target in targets {
             let timed_step = TimedStep {
